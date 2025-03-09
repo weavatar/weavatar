@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gookit/validate"
 
-	"github.com/go-rat/fiber-skeleton/internal/http/request"
+	"github.com/weavatar/weavatar/internal/http/request"
 )
 
 // SuccessResponse 通用成功响应

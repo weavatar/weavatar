@@ -6,8 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/knadh/koanf/v2"
 
-	"github.com/go-rat/fiber-skeleton/internal/http/middleware"
-	"github.com/go-rat/fiber-skeleton/internal/route"
+	"github.com/weavatar/weavatar/internal/http/middleware"
+	"github.com/weavatar/weavatar/internal/route"
 )
 
 func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *route.Http, ws *route.Ws) *fiber.App {

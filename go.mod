@@ -1,8 +1,6 @@
-module github.com/go-rat/fiber-skeleton
+module github.com/weavatar/weavatar
 
-go 1.23
-
-toolchain go1.24.1
+go 1.24.1
 
 require (
 	github.com/cloudflare/tableflip v1.2.3
@@ -10,6 +8,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
 	github.com/go-rat/utils v1.0.9
+	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/contrib/websocket v1.3.3
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/google/wire v0.6.0
@@ -20,7 +19,10 @@ require (
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.10.0
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1116
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
 	github.com/urfave/cli/v3 v3.0.0-beta1
+	github.com/wneessen/go-mail v0.6.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gorm v1.25.12
 )
@@ -54,11 +56,11 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.58.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.61.4 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

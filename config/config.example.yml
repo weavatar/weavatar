@@ -1,20 +1,58 @@
 app:
-  name: "go-web-app"
-  version: "1.0.0"
+  name: "weavatar"
   key: "a-long-string-with-32-characters"
   debug: true
-
 http:
   debug: true
   prefork: false
   address: ":3000"
   bodyLimit: 4096
   headerLimit: 4096
-  reduceMemoryUsage: true
-
+  reduceMemoryUsage: false
 database:
   debug: true
-  host: "localhost"
-  port: 5432
+  socket: "/tmp/mysql.sock"
   user: "root"
   password: ""
+  name: "weavatar"
+mail:
+  host: "smtp.example.com"
+  port: 587
+  user: "noreply@example.com"
+  password: ""
+geetest:
+  id: "your-geetest-id"
+  key: "your-geetest-key"
+code:
+  expireTime: 5
+sms:
+  secretId: ""
+  secretKey: ""
+  signName: ""
+  templateId: 123456
+  sdkAppId: 123456
+oauth:
+  clientID: "1234567890"
+  clientSecret: "abcdef1234567890abcdef1234567890"
+audit:
+  driver: "aliyun"
+  aliyun:
+    accessKeyId: "your-access-key-id"
+    accessKeySecret: "your-access-key-secret"
+  tencent:
+    secretId: "your-secret-id"
+    secretKey: "your-secret-key"
+    bucket: "your-bucket"
+cdn:
+  driver:
+    - "huawei"
+    - "baishan"
+  huawei:
+    accessKey: "your-access-key"
+    secretKey: "your-secret-key"
+  baishan:
+    token: "your-token"
+  cloudflare:
+    apiKey: "your-api-key"
+    apiEmail: "your-email"
+    zoneID: "your-zone-id"

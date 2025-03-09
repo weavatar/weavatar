@@ -5,12 +5,12 @@ package main
 import (
 	"github.com/google/wire"
 
-	"github.com/go-rat/fiber-skeleton/internal/app"
-	"github.com/go-rat/fiber-skeleton/internal/bootstrap"
-	"github.com/go-rat/fiber-skeleton/internal/data"
-	"github.com/go-rat/fiber-skeleton/internal/http/middleware"
-	"github.com/go-rat/fiber-skeleton/internal/route"
-	"github.com/go-rat/fiber-skeleton/internal/service"
+	"github.com/weavatar/weavatar/internal/app"
+	"github.com/weavatar/weavatar/internal/bootstrap"
+	"github.com/weavatar/weavatar/internal/data"
+	"github.com/weavatar/weavatar/internal/http/middleware"
+	"github.com/weavatar/weavatar/internal/route"
+	"github.com/weavatar/weavatar/internal/service"
 )
 
 // initApp init application.
