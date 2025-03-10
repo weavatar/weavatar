@@ -248,7 +248,7 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 		}
 		color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
 		// 删除文件
-		_ = os.Remove(fmt.Sprintf("%s/%d.csv", dir, i))
+		_ = os.Remove(fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, i))
 	}
 
 	color.Warnln("导入完成")
