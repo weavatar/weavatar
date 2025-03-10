@@ -2,6 +2,7 @@ package mail
 
 import (
 	"crypto/tls"
+
 	"github.com/wneessen/go-mail"
 )
 
