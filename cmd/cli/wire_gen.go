@@ -21,7 +21,16 @@ import (
 
 // initCli init command line.
 func initCli() (*app.Cli, error) {
-	cliService := service.NewCliService()
+	koanf, err := bootstrap.NewConf()
+	if err != nil {
+		return nil, err
+	}
+	logger := bootstrap.NewLog(koanf)
+	db, err := bootstrap.NewDB(koanf, logger)
+	if err != nil {
+		return nil, err
+	}
+	cliService := service.NewCliService(db)
 	cli := route.NewCli(cliService)
 	command := bootstrap.NewCli(cli)
 	appCli := app.NewCli(command)

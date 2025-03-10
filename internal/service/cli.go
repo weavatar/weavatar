@@ -217,6 +217,10 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 	dir := cmd.String("dir")
 	hashType := cmd.String("type")
+	engine := "InnoDB"
+	if cmd.Bool("rocksdb") {
+		engine = "ROCKSDB"
+	}
 
 	r.db.Exec("SET GLOBAL sql_log_bin = 0")
 	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 1")
@@ -230,7 +234,7 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		color.Greenf("正在创建表: %d\n", i)
-		if err := r.db.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = ROCKSDB;", hashType, i)).Error; err != nil {
+		if err := r.db.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = %s;", hashType, i, engine)).Error; err != nil {
 			return err
 		}
 	}
