@@ -225,8 +225,8 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 	r.db.Exec("SET GLOBAL sql_log_bin = 0")
 	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 1")
 	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 1")
-	r.db.Exec("SET unique_checks = 0")
-	r.db.Exec("SET GLOBAL local_infile = 1")
+	r.db.Exec("SET GLOBAL unique_checks = 0")
+	r.db.Exec("SET SESSION local_infile = 1")
 
 	for i := 0; i < 256; i++ {
 		if err := r.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
@@ -243,7 +243,7 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 	color.Warnln("正在导入数据")
 
 	for i := 0; i < 256; i++ {
-		if err := r.db.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
+		if err := r.db.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
 			return err
 		}
 		color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
@@ -256,8 +256,8 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 0")
 	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 0")
 	r.db.Exec("SET GLOBAL sql_log_bin = 1")
-	r.db.Exec("SET unique_checks = 1")
-	r.db.Exec("SET GLOBAL local_infile = 0")
+	r.db.Exec("SET GLOBAL unique_checks = 1")
+	r.db.Exec("SET SESSION local_infile = 0")
 
 	return nil
 }
