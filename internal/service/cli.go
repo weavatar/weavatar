@@ -104,9 +104,9 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 
 					var sum string
 					if hashType == "sha256" {
-						sum = str.SHA256(email)
+						sum = str.SHA256(email)[:16]
 					} else {
-						sum = str.MD5(email)
+						sum = str.MD5(email)[:16]
 					}
 
 					table, err := strconv.ParseUint(sum[:2], 16, 64)
