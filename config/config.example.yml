@@ -11,6 +11,7 @@ http:
   reduceMemoryUsage: false
 database:
   debug: true
+  import: true
   socket: "/tmp/mysql.sock"
   user: "root"
   password: ""

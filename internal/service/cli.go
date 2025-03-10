@@ -13,13 +13,17 @@ import (
 	"github.com/go-rat/utils/str"
 	"github.com/gookit/color"
 	"github.com/urfave/cli/v3"
+	"gorm.io/gorm"
 )
 
 type CliService struct {
+	db *gorm.DB
 }
 
-func NewCliService() *CliService {
-	return &CliService{}
+func NewCliService(db *gorm.DB) *CliService {
+	return &CliService{
+		db: db,
+	}
 }
 
 func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
@@ -43,16 +47,16 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 		count  int
 	}
 
-	files := make([]*fileInfo, 255)
-	for j := uint64(0); j <= 255; j++ {
-		fileName := fmt.Sprintf("%s/%d.csv", dir, j)
+	files := make([]*fileInfo, 256)
+	for j := uint64(0); j < 256; j++ {
+		fileName := fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, j)
 		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
 
 		// 预分配文件空间以减少文件系统碎片
-		estimatedSize := (end - start + 1) / 255 * 50 // 每行50字节
+		estimatedSize := (end - start + 1) / 256 * 50 // 每行50字节
 		if err = file.Truncate(int64(estimatedSize)); err != nil {
 			return err
 		}
@@ -194,7 +198,7 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 	writeWg.Wait()
 
 	// 确保所有数据都刷新到磁盘
-	for j := uint64(1); j <= 255; j++ {
+	for j := uint64(0); j < 256; j++ {
 		if err := files[j].writer.Flush(); err != nil {
 			return err
 		}
@@ -211,5 +215,45 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 }
 
 func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
+	dir := cmd.String("dir")
+	hashType := cmd.String("type")
+
+	r.db.Exec("SET GLOBAL sql_log_bin = 0")
+	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 1")
+	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 1")
+	r.db.Exec("SET unique_checks = 0")
+	r.db.Exec("SET GLOBAL local_infile = 1")
+
+	for i := 0; i < 256; i++ {
+		if err := r.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
+			return err
+		}
+
+		color.Greenf("正在创建表: %d\n", i)
+		if err := r.db.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = ROCKSDB;", hashType, i)).Error; err != nil {
+			return err
+		}
+	}
+
+	color.Greenln("建表完成")
+	color.Warnln("正在导入数据")
+
+	for i := 0; i < 256; i++ {
+		if err := r.db.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
+			return err
+		}
+		color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
+		// 删除文件
+		_ = os.Remove(fmt.Sprintf("%s/%d.csv", dir, i))
+	}
+
+	color.Warnln("导入完成")
+
+	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 0")
+	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 0")
+	r.db.Exec("SET GLOBAL sql_log_bin = 1")
+	r.db.Exec("SET unique_checks = 1")
+	r.db.Exec("SET GLOBAL local_infile = 0")
+
 	return nil
 }

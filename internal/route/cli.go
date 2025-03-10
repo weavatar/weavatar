@@ -62,14 +62,22 @@ func (r *Cli) Commands() []*cli.Command {
 					Action: r.cli.HashInsert,
 					Flags: []cli.Flag{
 						&cli.StringFlag{
-							Name:  "dir",
-							Value: "hash",
-							Usage: "哈希文件存放目录",
+							Name:     "dir",
+							Value:    "hash",
+							Usage:    "哈希文件存放目录",
+							Required: true,
 						},
 						&cli.StringFlag{
-							Name:  "type",
-							Value: "md5",
-							Usage: "哈希类型 md5, sha256",
+							Name:     "type",
+							Value:    "md5",
+							Usage:    "哈希类型 md5, sha256",
+							Required: true,
+							Validator: func(v string) error {
+								if !slices.Contains([]string{"md5", "sha256"}, v) {
+									return fmt.Errorf("哈希类型只能是 md5 或 sha256")
+								}
+								return nil
+							},
 						},
 					},
 				},
