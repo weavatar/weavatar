@@ -10,7 +10,7 @@ import (
 	"github.com/weavatar/weavatar/internal/route"
 )
 
-func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *route.Http, ws *route.Ws) *fiber.App {
+func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *route.Http) *fiber.App {
 	// prefork not support dual stack
 	network := fiber.NetworkTCP
 	if conf.Bool("http.prefork") {
@@ -38,8 +38,6 @@ func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *rou
 
 	// add http route
 	http.Register(r)
-	// add ws route
-	ws.Register(r)
 
 	// add fallback handler
 	r.Use(func(c *fiber.Ctx) error {
