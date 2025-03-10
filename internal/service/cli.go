@@ -222,11 +222,11 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 		engine = "ROCKSDB"
 	}
 
-	r.db.Exec("SET GLOBAL sql_log_bin = 0")
-	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 1")
-	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 1")
-	r.db.Exec("SET GLOBAL unique_checks = 0")
-	r.db.Exec("SET SESSION local_infile = 1")
+	r.db.Exec("SET SESSION sql_log_bin = 0")
+	r.db.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 1")
+	r.db.Exec("SET SESSION rocksdb_bulk_load = 1")
+	r.db.Exec("SET SESSION unique_checks = 0")
+	r.db.Exec("SET GLOBAL local_infile = 1")
 
 	for i := 0; i < 256; i++ {
 		if err := r.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
@@ -253,11 +253,11 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 
 	color.Warnln("导入完成")
 
-	r.db.Exec("SET GLOBAL rocksdb_bulk_load = 0")
-	r.db.Exec("SET GLOBAL rocksdb_bulk_load_allow_unsorted = 0")
-	r.db.Exec("SET GLOBAL sql_log_bin = 1")
-	r.db.Exec("SET GLOBAL unique_checks = 1")
-	r.db.Exec("SET SESSION local_infile = 0")
+	r.db.Exec("SET SESSION rocksdb_bulk_load = 0")
+	r.db.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 0")
+	r.db.Exec("SET SESSION sql_log_bin = 1")
+	r.db.Exec("SET SESSION unique_checks = 1")
+	r.db.Exec("SET GLOBAL local_infile = 0")
 
 	return nil
 }
