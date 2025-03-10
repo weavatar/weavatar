@@ -22,8 +22,4 @@ func (r *Http) Register(router fiber.Router) {
 	})
 
 	router.Get("/users", r.user.List)
-	router.Post("/users", r.user.Create)
-	router.Get("/users/:id", r.user.Get)
-	router.Put("/users/:id", r.user.Update)
-	router.Delete("/users/:id", r.user.Delete)
 }

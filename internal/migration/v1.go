@@ -9,15 +9,23 @@ import (
 
 func init() {
 	Migrations = append(Migrations, &gormigrate.Migration{
-		ID: "20240812-init",
+		ID: "20250310-init",
 		Migrate: func(tx *gorm.DB) error {
 			return tx.AutoMigrate(
 				&biz.User{},
+				&biz.Avatar{},
+				&biz.App{},
+				&biz.AppAvatar{},
+				&biz.Image{},
 			)
 		},
 		Rollback: func(tx *gorm.DB) error {
 			return tx.Migrator().DropTable(
 				&biz.User{},
+				&biz.Avatar{},
+				&biz.App{},
+				&biz.AppAvatar{},
+				&biz.Image{},
 			)
 		},
 	})

@@ -40,10 +40,10 @@ audit:
   aliyun:
     accessKeyId: "your-access-key-id"
     accessKeySecret: "your-access-key-secret"
-  tencent:
+  cos:
     secretId: "your-secret-id"
     secretKey: "your-secret-key"
-    bucket: "your-bucket"
+    bucket: "your-bucket.cos.ap-xx.myqcloud.com"
 cdn:
   driver:
     - "huawei"
