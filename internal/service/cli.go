@@ -222,42 +222,45 @@ func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
 		engine = "ROCKSDB"
 	}
 
-	r.db.Exec("SET SESSION sql_log_bin = 0")
-	r.db.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 1")
-	r.db.Exec("SET SESSION rocksdb_bulk_load = 1")
-	r.db.Exec("SET SESSION unique_checks = 0")
-	r.db.Exec("SET GLOBAL local_infile = 1")
+	// 确保不受 gorm 连接池影响
+	return r.db.Connection(func(tx *gorm.DB) error {
+		tx.Exec("SET SESSION sql_log_bin = 0")
+		tx.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 1")
+		tx.Exec("SET SESSION rocksdb_bulk_load = 1")
+		tx.Exec("SET SESSION unique_checks = 0")
+		tx.Exec("SET GLOBAL local_infile = 1")
 
-	for i := 0; i < 256; i++ {
-		if err := r.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
-			return err
+		for i := 0; i < 256; i++ {
+			if err := tx.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
+				return err
+			}
+
+			color.Greenf("正在创建表: %d\n", i)
+			if err := tx.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = %s;", hashType, i, engine)).Error; err != nil {
+				return err
+			}
 		}
 
-		color.Greenf("正在创建表: %d\n", i)
-		if err := r.db.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = %s;", hashType, i, engine)).Error; err != nil {
-			return err
+		color.Greenln("建表完成")
+		color.Warnln("正在导入数据")
+
+		for i := 0; i < 256; i++ {
+			if err := tx.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
+				return err
+			}
+			color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
+			// 删除文件
+			_ = os.Remove(fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, i))
 		}
-	}
 
-	color.Greenln("建表完成")
-	color.Warnln("正在导入数据")
+		color.Warnln("导入完成")
 
-	for i := 0; i < 256; i++ {
-		if err := r.db.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
-			return err
-		}
-		color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
-		// 删除文件
-		_ = os.Remove(fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, i))
-	}
+		tx.Exec("SET SESSION rocksdb_bulk_load = 0")
+		tx.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 0")
+		tx.Exec("SET SESSION sql_log_bin = 1")
+		tx.Exec("SET SESSION unique_checks = 1")
+		tx.Exec("SET GLOBAL local_infile = 0")
 
-	color.Warnln("导入完成")
-
-	r.db.Exec("SET SESSION rocksdb_bulk_load = 0")
-	r.db.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 0")
-	r.db.Exec("SET SESSION sql_log_bin = 1")
-	r.db.Exec("SET SESSION unique_checks = 1")
-	r.db.Exec("SET GLOBAL local_infile = 0")
-
-	return nil
+		return nil
+	})
 }
