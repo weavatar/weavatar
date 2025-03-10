@@ -3,7 +3,7 @@ package bootstrap
 import (
 	"encoding/json"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
 
 	"github.com/weavatar/weavatar/internal/http/middleware"
@@ -11,21 +11,11 @@ import (
 )
 
 func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *route.Http) *fiber.App {
-	// prefork not support dual stack
-	network := fiber.NetworkTCP
-	if conf.Bool("http.prefork") {
-		network = fiber.NetworkTCP4
-	}
-
 	r := fiber.New(fiber.Config{
-		AppName:               conf.String("app.name"),
-		BodyLimit:             conf.MustInt("http.bodyLimit") << 10,
-		ReadBufferSize:        conf.MustInt("http.headerLimit"),
-		ReduceMemoryUsage:     conf.Bool("http.reduceMemoryUsage"),
-		Prefork:               conf.Bool("http.prefork"),
-		EnablePrintRoutes:     conf.Bool("http.debug"),
-		DisableStartupMessage: !conf.Bool("http.debug"),
-		Network:               network,
+		AppName:           conf.String("app.name"),
+		BodyLimit:         conf.MustInt("http.bodyLimit") << 10,
+		ReadBufferSize:    conf.MustInt("http.headerLimit"),
+		ReduceMemoryUsage: conf.Bool("http.reduceMemoryUsage"),
 		// replace default json encoder and decoder if you are not happy with the performance
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
@@ -40,7 +30,7 @@ func NewRouter(conf *koanf.Koanf, middlewares *middleware.Middlewares, http *rou
 	http.Register(r)
 
 	// add fallback handler
-	r.Use(func(c *fiber.Ctx) error {
+	r.Use(func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendString("404 Not Found")
 	})
 
