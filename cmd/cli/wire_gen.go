@@ -9,7 +9,6 @@ package main
 import (
 	"github.com/weavatar/weavatar/internal/app"
 	"github.com/weavatar/weavatar/internal/bootstrap"
-	"github.com/weavatar/weavatar/internal/data"
 	"github.com/weavatar/weavatar/internal/route"
 	"github.com/weavatar/weavatar/internal/service"
 )
@@ -22,18 +21,8 @@ import (
 
 // initCli init command line.
 func initCli() (*app.Cli, error) {
-	koanf, err := bootstrap.NewConf()
-	if err != nil {
-		return nil, err
-	}
-	logger := bootstrap.NewLog(koanf)
-	db, err := bootstrap.NewDB(koanf, logger)
-	if err != nil {
-		return nil, err
-	}
-	userRepo := data.NewUserRepo(db)
-	userService := service.NewUserService(userRepo)
-	cli := route.NewCli(userService)
+	cliService := service.NewCliService()
+	cli := route.NewCli(cliService)
 	command := bootstrap.NewCli(cli)
 	appCli := app.NewCli(command)
 	return appCli, nil
