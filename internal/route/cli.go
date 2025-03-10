@@ -31,10 +31,9 @@ func (r *Cli) Commands() []*cli.Command {
 					Action: r.cli.HashMake,
 					Flags: []cli.Flag{
 						&cli.UintFlag{
-							Name:     "sum",
-							Value:    4000000000,
-							Usage:    "生成的QQ号最大值",
-							Required: true,
+							Name:  "sum",
+							Value: 4000000000,
+							Usage: "生成的QQ号最大值",
 						},
 						&cli.StringFlag{
 							Name:     "dir",
