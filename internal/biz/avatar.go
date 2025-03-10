@@ -1,6 +1,10 @@
 package biz
 
-import "github.com/dromara/carbon/v2"
+import (
+	"time"
+
+	"github.com/dromara/carbon/v2"
+)
 
 type Avatar struct {
 	SHA256    string          `gorm:"type:char(64);primaryKey" json:"sha256"`
@@ -12,4 +16,12 @@ type Avatar struct {
 
 	AppSHA256 *AppAvatar `gorm:"foreignKey:AvatarSHA256;references:SHA256" json:"-"`
 	AppMD5    *AppAvatar `gorm:"foreignKey:AvatarMD5;references:MD5" json:"-"`
+}
+
+type AvatarRepo interface {
+	GetByHash(hash string) (*Avatar, error)
+	GetQqByHash(hash string) (string, []byte, time.Time, error)
+	GetGravatarByHash(hash string) ([]byte, time.Time, error)
+	GetByType(avatarType string, option ...string) ([]byte, time.Time, error)
+	IsBanned(img []byte) (bool, error)
 }
