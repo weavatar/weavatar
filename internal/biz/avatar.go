@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/dromara/carbon/v2"
+
+	"github.com/weavatar/weavatar/internal/http/request"
 )
 
 type Avatar struct {
@@ -20,6 +22,11 @@ type Avatar struct {
 }
 
 type AvatarRepo interface {
+	List(page, limit uint) ([]*Avatar, int64, error)
+	Get(hash string) (*Avatar, error)
+	Create(userID string, req *request.AvatarCreate) (*Avatar, error)
+	Update(userID string, req *request.AvatarUpdate) (*Avatar, error)
+	Delete(userID string, hash string) error
 	GetByRaw(raw string) (*Avatar, error)
 	GetWeAvatar(hash, appID string) (string, []byte, time.Time, error)
 	GetQqByHash(hash string) (string, []byte, time.Time, error)

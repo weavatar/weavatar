@@ -7,6 +7,7 @@ import (
 	"hash/fnv"
 	"image/color"
 	"image/png"
+	"io"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"
+	"github.com/weavatar/weavatar/internal/http/request"
 	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/embed"
 )
@@ -57,6 +59,140 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 		font:   font,
 		client: client,
 	}, nil
+}
+
+func (r *avatarRepo) List(page, limit uint) ([]*biz.Avatar, int64, error) {
+	var total int64
+	if err := r.db.Model(&biz.Avatar{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var list []*biz.Avatar
+	if err := r.db.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return list, total, nil
+}
+
+func (r *avatarRepo) Get(hash string) (*biz.Avatar, error) {
+	avatar := new(biz.Avatar)
+	if err := r.db.Where("sha256 = ? OR md5 = ?", hash, hash).First(avatar).Error; err != nil {
+		return nil, err
+	}
+	return avatar, nil
+}
+
+func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avatar, error) {
+	f, err := req.Avatar.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, _ := io.ReadAll(f)
+	img, err := r.formatAvatar(b, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	avatar := new(biz.Avatar)
+	avatar.UserID = userID
+
+	err = r.db.Transaction(func(tx *gorm.DB) error {
+		avatar.SHA256 = str.SHA256(req.Raw)
+		avatar.MD5 = str.MD5(req.Raw)
+		avatar.Raw = req.Raw
+		if err = tx.Create(avatar).Error; err != nil {
+			return err
+		}
+
+		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
+		if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
+			return err
+		}
+		if err = os.WriteFile(fp, img, 0644); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO 刷新缓存
+	return avatar, nil
+}
+
+func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avatar, error) {
+	avatar, err := r.Get(req.Hash)
+	if err != nil {
+		return nil, err
+	}
+	if avatar.UserID != userID {
+		return nil, fmt.Errorf("这不是你的头像")
+	}
+
+	f, err := req.Avatar.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, _ := io.ReadAll(f)
+	img, err := r.formatAvatar(b, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.Transaction(func(tx *gorm.DB) error {
+		if err = tx.Save(avatar).Error; err != nil {
+			return err
+		}
+
+		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
+		if err = os.WriteFile(fp, img, 0644); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO 刷新缓存
+	return avatar, nil
+}
+
+func (r *avatarRepo) Delete(userID string, hash string) error {
+	avatar, err := r.Get(hash)
+	if err != nil {
+		return err
+	}
+	if avatar.UserID != userID {
+		return fmt.Errorf("这不是你的头像")
+	}
+
+	err = r.db.Transaction(func(tx *gorm.DB) error {
+		if err = tx.Delete(avatar).Error; err != nil {
+			return err
+		}
+
+		fp := filepath.Join("storage", "upload", "default", hash[:2], hash)
+		if err = os.Remove(fp); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// TODO 刷新缓存
+	return nil
 }
 
 func (r *avatarRepo) GetByRaw(raw string) (*biz.Avatar, error) {
@@ -221,7 +357,7 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		}
 		return img, time.Now(), nil
 	case "color":
-		img, err := vips.Black(1, 1)
+		img, err := vips.Black(100, 100)
 		if err != nil {
 			return nil, time.Now(), err
 		}
@@ -281,4 +417,27 @@ func (r *avatarRepo) randomColor(hash string) (int, int, int, error) {
 	}
 	rd := rand.New(rand.NewPCG(h.Sum64(), (h.Sum64()>>1)|1))
 	return rd.IntN(256), rd.IntN(256), rd.IntN(256), nil
+}
+
+func (r *avatarRepo) formatAvatar(avatar []byte, size int) ([]byte, error) {
+	img, err := vips.NewImageFromBuffer(avatar)
+	if err != nil {
+		return nil, err
+	}
+	defer img.Close()
+
+	if img.Width() != img.Height() {
+		return nil, fmt.Errorf("头像必须是正方形图片")
+	}
+	if img.Width() < 40 {
+		return nil, fmt.Errorf("头像必须大于 40px")
+	}
+	if img.Width() > size {
+		if err = img.Thumbnail(size, size, vips.InterestingAttention); err != nil {
+			return nil, err
+		}
+	}
+
+	data, _, err := img.ExportNative()
+	return data, err
 }

@@ -1,12 +1,17 @@
 package request
 
 import (
+	"encoding/json"
+	"mime/multipart"
 	"regexp"
 	"slices"
 	"strings"
 
+	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
+
+	"github.com/weavatar/weavatar/pkg/geetest"
 )
 
 var hashRegex = regexp.MustCompile(`^([a-f0-9]{64})|([a-f0-9]{32})$`)
@@ -64,6 +69,39 @@ func (r *Avatar) Prepare(c fiber.Ctx) error {
 	}
 
 	return nil
+}
+
+type AvatarCreate struct {
+	Raw        string                `form:"raw" validate:"required"`
+	VerifyCode string                `form:"verify_code" validate:"required|verifyCode:Raw,avatar"`
+	Avatar     *multipart.FileHeader `form:"avatar" validate:"required|image"`
+
+	Captcha geetest.Ticket `json:"captcha" form:"captcha" validate:"required|geetest"`
+}
+
+func (r *AvatarCreate) Prepare(c fiber.Ctx) error {
+	if err := json.Unmarshal(convert.UnsafeBytes(c.FormValue("captcha")), &r.Captcha); err != nil {
+		return err
+	}
+	return nil
+}
+
+type AvatarUpdate struct {
+	Hash   string                `uri:"hash" validate:"required"`
+	Avatar *multipart.FileHeader `form:"avatar" validate:"required|image"`
+
+	Captcha geetest.Ticket `json:"captcha" form:"captcha" validate:"required|geetest"`
+}
+
+func (r *AvatarUpdate) Prepare(c fiber.Ctx) error {
+	if err := json.Unmarshal(convert.UnsafeBytes(c.FormValue("captcha")), &r.Captcha); err != nil {
+		return err
+	}
+	return nil
+}
+
+type AvatarDelete struct {
+	Hash string `uri:"hash" validate:"required"`
 }
 
 type AvatarCheck struct {

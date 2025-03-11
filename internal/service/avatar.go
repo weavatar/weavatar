@@ -100,6 +100,64 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	return c.Type(req.Ext).Send(avatar)
 }
 
+func (r *AvatarService) List(c fiber.Ctx) error {
+	req, err := Bind[request.Paginate](c)
+	if err != nil {
+		return Error(c, http.StatusUnprocessableEntity, "%v", err)
+	}
+
+	avatar, total, err := r.avatarRepo.List(req.Page, req.Limit)
+	if err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, fiber.Map{
+		"total": total,
+		"items": avatar,
+	})
+}
+
+func (r *AvatarService) Create(c fiber.Ctx) error {
+	req, err := Bind[request.AvatarCreate](c)
+	if err != nil {
+		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	avatar, err := r.avatarRepo.Create(fiber.Locals[string](c, "user_id"), req)
+	if err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, avatar)
+}
+
+func (r *AvatarService) Update(c fiber.Ctx) error {
+	req, err := Bind[request.AvatarUpdate](c)
+	if err != nil {
+		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	avatar, err := r.avatarRepo.Update(fiber.Locals[string](c, "user_id"), req)
+	if err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, avatar)
+}
+
+func (r *AvatarService) Delete(c fiber.Ctx) error {
+	req, err := Bind[request.AvatarDelete](c)
+	if err != nil {
+		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	if err = r.avatarRepo.Delete(fiber.Locals[string](c, "user_id"), req.Hash); err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, nil)
+}
+
 func (r *AvatarService) Check(c fiber.Ctx) error {
 	req, err := Bind[request.AvatarCheck](c)
 	if err != nil {
@@ -135,6 +193,7 @@ func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
+	defer img.Close()
 
 	if err = img.Thumbnail(size, size, vips.InterestingAttention); err != nil {
 		return nil, err

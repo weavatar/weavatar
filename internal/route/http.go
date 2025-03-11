@@ -51,6 +51,10 @@ func (r *Http) Register(router fiber.Router) {
 
 	avatars := api.Group("/avatars")
 	avatars.Use(middleware.MustLogin(r.conf))
+	avatars.Get("/", r.avatar.List)
+	avatars.Post("/", r.avatar.Create)
+	avatars.Put("/:hash", r.avatar.Update)
+	avatars.Delete("/:hash", r.avatar.Delete)
 	avatars.Get("/check", r.avatar.Check)
 	avatars.Get("/qq", r.avatar.Qq)
 
