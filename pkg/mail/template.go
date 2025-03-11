@@ -35,16 +35,16 @@ var codeTmpl = `
         line-height: 1.6;
         margin: 0;
         padding: 0;
-        background-color: #f0f0f0;
+        background-color: #f8f8f8;
       }
       .container {
         max-width: 600px;
         margin: 0 auto;
-        padding: 0;
+        padding: 20px;
       }
       .header {
-        text-align: center;
         padding: 20px 0;
+        text-align: center;
       }
       .text-logo {
         font-size: 28px;
@@ -56,15 +56,16 @@ var codeTmpl = `
       }
       .content {
         background-color: #ffffff;
-        padding: 30px;
-        border-radius: 0;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        margin: 0 60px;
+        padding: 25px 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin: 0;
       }
       .title {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: bold;
-        margin-bottom: 20px;
+        margin-top: 0;
+        margin-bottom: 15px;
       }
       .code-container {
         background-color: #f5f7fa;
@@ -76,15 +77,22 @@ var codeTmpl = `
       .verification-code {
         font-size: 36px;
         font-weight: bold;
-        letter-spacing: 8px;
+        letter-spacing: 6px;
         margin: 0;
       }
       .footer {
         text-align: center;
         font-size: 12px;
         color: #888;
-        margin-top: 20px;
-        padding: 0 60px;
+        margin-top: 0;
+        padding: 15px;
+      }
+      p {
+        margin: 12px 0;
+      }
+      .instruction {
+        font-size: 14px;
+        margin-bottom: 15px;
       }
       strong {
         font-weight: bold;
@@ -97,15 +105,13 @@ var codeTmpl = `
         <div class="text-logo">{{.Company}}</div>
       </div>
       <div class="content">
-        <div class="title">验证您的邮箱以继续</div>
-        <p>请使用以下验证码完成操作：</p>
+        <h2 class="title">验证您的邮箱以继续</h2>
+        <p class="instruction">请使用以下验证码完成操作：</p>
         <div class="code-container">
           <pre class="verification-code">{{.Code}}</pre>
         </div>
-        <p>
-          如果这不是您本人操作，请直接忽略此邮件。出于安全原因，验证码将在
-          <strong>5 分钟</strong>后失效。
-        </p>
+        <p>出于安全原因，验证码将在 <strong>5</strong> 分钟后失效。</p>
+        <p>如果这不是您本人操作，请直接忽略此邮件。</p>
         <p>此敬<br /><b>{{.Company}}</b></p>
       </div>
       <div class="footer">
