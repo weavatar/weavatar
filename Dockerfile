@@ -14,8 +14,8 @@ RUN apk --update add \
     build-base       \
     pkgconfig        \
     jemalloc-dev     \
+    upx              \
     vips-dev         \
-    vips-cpp         \
     vips-heif        \
     vips-jxl         \
     vips-magick      \
@@ -26,17 +26,15 @@ COPY . ./
 
 RUN go mod tidy
 RUN go build -ldflags "-s -w" -o app ./cmd/app
+RUN upx --best --lzma app
 
 # Run the binary on an empty container
 FROM alpine
 
 RUN apk --update add \
     ca-certificates  \
-    build-base       \
-    pkgconfig        \
-    jemalloc-dev     \
-    vips-dev         \
-    vips-cpp         \
+    jemalloc         \
+    vips             \
     vips-heif        \
     vips-jxl         \
     vips-magick      \
@@ -45,7 +43,6 @@ RUN apk --update add \
 COPY --from=builder /app/app .
 COPY --from=builder /app/config/ ./config/
 COPY --from=builder /app/storage/ ./storage/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 EXPOSE 3000
 ENTRYPOINT ["/app"]
