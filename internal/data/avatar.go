@@ -217,7 +217,6 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 		if length > 1 {
 			fontSize = 400
 			letters = letters[:2]
-			length = 2
 		}
 		img, err := letteravatar.Draw(1000, letters, &letteravatar.Options{
 			Font:       r.font,
