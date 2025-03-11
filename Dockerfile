@@ -16,7 +16,7 @@ RUN apk --update add \
     vips-heif        \
     vips-jxl         \
     vips-magick      \
-    vips-poppler     \
+    vips-poppler
 
 WORKDIR /app
 COPY . ./
