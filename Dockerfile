@@ -1,11 +1,13 @@
 # Build the go application into a binary
 FROM golang:alpine AS builder
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=1  \
-    GOARCH="amd64" \
-    GOOS="linux"   \
-    GOAMD64="v3"
+ENV GO111MODULE=on                                                                              \
+    GOARCH="amd64"                                                                              \
+    GOOS="linux"                                                                                \
+    GOAMD64="v3"                                                                                \
+    CGO_ENABLED=1                                                                               \
+    CGO_CFLAGS="-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free" \
+    CGO_LDFLAGS="-ljemalloc"
 
 RUN apk --update add \
     ca-certificates  \
