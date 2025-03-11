@@ -41,7 +41,7 @@ func Error(c fiber.Ctx, code int, format string, args ...any) error {
 // ErrorSystem 响应系统错误
 func ErrorSystem(c fiber.Ctx) error {
 	return c.Status(http.StatusInternalServerError).JSON(&ErrorResponse{
-		Msg: http.StatusText(http.StatusInternalServerError),
+		Msg: "WeAvatar 服务出现错误",
 	})
 }
 

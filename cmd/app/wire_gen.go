@@ -33,9 +33,14 @@ func initApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
+	avatarRepo, err := data.NewAvatarRepo(db)
+	if err != nil {
+		return nil, err
+	}
+	avatarService := service.NewAvatarService(avatarRepo)
 	userRepo := data.NewUserRepo(db)
 	userService := service.NewUserService(userRepo)
-	http := route.NewHttp(userService)
+	http := route.NewHttp(avatarService, userService)
 	fiberApp := bootstrap.NewRouter(koanf, middlewares, http)
 	gormigrate := bootstrap.NewMigrate(db)
 	cron := bootstrap.NewCron(koanf, logger)

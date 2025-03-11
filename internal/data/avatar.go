@@ -59,13 +59,30 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	}, nil
 }
 
-func (r *avatarRepo) GetByHash(hash string) (*biz.Avatar, error) {
+func (r *avatarRepo) GetWeAvatar(hash, appID string) ([]byte, time.Time, error) {
 	avatar := new(biz.Avatar)
-	if err := r.db.Preload("AppSHA256").Preload("AppMD5").Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {
-		return nil, err
+	if err := r.db.Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {
+		return nil, time.Now(), err
 	}
 
-	return avatar, nil
+	var img []byte
+	var err error
+	// 优先加载 App 头像
+	if avatar.AppSHA256 != nil || avatar.AppMD5 != nil {
+		fp := filepath.Join("storage", "upload", "app", appID, avatar.SHA256[:2], avatar.SHA256)
+		img, err = os.ReadFile(fp)
+		if avatar.AppSHA256 != nil {
+			return img, avatar.AppSHA256.UpdatedAt.StdTime(), err
+		}
+		if avatar.AppMD5 != nil {
+			return img, avatar.AppMD5.UpdatedAt.StdTime(), err
+		}
+	}
+
+	fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
+	img, err = os.ReadFile(fp)
+
+	return img, avatar.UpdatedAt.StdTime(), err
 }
 
 // GetQqByHash 通过哈希获取 Q 头像
@@ -132,31 +149,29 @@ func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
 }
 
 // GetByType 通过头像类型获取头像
-func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, time.Time, error) {
+func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, time.Time, error) {
 	switch avatarType {
-	case "404":
-		return nil, time.Now(), nil
 	case "mp", "mm", "mystery":
 		img, err := embed.DefaultFS.ReadFile(filepath.Join("default", "mp.png"))
 		return img, time.Now(), err
 	case "identicon":
-		red, green, blue, err := r.randomColor(option[0])
+		red, green, blue, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2, err := r.randomColor(option[0])
+		red2, green2, blue2, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
 		img := identicon.Make(identicon.Style1, 600,
 			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
 			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
-			convert.UnsafeBytes(option[0]))
+			convert.UnsafeBytes(options[0]))
 		buf := new(bytes.Buffer)
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "monsterid":
-		img, err := govatar.GenerateForUsername(govatar.FEMALE, option[0])
+		img, err := govatar.GenerateForUsername(govatar.FEMALE, options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
@@ -164,25 +179,25 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "wavatar":
-		return adorable.PseudoRandom(convert.UnsafeBytes(option[0])), time.Now(), nil
+		return adorable.PseudoRandom(convert.UnsafeBytes(options[0])), time.Now(), nil
 	case "retro":
-		red, green, blue, err := r.randomColor(option[0])
+		red, green, blue, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2, err := r.randomColor(option[0])
+		red2, green2, blue2, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
 		img := identicon.Make(identicon.Style2, 600,
 			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
 			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
-			convert.UnsafeBytes(option[0]))
+			convert.UnsafeBytes(options[0]))
 		buf := new(bytes.Buffer)
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "robohash":
-		img, err := govatar.GenerateForUsername(govatar.MALE, option[0])
+		img, err := govatar.GenerateForUsername(govatar.MALE, options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
@@ -201,7 +216,7 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 			return nil, time.Now(), err
 		}
 		defer img.Close()
-		red, green, blue, err := r.randomColor(option[0])
+		red, green, blue, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
@@ -212,7 +227,7 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 		return data, time.Now(), err
 	case "letter", "initials": // TODO deprecated letter in the future
 		fontSize := 500
-		letters := []rune(strings.ToUpper(option[0]))
+		letters := []rune(strings.ToUpper(options[1]))
 		length := len(letters)
 		if length > 1 {
 			fontSize = 400
@@ -221,7 +236,7 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 		img, err := letteravatar.Draw(1000, letters, &letteravatar.Options{
 			Font:       r.font,
 			FontSize:   fontSize,
-			PaletteKey: option[1], // 对相同的字符串使用相同的颜色
+			PaletteKey: options[0], // 对相同的字符串使用相同的颜色
 		})
 		if err != nil {
 			return nil, time.Now(), err
@@ -230,7 +245,8 @@ func (r *avatarRepo) GetByType(avatarType string, option ...string) ([]byte, tim
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	default:
-		return nil, time.Now(), fmt.Errorf("unsupported avatar type: %s", avatarType)
+		img, err := embed.DefaultFS.ReadFile(filepath.Join("default", "default.png"))
+		return img, time.Now(), err
 	}
 }
 

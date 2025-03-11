@@ -7,19 +7,24 @@ import (
 )
 
 type Http struct {
-	user *service.UserService
+	avatar *service.AvatarService
+	user   *service.UserService
 }
 
-func NewHttp(user *service.UserService) *Http {
+func NewHttp(avatar *service.AvatarService, user *service.UserService) *Http {
 	return &Http{
-		user: user,
+		avatar: avatar,
+		user:   user,
 	}
 }
 
 func (r *Http) Register(router fiber.Router) {
 	router.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("Hello, World 👋!")
+		return c.Redirect().Status(fiber.StatusFound).To("https://weavatar.com/")
 	})
+
+	router.Get("/avatar", r.avatar.Avatar)
+	router.Get("/avatar/:hash", r.avatar.Avatar)
 
 	router.Get("/users", r.user.List)
 }

@@ -28,12 +28,19 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Gitea Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: git.haozi.net
+          username: ${{ secrets.GITEA_USERNAME }}
+          password: ${{ secrets.GITEA_TOKEN }}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.GHCR_IMAGE_REPOSITORY }}
+            ${{ env.GITEA_IMAGE_REPOSITORY }}
           tags: |
             type=raw,value=latest
       - name: Build and push Docker image
