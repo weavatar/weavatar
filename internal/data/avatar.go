@@ -86,6 +86,8 @@ func (r *avatarRepo) GetWeAvatar(hash, appID string) ([]byte, time.Time, error) 
 }
 
 // GetQqByHash 通过哈希获取 Q 头像
+// 系统有前 16 位的 MD5 和 SHA256 哈希表
+// 哈希表通过前两位十六进制数分表存储
 func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error) {
 	hashType := "sha256"
 	if len(hash) == 32 {
@@ -98,7 +100,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 
 	table := fmt.Sprintf("hash.qq_%s_%d", hashType, index)
 	qqHash := new(biz.QqHash)
-	if err = r.db.Table(table).Where("hash", hash).First(qqHash).Error; err != nil {
+	if err = r.db.Table(table).Where("hash = UNHEX(?)", hash[:16]).First(qqHash).Error; err != nil {
 		return "", nil, time.Now(), err
 	}
 
