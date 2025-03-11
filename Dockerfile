@@ -13,6 +13,7 @@ RUN apk --update add \
     ca-certificates  \
     build-base       \
     pkgconfig        \
+    jemalloc-dev     \
     vips-dev         \
     vips-cpp         \
     vips-heif        \
@@ -33,6 +34,7 @@ RUN apk --update add \
     ca-certificates  \
     build-base       \
     pkgconfig        \
+    jemalloc-dev     \
     vips-dev         \
     vips-cpp         \
     vips-heif        \
