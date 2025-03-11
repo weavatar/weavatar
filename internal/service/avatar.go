@@ -35,10 +35,7 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	var avatar []byte
 	var lmt time.Time
 	from := "weavatar"
-	options := []string{req.Hash}
-	if req.Default == "letter" || req.Default == "initials" {
-		options = append(options, req.Default)
-	}
+	nickname := ""
 
 	// 快速路径
 	if req.Force {
@@ -50,26 +47,36 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 		}
 	}
 
-	if !req.Force {
-		avatar, lmt, err = r.avatarRepo.GetWeAvatar(req.Hash, req.AppID)
-		if err != nil {
-			avatar, lmt, err = r.avatarRepo.GetGravatarByHash(req.Hash)
-			from = "gravatar"
-		}
-		if err != nil {
-			_, avatar, lmt, err = r.avatarRepo.GetQqByHash(req.Hash)
-			from = "qq"
-		}
+	nickname, avatar, lmt, err = r.avatarRepo.GetWeAvatar(req.Hash, req.AppID)
+	if err != nil {
+		avatar, lmt, err = r.avatarRepo.GetGravatarByHash(req.Hash)
+		from = "gravatar"
 	}
-
-	if from == "gravatar" && err == nil {
+	if err != nil {
+		_, avatar, lmt, err = r.avatarRepo.GetQqByHash(req.Hash)
+		from = "qq"
+	}
+	if from == "weavatar" || from == "gravatar" {
 		if ban, _ := r.avatarRepo.IsBanned(avatar); ban {
 			avatar, err = embed.DefaultFS.ReadFile(filepath.Join("default", "ban.png"))
 			lmt = time.Now()
 		}
 	}
 
-	if err != nil || avatar == nil {
+	// 如果前面取不到头像或者要求强制默认头像
+	if err != nil || avatar == nil || req.Force {
+		options := []string{req.Hash}
+		if req.Default == "letter" || req.Default == "initials" {
+			initials := c.Query("initials", c.Query("letter")) // TODO deprecated letter in the future
+			if initials == "" {
+				name := c.Query("name", nickname) // 保持和 Gravatar 一致，name 取第一位
+				initials = r.getFirstRune(name)
+			}
+			options = append(options, initials)
+		}
+		if options[0] == "" {
+			options[0] = "weavatar" // 默认赋值，防止颜色乱跳
+		}
 		avatar, lmt, err = r.avatarRepo.GetByType(req.Default, options...)
 		from = "weavatar"
 	}
@@ -156,4 +163,12 @@ func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, er
 	}
 
 	return data, err
+}
+
+func (r *AvatarService) getFirstRune(s string) string {
+	runes := []rune(s)
+	if len(runes) > 0 {
+		return string(runes[0])
+	}
+	return "?"
 }

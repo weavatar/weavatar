@@ -67,10 +67,10 @@ func (r *avatarRepo) GetByRaw(raw string) (*biz.Avatar, error) {
 	return avatar, nil
 }
 
-func (r *avatarRepo) GetWeAvatar(hash, appID string) ([]byte, time.Time, error) {
+func (r *avatarRepo) GetWeAvatar(hash, appID string) (string, []byte, time.Time, error) {
 	avatar := new(biz.Avatar)
-	if err := r.db.Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {
-		return nil, time.Now(), err
+	if err := r.db.Preload("User").Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {
+		return "", nil, time.Now(), err
 	}
 
 	var img []byte
@@ -80,17 +80,17 @@ func (r *avatarRepo) GetWeAvatar(hash, appID string) ([]byte, time.Time, error) 
 		fp := filepath.Join("storage", "upload", "app", appID, avatar.SHA256[:2], avatar.SHA256)
 		img, err = os.ReadFile(fp)
 		if avatar.AppSHA256 != nil {
-			return img, avatar.AppSHA256.UpdatedAt.StdTime(), err
+			return avatar.User.Nickname, img, avatar.AppSHA256.UpdatedAt.StdTime(), err
 		}
 		if avatar.AppMD5 != nil {
-			return img, avatar.AppMD5.UpdatedAt.StdTime(), err
+			return avatar.User.Nickname, img, avatar.AppMD5.UpdatedAt.StdTime(), err
 		}
 	}
 
 	fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
 	img, err = os.ReadFile(fp)
 
-	return img, avatar.UpdatedAt.StdTime(), err
+	return avatar.User.Nickname, img, avatar.UpdatedAt.StdTime(), err
 }
 
 // GetQqByHash 通过哈希获取 Q 头像

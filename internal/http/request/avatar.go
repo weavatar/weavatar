@@ -51,7 +51,7 @@ func (r *Avatar) Prepare(c fiber.Ctx) error {
 
 	// 过滤 d 参数
 	r.Default = fiber.Query(c, "d", fiber.Query(c, "default", ""))
-	if !slices.Contains([]string{"404", "mp", "mm", "mystery", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank", "letter", "initials"}, r.Default) { // TODO deprecated letter in the future
+	if !slices.Contains([]string{"404", "mp", "mm", "mystery", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank", "color", "letter", "initials"}, r.Default) { // TODO deprecated letter in the future
 		// 如果不是预设的默认头像，则检查是否是合法的 URL
 		if !str.IsURL(r.Default) {
 			r.Default = ""

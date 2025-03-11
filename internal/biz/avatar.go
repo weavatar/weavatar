@@ -14,13 +14,14 @@ type Avatar struct {
 	CreatedAt carbon.DateTime `gorm:"type:datetime;not null" json:"created_at"`
 	UpdatedAt carbon.DateTime `gorm:"type:datetime;not null" json:"updated_at"`
 
+	User      *User      `json:"-"`
 	AppSHA256 *AppAvatar `gorm:"foreignKey:AvatarSHA256;references:SHA256" json:"-"`
 	AppMD5    *AppAvatar `gorm:"foreignKey:AvatarMD5;references:MD5" json:"-"`
 }
 
 type AvatarRepo interface {
 	GetByRaw(raw string) (*Avatar, error)
-	GetWeAvatar(hash, appID string) ([]byte, time.Time, error)
+	GetWeAvatar(hash, appID string) (string, []byte, time.Time, error)
 	GetQqByHash(hash string) (string, []byte, time.Time, error)
 	GetGravatarByHash(hash string) ([]byte, time.Time, error)
 	GetByType(avatarType string, option ...string) ([]byte, time.Time, error)
