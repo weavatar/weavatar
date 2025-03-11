@@ -32,7 +32,7 @@ func (r *userRepo) LoginByOauth(openID, unionID string, realName bool) (string, 
 		OpenID:   openID,
 		UnionID:  unionID,
 		Nickname: "新用户",
-		Avatar:   "https://weavatar.com/avatar/",
+		Avatar:   "https://weavatar.com/avatar/?d=mp",
 	}).Assign(&biz.User{
 		RealName: realName,
 	}).FirstOrCreate(user).Error; err != nil {
