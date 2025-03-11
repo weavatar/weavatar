@@ -36,7 +36,7 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 	color.Warnf("存放目录: %s\n", dir)
 	color.Warnf("哈希类型: %s\n\n", hashType)
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0644); err != nil {
 		return err
 	}
 

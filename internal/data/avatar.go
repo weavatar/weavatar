@@ -17,7 +17,6 @@ import (
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-rat/utils/convert"
-	"github.com/go-rat/utils/debug"
 	"github.com/go-rat/utils/file"
 	"github.com/go-rat/utils/str"
 	"github.com/goki/freetype/truetype"
@@ -109,7 +108,7 @@ func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avat
 		}
 
 		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
-		if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
+		if err = os.MkdirAll(filepath.Dir(fp), 0644); err != nil {
 			return err
 		}
 		if err = os.WriteFile(fp, img, 0644); err != nil {
@@ -153,6 +152,9 @@ func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avat
 		}
 
 		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
+		if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
+			return err
+		}
 		if err = os.WriteFile(fp, img, 0644); err != nil {
 			return err
 		}
@@ -240,14 +242,12 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 	}
 	index, err := strconv.ParseUint(hash[:2], 16, 64)
 	if err != nil {
-		debug.Dump("parse", err)
 		return "", nil, time.Now(), err
 	}
 
 	table := fmt.Sprintf("hash.qq_%s_%d", hashType, index)
 	qqHash := new(biz.QqHash)
 	if err = r.db.Table(table).Where("h = UNHEX(?)", hash[:16]).First(qqHash).Error; err != nil {
-		debug.Dump("hash", err)
 		return "", nil, time.Now(), err
 	}
 
@@ -257,20 +257,17 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 		lastModified, err2 := file.LastModified(cache, "UTC")
 		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
 			return qqHash.Q, img, lastModified, nil
-		} else {
-			debug.Dump("img", err)
-			debug.Dump("lmt", err2)
 		}
 	}
 
 	img, err := avatars.Qq(qqHash.Q)
 	if err != nil {
-		debug.Dump("qq", err)
 		return "", nil, time.Now(), err
 	}
-
+	if err = os.MkdirAll(filepath.Dir(cache), 0755); err != nil {
+		return "", nil, time.Now(), err
+	}
 	if err = os.WriteFile(cache, img, 0644); err != nil {
-		debug.Dump("wfq", err)
 		return "", nil, time.Now(), err
 	}
 
@@ -286,20 +283,18 @@ func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
 		img, err := os.ReadFile(cache)
 		lastModified, err2 := file.LastModified(cache, "UTC")
 		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
-			debug.Dump("gimg", err)
-			debug.Dump("glmt", err2)
 			return img, lastModified, nil
 		}
 	}
 
 	img, err := avatars.Gravatar(hash)
 	if err != nil {
-		debug.Dump("gr", err)
 		return nil, time.Now(), err
 	}
-
+	if err = os.MkdirAll(filepath.Dir(cache), 0755); err != nil {
+		return nil, time.Now(), err
+	}
 	if err = os.WriteFile(cache, img, 0644); err != nil {
-		debug.Dump("wfg", err)
 		return nil, time.Now(), err
 	}
 
