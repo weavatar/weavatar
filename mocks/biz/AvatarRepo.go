@@ -298,40 +298,47 @@ func (_c *AvatarRepo_GetQqByHash_Call) RunAndReturn(run func(string) (string, []
 }
 
 // GetWeAvatar provides a mock function with given fields: hash, appID
-func (_m *AvatarRepo) GetWeAvatar(hash string, appID string) ([]byte, time.Time, error) {
+func (_m *AvatarRepo) GetWeAvatar(hash string, appID string) (string, []byte, time.Time, error) {
 	ret := _m.Called(hash, appID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetWeAvatar")
 	}
 
-	var r0 []byte
-	var r1 time.Time
-	var r2 error
-	if rf, ok := ret.Get(0).(func(string, string) ([]byte, time.Time, error)); ok {
+	var r0 string
+	var r1 []byte
+	var r2 time.Time
+	var r3 error
+	if rf, ok := ret.Get(0).(func(string, string) (string, []byte, time.Time, error)); ok {
 		return rf(hash, appID)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) []byte); ok {
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
 		r0 = rf(hash, appID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string) []byte); ok {
+		r1 = rf(hash, appID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]byte)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) time.Time); ok {
-		r1 = rf(hash, appID)
-	} else {
-		r1 = ret.Get(1).(time.Time)
-	}
-
-	if rf, ok := ret.Get(2).(func(string, string) error); ok {
+	if rf, ok := ret.Get(2).(func(string, string) time.Time); ok {
 		r2 = rf(hash, appID)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(time.Time)
 	}
 
-	return r0, r1, r2
+	if rf, ok := ret.Get(3).(func(string, string) error); ok {
+		r3 = rf(hash, appID)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // AvatarRepo_GetWeAvatar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetWeAvatar'
@@ -353,12 +360,12 @@ func (_c *AvatarRepo_GetWeAvatar_Call) Run(run func(hash string, appID string)) 
 	return _c
 }
 
-func (_c *AvatarRepo_GetWeAvatar_Call) Return(_a0 []byte, _a1 time.Time, _a2 error) *AvatarRepo_GetWeAvatar_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *AvatarRepo_GetWeAvatar_Call) Return(_a0 string, _a1 []byte, _a2 time.Time, _a3 error) *AvatarRepo_GetWeAvatar_Call {
+	_c.Call.Return(_a0, _a1, _a2, _a3)
 	return _c
 }
 
-func (_c *AvatarRepo_GetWeAvatar_Call) RunAndReturn(run func(string, string) ([]byte, time.Time, error)) *AvatarRepo_GetWeAvatar_Call {
+func (_c *AvatarRepo_GetWeAvatar_Call) RunAndReturn(run func(string, string) (string, []byte, time.Time, error)) *AvatarRepo_GetWeAvatar_Call {
 	_c.Call.Return(run)
 	return _c
 }
