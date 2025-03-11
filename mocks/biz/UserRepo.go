@@ -21,7 +21,7 @@ func (_m *UserRepo) EXPECT() *UserRepo_Expecter {
 }
 
 // Delete provides a mock function with given fields: id
-func (_m *UserRepo) Delete(id uint) error {
+func (_m *UserRepo) Delete(id string) error {
 	ret := _m.Called(id)
 
 	if len(ret) == 0 {
@@ -29,7 +29,7 @@ func (_m *UserRepo) Delete(id uint) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(uint) error); ok {
+	if rf, ok := ret.Get(0).(func(string) error); ok {
 		r0 = rf(id)
 	} else {
 		r0 = ret.Error(0)
@@ -44,14 +44,14 @@ type UserRepo_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - id uint
+//   - id string
 func (_e *UserRepo_Expecter) Delete(id interface{}) *UserRepo_Delete_Call {
 	return &UserRepo_Delete_Call{Call: _e.mock.On("Delete", id)}
 }
 
-func (_c *UserRepo_Delete_Call) Run(run func(id uint)) *UserRepo_Delete_Call {
+func (_c *UserRepo_Delete_Call) Run(run func(id string)) *UserRepo_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint))
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -61,13 +61,13 @@ func (_c *UserRepo_Delete_Call) Return(_a0 error) *UserRepo_Delete_Call {
 	return _c
 }
 
-func (_c *UserRepo_Delete_Call) RunAndReturn(run func(uint) error) *UserRepo_Delete_Call {
+func (_c *UserRepo_Delete_Call) RunAndReturn(run func(string) error) *UserRepo_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function with given fields: id
-func (_m *UserRepo) Get(id uint) (*biz.User, error) {
+func (_m *UserRepo) Get(id string) (*biz.User, error) {
 	ret := _m.Called(id)
 
 	if len(ret) == 0 {
@@ -76,10 +76,10 @@ func (_m *UserRepo) Get(id uint) (*biz.User, error) {
 
 	var r0 *biz.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(uint) (*biz.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (*biz.User, error)); ok {
 		return rf(id)
 	}
-	if rf, ok := ret.Get(0).(func(uint) *biz.User); ok {
+	if rf, ok := ret.Get(0).(func(string) *biz.User); ok {
 		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
@@ -87,7 +87,7 @@ func (_m *UserRepo) Get(id uint) (*biz.User, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(uint) error); ok {
+	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(id)
 	} else {
 		r1 = ret.Error(1)
@@ -102,14 +102,14 @@ type UserRepo_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - id uint
+//   - id string
 func (_e *UserRepo_Expecter) Get(id interface{}) *UserRepo_Get_Call {
 	return &UserRepo_Get_Call{Call: _e.mock.On("Get", id)}
 }
 
-func (_c *UserRepo_Get_Call) Run(run func(id uint)) *UserRepo_Get_Call {
+func (_c *UserRepo_Get_Call) Run(run func(id string)) *UserRepo_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint))
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -119,7 +119,7 @@ func (_c *UserRepo_Get_Call) Return(_a0 *biz.User, _a1 error) *UserRepo_Get_Call
 	return _c
 }
 
-func (_c *UserRepo_Get_Call) RunAndReturn(run func(uint) (*biz.User, error)) *UserRepo_Get_Call {
+func (_c *UserRepo_Get_Call) RunAndReturn(run func(string) (*biz.User, error)) *UserRepo_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -186,6 +186,64 @@ func (_c *UserRepo_List_Call) Return(_a0 []*biz.User, _a1 int64, _a2 error) *Use
 }
 
 func (_c *UserRepo_List_Call) RunAndReturn(run func(uint, uint) ([]*biz.User, int64, error)) *UserRepo_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LoginByOauth provides a mock function with given fields: openID, unionID, realName
+func (_m *UserRepo) LoginByOauth(openID string, unionID string, realName bool) (string, error) {
+	ret := _m.Called(openID, unionID, realName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LoginByOauth")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, bool) (string, error)); ok {
+		return rf(openID, unionID, realName)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, bool) string); ok {
+		r0 = rf(openID, unionID, realName)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string, bool) error); ok {
+		r1 = rf(openID, unionID, realName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepo_LoginByOauth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoginByOauth'
+type UserRepo_LoginByOauth_Call struct {
+	*mock.Call
+}
+
+// LoginByOauth is a helper method to define mock.On call
+//   - openID string
+//   - unionID string
+//   - realName bool
+func (_e *UserRepo_Expecter) LoginByOauth(openID interface{}, unionID interface{}, realName interface{}) *UserRepo_LoginByOauth_Call {
+	return &UserRepo_LoginByOauth_Call{Call: _e.mock.On("LoginByOauth", openID, unionID, realName)}
+}
+
+func (_c *UserRepo_LoginByOauth_Call) Run(run func(openID string, unionID string, realName bool)) *UserRepo_LoginByOauth_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string), args[2].(bool))
+	})
+	return _c
+}
+
+func (_c *UserRepo_LoginByOauth_Call) Return(_a0 string, _a1 error) *UserRepo_LoginByOauth_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepo_LoginByOauth_Call) RunAndReturn(run func(string, string, bool) (string, error)) *UserRepo_LoginByOauth_Call {
 	_c.Call.Return(run)
 	return _c
 }
