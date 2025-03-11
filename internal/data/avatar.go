@@ -108,10 +108,7 @@ func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avat
 		}
 
 		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
-		if err = os.MkdirAll(filepath.Dir(fp), 0644); err != nil {
-			return err
-		}
-		if err = os.WriteFile(fp, img, 0644); err != nil {
+		if err = file.Write(fp, img, 0644); err != nil {
 			return err
 		}
 
@@ -152,10 +149,7 @@ func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avat
 		}
 
 		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
-		if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
-			return err
-		}
-		if err = os.WriteFile(fp, img, 0644); err != nil {
+		if err = file.Write(fp, img, 0644); err != nil {
 			return err
 		}
 
@@ -264,10 +258,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 	if err != nil {
 		return "", nil, time.Now(), err
 	}
-	if err = os.MkdirAll(filepath.Dir(cache), 0755); err != nil {
-		return "", nil, time.Now(), err
-	}
-	if err = os.WriteFile(cache, img, 0644); err != nil {
+	if err = file.Write(cache, img, 0644); err != nil {
 		return "", nil, time.Now(), err
 	}
 
@@ -291,10 +282,7 @@ func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
 	if err != nil {
 		return nil, time.Now(), err
 	}
-	if err = os.MkdirAll(filepath.Dir(cache), 0755); err != nil {
-		return nil, time.Now(), err
-	}
-	if err = os.WriteFile(cache, img, 0644); err != nil {
+	if err = file.Write(cache, img, 0644); err != nil {
 		return nil, time.Now(), err
 	}
 

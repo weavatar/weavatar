@@ -11,7 +11,7 @@ require (
 	github.com/dromara/carbon/v2 v2.5.4
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
 	github.com/go-rat/cache v1.1.0
-	github.com/go-rat/utils v1.1.0
+	github.com/go-rat/utils v1.1.3
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4.0.20250310080611-c0599ee1d427
 	github.com/goki/freetype v1.0.5
