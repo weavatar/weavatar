@@ -13,8 +13,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          cache: true
           go-version: 'stable'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libvips-dev
+          go mod tidy
       - name: Set up environment
         run: |
           cp config/config.example.yml config/config.yml
