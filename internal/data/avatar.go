@@ -108,7 +108,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 
 	table := fmt.Sprintf("hash.qq_%s_%d", hashType, index)
 	qqHash := new(biz.QqHash)
-	if err = r.db.Table(table).Where("hash = UNHEX(?)", hash[:16]).First(qqHash).Error; err != nil {
+	if err = r.db.Table(table).Where("h = UNHEX(?)", hash[:16]).First(qqHash).Error; err != nil {
 		return "", nil, time.Now(), err
 	}
 
