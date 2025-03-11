@@ -1,7 +1,6 @@
 package request
 
 import (
-	"github.com/go-rat/utils/debug"
 	"regexp"
 	"slices"
 	"strings"
@@ -63,8 +62,6 @@ func (r *Avatar) Prepare(c fiber.Ctx) error {
 	if !hashRegex.MatchString(r.Hash) {
 		r.Force = true
 	}
-
-	debug.Dump(r)
 
 	return nil
 }
