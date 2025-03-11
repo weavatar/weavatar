@@ -7,18 +7,36 @@ ENV GO111MODULE=on \
     GOOS="linux"   \
     GOAMD64="v3"
 
-RUN apk --update add ca-certificates build-base pkgconfig vips-dev
+RUN apk --update add \
+    ca-certificates  \
+    build-base       \
+    pkgconfig        \
+    vips-dev         \
+    vips-cpp         \
+    vips-heif        \
+    vips-jxl         \
+    vips-magick      \
+    vips-poppler     \
 
 WORKDIR /app
 COPY . ./
 
 RUN go mod tidy
-RUN go build -ldflags "-s -w --extldflags '-static'" -o app ./cmd/app
+RUN go build -ldflags "-s -w" -o app ./cmd/app
 
 # Run the binary on an empty container
 FROM alpine
 
-RUN apk add vips-dev
+RUN apk --update add \
+    ca-certificates  \
+    build-base       \
+    pkgconfig        \
+    vips-dev         \
+    vips-cpp         \
+    vips-heif        \
+    vips-jxl         \
+    vips-magick      \
+    vips-poppler     \
 
 COPY --from=builder /app/app .
 COPY --from=builder /app/config/ ./config/
