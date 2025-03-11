@@ -48,15 +48,15 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	}
 
 	nickname, avatar, lmt, err = r.avatarRepo.GetWeAvatar(req.Hash, req.AppID)
-	if err != nil {
+	if err != nil && !req.Force {
 		avatar, lmt, err = r.avatarRepo.GetGravatarByHash(req.Hash)
 		from = "gravatar"
 	}
-	if err != nil {
+	if err != nil && !req.Force {
 		_, avatar, lmt, err = r.avatarRepo.GetQqByHash(req.Hash)
 		from = "qq"
 	}
-	if from == "weavatar" || from == "gravatar" {
+	if err == nil && (from == "weavatar" || from == "gravatar") {
 		if ban, _ := r.avatarRepo.IsBanned(avatar); ban {
 			avatar, err = embed.DefaultFS.ReadFile(filepath.Join("default", "ban.png"))
 			lmt = time.Now()
