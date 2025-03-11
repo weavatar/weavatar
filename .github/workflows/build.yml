@@ -33,7 +33,7 @@ jobs:
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
         run: |
-          LDFLAGS="-s -w --extldflags '-static'"
+          LDFLAGS="-s -w"
           go build -ldflags "${LDFLAGS}" -o app-${{ matrix.goarch }} ./cmd/app
           go build -ldflags "${LDFLAGS}" -o cli-${{ matrix.goarch }} ./cmd/cli
       - name: Compress ${{ matrix.goarch }}
