@@ -28,5 +28,7 @@
       "automerge": true
     }
   ],
-  "ignoreDeps": []
+  "ignoreDeps": [
+    "github.com/tencentcloud/tencentcloud-sdk-go/*"
+  ]
 }

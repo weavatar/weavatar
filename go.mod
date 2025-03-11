@@ -28,7 +28,7 @@ require (
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.10.0
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1116
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
 	github.com/tnb-labs/letteravatar v1.1.0
 	github.com/urfave/cli/v3 v3.0.0-beta1
