@@ -1,14 +1,11 @@
 package request
 
-type UserID struct {
-	ID uint `uri:"id" validate:"required|number"`
-}
-
-type UserAdd struct {
-	Name string `json:"name" form:"name" validate:"required|min_len:3|max_len:255"`
+type UserCallback struct {
+	Code  string `query:"code" form:"code" validate:"required"`
+	State string `query:"state" form:"state" validate:"required"`
 }
 
 type UserUpdate struct {
-	ID   uint   `uri:"id" validate:"required|number"`
-	Name string `json:"name" form:"name" validate:"required|min_len:3|max_len:255"`
+	Nickname string `form:"nickname" json:"nickname" validate:"required"`
+	Avatar   string `form:"avatar" json:"avatar" validate:"required|isFullURL"`
 }

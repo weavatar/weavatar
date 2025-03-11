@@ -19,6 +19,7 @@ type Avatar struct {
 }
 
 type AvatarRepo interface {
+	GetByRaw(raw string) (*Avatar, error)
 	GetWeAvatar(hash, appID string) ([]byte, time.Time, error)
 	GetQqByHash(hash string) (string, []byte, time.Time, error)
 	GetGravatarByHash(hash string) ([]byte, time.Time, error)

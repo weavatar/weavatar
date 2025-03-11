@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/weavatar/weavatar/internal/biz"
 	"github.com/weavatar/weavatar/internal/http/request"
+	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/embed"
 )
 
@@ -89,6 +91,36 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	c.Set("Expires", time.Now().UTC().Add(5*time.Minute).Format(http.TimeFormat))
 
 	return c.Type(req.Ext).Send(avatar)
+}
+
+func (r *AvatarService) Check(c fiber.Ctx) error {
+	req, err := Bind[request.AvatarCheck](c)
+	if err != nil {
+		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	avatar, err := r.avatarRepo.GetByRaw(req.Raw)
+	if err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, fiber.Map{
+		"bind": avatar.UserID != "",
+	})
+}
+
+func (r *AvatarService) Qq(c fiber.Ctx) error {
+	req, err := Bind[request.AvatarQq](c)
+	if err != nil {
+		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	avatar, err := avatars.Qq(req.Qq)
+	if err != nil {
+		return Error(c, fiber.StatusInternalServerError, "%v", err)
+	}
+
+	return Success(c, base64.StdEncoding.EncodeToString(avatar))
 }
 
 func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, error) {

@@ -59,6 +59,14 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	}, nil
 }
 
+func (r *avatarRepo) GetByRaw(raw string) (*biz.Avatar, error) {
+	avatar := new(biz.Avatar)
+	if err := r.db.Where("raw = ?", raw).First(avatar).Error; err != nil {
+		return nil, err
+	}
+	return avatar, nil
+}
+
 func (r *avatarRepo) GetWeAvatar(hash, appID string) ([]byte, time.Time, error) {
 	avatar := new(biz.Avatar)
 	if err := r.db.Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {

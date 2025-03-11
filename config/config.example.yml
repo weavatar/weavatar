@@ -6,6 +6,7 @@ http:
   debug: true
   prefork: false
   address: ":3000"
+  domain: "weavatar.com"
   bodyLimit: 4096
   headerLimit: 4096
   reduceMemoryUsage: false
@@ -33,6 +34,7 @@ sms:
   templateId: 123456
   sdkAppId: 123456
 oauth:
+  baseUrl: "https://account.haozi.net"
   clientID: "1234567890"
   clientSecret: "abcdef1234567890abcdef1234567890"
 audit:

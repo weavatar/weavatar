@@ -7,8 +7,8 @@ import (
 
 type User struct {
 	ID        string          `gorm:"type:char(10);primaryKey" json:"id"`
-	OpenID    string          `gorm:"type:char(10);not null" json:"open_id"`
-	UnionID   string          `gorm:"type:char(10);not null" json:"union_id"`
+	OpenID    string          `gorm:"type:char(10);not null" json:"-"`
+	UnionID   string          `gorm:"type:char(10);not null" json:"-"`
 	Nickname  string          `gorm:"type:varchar(255);not null" json:"nickname"`
 	Avatar    string          `gorm:"type:varchar(255);not null" json:"avatar"`
 	RealName  bool            `gorm:"not null" json:"real_name"`
@@ -20,8 +20,9 @@ type User struct {
 }
 
 type UserRepo interface {
+	LoginByOauth(openID, unionID string, realName bool) (string, error)
 	List(page, limit uint) ([]*User, int64, error)
-	Get(id uint) (*User, error)
+	Get(id string) (*User, error)
 	Save(user *User) error
-	Delete(id uint) error
+	Delete(id string) error
 }

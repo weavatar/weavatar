@@ -65,3 +65,11 @@ func (r *Avatar) Prepare(c fiber.Ctx) error {
 
 	return nil
 }
+
+type AvatarCheck struct {
+	Raw string `query:"raw"`
+}
+
+type AvatarQq struct {
+	Qq string `query:"qq"`
+}

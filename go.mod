@@ -10,6 +10,7 @@ require (
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/dromara/carbon/v2 v2.5.4
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
+	github.com/go-rat/cache v1.1.0
 	github.com/go-rat/utils v1.1.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4.0.20250310080611-c0599ee1d427
@@ -27,6 +28,7 @@ require (
 	github.com/o1egl/govatar v0.4.1
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/sethvargo/go-limiter v1.0.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
@@ -47,7 +49,8 @@ require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.5.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/cristalhq/jwt/v5 v5.4.0 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
@@ -76,10 +79,11 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/onsi/ginkgo/v2 v2.22.0 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.48.2 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
