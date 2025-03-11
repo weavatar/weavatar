@@ -69,7 +69,7 @@ func (r *avatarRepo) GetByRaw(raw string) (*biz.Avatar, error) {
 
 func (r *avatarRepo) GetWeAvatar(hash, appID string) (string, []byte, time.Time, error) {
 	avatar := new(biz.Avatar)
-	if err := r.db.Preload("User").Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err == nil {
+	if err := r.db.Preload("User").Preload("AppSHA256", "app_id = ?", appID).Preload("AppMD5", "app_id = ?", appID).Where("sha256 = ?", hash).Or("md5 = ?", hash).First(avatar).Error; err != nil {
 		return "", nil, time.Now(), err
 	}
 
