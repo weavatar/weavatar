@@ -36,7 +36,7 @@ RUN apk --update add \
     vips-heif        \
     vips-jxl         \
     vips-magick      \
-    vips-poppler     \
+    vips-poppler
 
 COPY --from=builder /app/app .
 COPY --from=builder /app/config/ ./config/
