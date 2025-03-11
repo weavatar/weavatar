@@ -17,7 +17,7 @@ func Gravatar(hash string) ([]byte, error) {
 	resp, err := client.R().SetQueryParams(map[string]string{
 		"r": "g",
 		"d": "404",
-		"s": "600",
+		"s": "1000",
 	}).Get(gravatarBase + "/avatar/" + hash)
 	if err != nil {
 		return nil, err
