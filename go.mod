@@ -3,7 +3,7 @@ module github.com/weavatar/weavatar
 go 1.24.0
 
 require (
-	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.2
+	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.3
 	github.com/alibabacloud-go/green-20220302/v2 v2.20.0
 	github.com/alibabacloud-go/tea v1.3.2
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
