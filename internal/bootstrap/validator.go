@@ -1,15 +1,17 @@
 package bootstrap
 
 import (
+	"github.com/go-rat/cache"
 	"github.com/gookit/validate"
 	"github.com/gookit/validate/locales/zhcn"
+	"github.com/knadh/koanf/v2"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/http/rule"
 )
 
 // NewValidator just for register global rules
-func NewValidator(db *gorm.DB) *validate.Validation {
+func NewValidator(conf *koanf.Koanf, db *gorm.DB, cache cache.Cache) *validate.Validation {
 	zhcn.RegisterGlobal()
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false
@@ -18,7 +20,7 @@ func NewValidator(db *gorm.DB) *validate.Validation {
 	})
 
 	// register global rules
-	rule.GlobalRules(db)
+	rule.GlobalRules(conf, db, cache)
 
 	return validate.NewEmpty()
 }
