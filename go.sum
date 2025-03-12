@@ -252,8 +252,8 @@ github.com/tinylib/msgp v1.2.5/go.mod h1:ykjzy2wzgrlvpDCRc4LA8UXy6D8bzMSuAF3WD57
 github.com/tjfoc/gmsm v1.3.2/go.mod h1:HaUcFuY0auTiaHB9MHFGCPx5IaLhTUd2atbCFBQXn9w=
 github.com/tjfoc/gmsm v1.4.1 h1:aMe1GlZb+0bLjn+cKTPEvvn9oUEBlJitaZiiBwsbgho=
 github.com/tjfoc/gmsm v1.4.1/go.mod h1:j4INPkHWMrhJb38G+J6W4Tw0AbuN8Thu3PbdVYhVcTE=
-github.com/tnb-labs/letteravatar/v2 v2.0.0 h1:gy3dF/p541jNIU/02E0bVh0/ydv9gNCJhH9J4qIWDYw=
-github.com/tnb-labs/letteravatar/v2 v2.0.0/go.mod h1:3ihuSKZHyh/vYareRllvLU8Ib3qqb2r3OIjtpZnfMo8=
+github.com/tnb-labs/letteravatar/v2 v2.0.1 h1:pNXi39xsRvGCmZGpN5RSKbfTeJWyTGHQXHW9+54UO5c=
+github.com/tnb-labs/letteravatar/v2 v2.0.1/go.mod h1:3ihuSKZHyh/vYareRllvLU8Ib3qqb2r3OIjtpZnfMo8=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/urfave/cli/v3 v3.0.0-beta1 h1:6DTaaUarcM0wX7qj5Hcvs+5Dm3dyUTBbEwIWAjcw9Zg=
 github.com/urfave/cli/v3 v3.0.0-beta1/go.mod h1:FnIeEMYu+ko8zP1F9Ypr3xkZMIDqW3DR92yUtY39q1Y=

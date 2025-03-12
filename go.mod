@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tnb-labs/letteravatar/v2 v2.0.0
+	github.com/tnb-labs/letteravatar/v2 v2.0.1
 	github.com/urfave/cli/v3 v3.0.0-beta1
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/image v0.25.0
