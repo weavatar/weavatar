@@ -47,7 +47,7 @@ var codeTmpl = `
         text-align: center;
       }
       .text-logo {
-        font-size: 28px;
+        font-size: 48px;
         font-weight: bold;
         color: #2563eb;
         letter-spacing: 1px;

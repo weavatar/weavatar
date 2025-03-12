@@ -10,5 +10,7 @@ func NewSystemService() *SystemService {
 }
 
 func (r *SystemService) Count(c fiber.Ctx) error {
-	return Success(c, nil)
+	return Success(c, fiber.Map{
+		"usage": 0,
+	})
 }
