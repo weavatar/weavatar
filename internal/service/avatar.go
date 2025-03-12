@@ -175,7 +175,7 @@ func (r *AvatarService) Check(c fiber.Ctx) error {
 	}
 
 	return Success(c, fiber.Map{
-		"bind": avatar.UserID != "",
+		"bind": avatar != nil,
 	})
 }
 
