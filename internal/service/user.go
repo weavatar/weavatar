@@ -48,7 +48,7 @@ func (r *UserService) Callback(c fiber.Ctx) error {
 		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
 	}
 
-	if !r.cache.Has(fmt.Sprintf("login-%s", req.State)) {
+	if !r.cache.Has(req.State) {
 		return Error(c, fiber.StatusBadRequest, "状态已过期")
 	}
 
