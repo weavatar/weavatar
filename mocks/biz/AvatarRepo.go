@@ -592,9 +592,9 @@ func (_c *AvatarRepo_IsBanned_Call) RunAndReturn(run func([]byte) (bool, error))
 	return _c
 }
 
-// List provides a mock function with given fields: page, limit
-func (_m *AvatarRepo) List(page uint, limit uint) ([]*biz.Avatar, int64, error) {
-	ret := _m.Called(page, limit)
+// List provides a mock function with given fields: userID, page, limit
+func (_m *AvatarRepo) List(userID string, page uint, limit uint) ([]*biz.Avatar, int64, error) {
+	ret := _m.Called(userID, page, limit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
@@ -603,25 +603,25 @@ func (_m *AvatarRepo) List(page uint, limit uint) ([]*biz.Avatar, int64, error) 
 	var r0 []*biz.Avatar
 	var r1 int64
 	var r2 error
-	if rf, ok := ret.Get(0).(func(uint, uint) ([]*biz.Avatar, int64, error)); ok {
-		return rf(page, limit)
+	if rf, ok := ret.Get(0).(func(string, uint, uint) ([]*biz.Avatar, int64, error)); ok {
+		return rf(userID, page, limit)
 	}
-	if rf, ok := ret.Get(0).(func(uint, uint) []*biz.Avatar); ok {
-		r0 = rf(page, limit)
+	if rf, ok := ret.Get(0).(func(string, uint, uint) []*biz.Avatar); ok {
+		r0 = rf(userID, page, limit)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*biz.Avatar)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(uint, uint) int64); ok {
-		r1 = rf(page, limit)
+	if rf, ok := ret.Get(1).(func(string, uint, uint) int64); ok {
+		r1 = rf(userID, page, limit)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
 
-	if rf, ok := ret.Get(2).(func(uint, uint) error); ok {
-		r2 = rf(page, limit)
+	if rf, ok := ret.Get(2).(func(string, uint, uint) error); ok {
+		r2 = rf(userID, page, limit)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -635,15 +635,16 @@ type AvatarRepo_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
+//   - userID string
 //   - page uint
 //   - limit uint
-func (_e *AvatarRepo_Expecter) List(page interface{}, limit interface{}) *AvatarRepo_List_Call {
-	return &AvatarRepo_List_Call{Call: _e.mock.On("List", page, limit)}
+func (_e *AvatarRepo_Expecter) List(userID interface{}, page interface{}, limit interface{}) *AvatarRepo_List_Call {
+	return &AvatarRepo_List_Call{Call: _e.mock.On("List", userID, page, limit)}
 }
 
-func (_c *AvatarRepo_List_Call) Run(run func(page uint, limit uint)) *AvatarRepo_List_Call {
+func (_c *AvatarRepo_List_Call) Run(run func(userID string, page uint, limit uint)) *AvatarRepo_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint), args[1].(uint))
+		run(args[0].(string), args[1].(uint), args[2].(uint))
 	})
 	return _c
 }
@@ -653,7 +654,7 @@ func (_c *AvatarRepo_List_Call) Return(_a0 []*biz.Avatar, _a1 int64, _a2 error) 
 	return _c
 }
 
-func (_c *AvatarRepo_List_Call) RunAndReturn(run func(uint, uint) ([]*biz.Avatar, int64, error)) *AvatarRepo_List_Call {
+func (_c *AvatarRepo_List_Call) RunAndReturn(run func(string, uint, uint) ([]*biz.Avatar, int64, error)) *AvatarRepo_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
