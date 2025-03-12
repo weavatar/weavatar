@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/etag"
 	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/pprof"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/google/wire"
@@ -35,5 +36,6 @@ func (r *Middlewares) Globals(app *fiber.App) []fiber.Handler {
 		etag.New(),
 		requestid.New(),
 		logger.New(),
+		pprof.New(pprof.Config{Prefix: "/internal"}),
 	}
 }
