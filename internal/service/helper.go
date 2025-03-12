@@ -51,8 +51,12 @@ func Bind[T any](c fiber.Ctx) (*T, error) {
 
 	// 绑定参数
 	if slices.Contains([]string{"POST", "PUT", "PATCH", "DELETE"}, strings.ToUpper(c.Method())) {
-		if err := c.Bind().Body(req); err != nil {
-			return nil, err
+		if c.Request().Header.ContentLength() > 0 {
+			if err := c.Bind().Body(req); err != nil {
+				if strings.ToUpper(c.Method()) != "DELETE" {
+					return nil, err
+				}
+			}
 		}
 	}
 	if err := c.Bind().Query(req); err != nil {
