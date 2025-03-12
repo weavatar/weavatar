@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/davidbyttow/govips/v2/vips"
+	"github.com/forPelevin/gomoji"
 	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/file"
 	"github.com/go-rat/utils/str"
@@ -38,15 +39,24 @@ import (
 type avatarRepo struct {
 	db     *gorm.DB
 	font   *truetype.Font
+	emoji  *truetype.Font
 	client *req.Client
 }
 
 func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
-	fontData, err := embed.FontFS.ReadFile("font/SourceHanSans-VF-700.ttf")
+	font1, err := embed.FontFS.ReadFile("font/SourceHanSans-VF-700.ttf")
 	if err != nil {
 		return nil, err
 	}
-	font, err := truetype.Parse(fontData)
+	font, err := truetype.Parse(font1)
+	if err != nil {
+		return nil, err
+	}
+	font2, err := embed.FontFS.ReadFile("font/NotoEmoji-Bold.ttf")
+	if err != nil {
+		return nil, err
+	}
+	emoji, err := truetype.Parse(font2)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +69,7 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	return &avatarRepo{
 		db:     db,
 		font:   font,
+		emoji:  emoji,
 		client: client,
 	}, nil
 }
@@ -363,15 +374,22 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "letter", "initials": // TODO deprecated letter in the future
+		font := r.font
 		fontSize := 500
-		letters := []rune(strings.ToUpper(options[1]))
-		length := len(letters)
+		initials := []rune(strings.ToUpper(options[1]))
+		length := len(initials)
 		if length > 1 {
 			fontSize = 400
-			letters = letters[:2]
+			initials = initials[:2]
 		}
-		img, err := letteravatar.Draw(1000, letters, &letteravatar.Options{
-			Font:       r.font,
+		// 存在 emoji 时，只取找到的第一个 emoji
+		if gomoji.FindAll(string(initials)) != nil {
+			initials = initials[:1]
+			font = r.emoji
+			fontSize = 500
+		}
+		img, err := letteravatar.Draw(1000, initials, &letteravatar.Options{
+			Font:       font,
 			FontSize:   fontSize,
 			PaletteKey: options[0], // 对相同的字符串使用相同的颜色
 		})

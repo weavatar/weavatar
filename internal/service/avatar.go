@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/base64"
+	"math/rand/v2"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -70,7 +71,7 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 			initials := c.Query("initials", c.Query("letter")) // TODO deprecated letter in the future
 			if initials == "" {
 				name := c.Query("name", nickname) // 保持和 Gravatar 一致，name 取第一位
-				initials = r.getFirstRune(name)
+				initials = r.getEmoji(name)
 			}
 			options = append(options, initials)
 		}
@@ -224,10 +225,24 @@ func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, er
 	return data, err
 }
 
-func (r *AvatarService) getFirstRune(s string) string {
+func (r *AvatarService) getEmoji(s string) string {
 	runes := []rune(s)
 	if len(runes) > 0 {
 		return string(runes[0])
 	}
-	return "?"
+	emojis := []string{
+		"🐭", // 鼠
+		"🐮", // 牛
+		"🐯", // 虎
+		"🐰", // 兔
+		"🐲", // 龙
+		"🐍", // 蛇
+		"🐴", // 马
+		"🐏", // 羊
+		"🐵", // 猴
+		"🐔", // 鸡
+		"🐶", // 狗
+		"🐷", // 猪
+	}
+	return emojis[rand.IntN(len(emojis))]
 }

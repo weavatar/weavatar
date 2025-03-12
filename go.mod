@@ -9,6 +9,7 @@ require (
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/dromara/carbon/v2 v2.5.4
+	github.com/forPelevin/gomoji v1.3.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
 	github.com/go-rat/cache v1.1.0
 	github.com/go-rat/utils v1.1.3
@@ -83,6 +84,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.48.2 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
