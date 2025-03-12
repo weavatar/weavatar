@@ -76,21 +76,21 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 
 func (r *avatarRepo) List(userID string, page, limit uint) ([]*biz.Avatar, int64, error) {
 	var total int64
-	if err := r.db.Model(&biz.Avatar{}).Count(&total).Error; err != nil {
+	if err := r.db.Model(&biz.Avatar{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	var list []*biz.Avatar
-	if err := r.db.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&list).Error; err != nil {
+	if err := r.db.Where("user_id = ?", userID).Order("created_at desc").Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return list, total, nil
 }
 
-func (r *avatarRepo) Get(hash string) (*biz.Avatar, error) {
+func (r *avatarRepo) Get(userID string, hash string) (*biz.Avatar, error) {
 	avatar := new(biz.Avatar)
-	if err := r.db.Where("sha256 = ? OR md5 = ?", hash, hash).First(avatar).Error; err != nil {
+	if err := r.db.Where("sha256 = ? OR md5 = ?", hash, hash).Where("user_id = ?", userID).First(avatar).Error; err != nil {
 		return nil, err
 	}
 	return avatar, nil
@@ -136,12 +136,9 @@ func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avat
 }
 
 func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avatar, error) {
-	avatar, err := r.Get(req.Hash)
+	avatar, err := r.Get(userID, req.Hash)
 	if err != nil {
 		return nil, err
-	}
-	if avatar.UserID != userID {
-		return nil, fmt.Errorf("这不是你的头像")
 	}
 
 	f, err := req.Avatar.Open()
@@ -177,12 +174,9 @@ func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avat
 }
 
 func (r *avatarRepo) Delete(userID string, hash string) error {
-	avatar, err := r.Get(hash)
+	avatar, err := r.Get(userID, hash)
 	if err != nil {
 		return err
-	}
-	if avatar.UserID != userID {
-		return fmt.Errorf("这不是你的头像")
 	}
 
 	err = r.db.Transaction(func(tx *gorm.DB) error {

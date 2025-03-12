@@ -23,7 +23,7 @@ type Avatar struct {
 
 type AvatarRepo interface {
 	List(userID string, page, limit uint) ([]*Avatar, int64, error)
-	Get(hash string) (*Avatar, error)
+	Get(userID string, hash string) (*Avatar, error)
 	Create(userID string, req *request.AvatarCreate) (*Avatar, error)
 	Update(userID string, req *request.AvatarUpdate) (*Avatar, error)
 	Delete(userID string, hash string) error
