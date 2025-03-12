@@ -36,6 +36,6 @@ func (r *Middlewares) Globals(app *fiber.App) []fiber.Handler {
 		etag.New(),
 		requestid.New(),
 		logger.New(),
-		pprof.New(pprof.Config{Prefix: "/internal"}),
+		pprof.New(pprof.Config{Prefix: "/api"}),
 	}
 }

@@ -3,6 +3,7 @@ package route
 import (
 	"time"
 
+	"github.com/gofiber/contrib/monitor"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
 
@@ -33,6 +34,7 @@ func (r *Http) Register(router fiber.Router) {
 	api.Get("/", func(c fiber.Ctx) error {
 		return c.Redirect().Status(fiber.StatusFound).To("https://" + r.conf.MustString("http.domain"))
 	})
+	api.Get("/monitor", monitor.New(monitor.Config{Title: "WeAvatar Monitor", ChartJSURL: "https://fastly.jsdelivr.net/npm/chart.js@2.9/dist/Chart.bundle.min.js"}))
 
 	api.Get("/avatar", r.avatar.Avatar)
 	api.Get("/avatar/:hash", r.avatar.Avatar)
