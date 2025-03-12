@@ -109,7 +109,7 @@ func (r *AvatarService) List(c fiber.Ctx) error {
 		return Error(c, http.StatusUnprocessableEntity, "%v", err)
 	}
 
-	avatar, total, err := r.avatarRepo.List(req.Page, req.Limit)
+	avatar, total, err := r.avatarRepo.List(fiber.Locals[string](c, "user_id"), req.Page, req.Limit)
 	if err != nil {
 		return Error(c, fiber.StatusInternalServerError, "%v", err)
 	}

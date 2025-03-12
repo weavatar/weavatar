@@ -74,7 +74,7 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	}, nil
 }
 
-func (r *avatarRepo) List(page, limit uint) ([]*biz.Avatar, int64, error) {
+func (r *avatarRepo) List(userID string, page, limit uint) ([]*biz.Avatar, int64, error) {
 	var total int64
 	if err := r.db.Model(&biz.Avatar{}).Count(&total).Error; err != nil {
 		return nil, 0, err
