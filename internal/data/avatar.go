@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"image"
 	"image/color"
 	"image/png"
 	"io"
+	"math"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -300,10 +302,7 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2, err := r.randomColor(options[0])
-		if err != nil {
-			return nil, time.Now(), err
-		}
+		red2, green2, blue2 := r.contrastColor(red, green, blue)
 		img := identicon.Make(identicon.Style1, 600,
 			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
 			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
@@ -326,10 +325,7 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2, err := r.randomColor(options[0])
-		if err != nil {
-			return nil, time.Now(), err
-		}
+		red2, green2, blue2 := r.contrastColor(red, green, blue)
 		img := identicon.Make(identicon.Style2, 600,
 			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
 			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
@@ -352,20 +348,20 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		}
 		return img, time.Now(), nil
 	case "color":
-		img, err := vips.Black(100, 100)
-		if err != nil {
-			return nil, time.Now(), err
-		}
-		defer img.Close()
 		red, green, blue, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		if err = img.Linear([]float64{0, 0, 0}, []float64{float64(red), float64(green), float64(blue)}); err != nil {
-			return nil, time.Now(), err
+		img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+		backgroundColor := color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}
+		for y := 0; y < 10; y++ {
+			for x := 0; x < 10; x++ {
+				img.Set(x, y, backgroundColor)
+			}
 		}
-		data, _, err := img.ExportNative()
-		return data, time.Now(), err
+		buf := new(bytes.Buffer)
+		err = png.Encode(buf, img)
+		return buf.Bytes(), time.Now(), err
 	case "letter", "initials": // TODO deprecated letter in the future
 		fontSize := 500
 		letters := []rune(strings.ToUpper(options[1]))
@@ -412,6 +408,24 @@ func (r *avatarRepo) randomColor(hash string) (int, int, int, error) {
 	}
 	rd := rand.New(rand.NewPCG(h.Sum64(), (h.Sum64()>>1)|1))
 	return rd.IntN(256), rd.IntN(256), rd.IntN(256), nil
+}
+
+func (r *avatarRepo) contrastColor(bgR, bgG, bgB int) (int, int, int) {
+	fgR := 255 - bgR
+	fgG := 255 - bgG
+	fgB := 255 - bgB
+	fgLuminance := 0.2126*float64(fgR) + 0.7152*float64(fgG) + 0.0722*float64(fgB)
+	bgLuminance := 0.2126*float64(bgR) + 0.7152*float64(bgG) + 0.0722*float64(bgB)
+
+	if math.Abs(fgLuminance-bgLuminance) < 128 {
+		if bgLuminance > 128 {
+			return 0, 0, 0 // 背景亮，前景暗
+		} else {
+			return 255, 255, 255 // 背景暗，前景亮
+		}
+	}
+
+	return fgR, fgG, fgB
 }
 
 func (r *avatarRepo) formatAvatar(avatar []byte, size int) ([]byte, error) {

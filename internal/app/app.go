@@ -31,6 +31,7 @@ func (r *App) Run() error {
 	// init vips
 	vips.LoggingSettings(nil, vips.LogLevelError)
 	vips.Startup(nil)
+	defer vips.Shutdown()
 
 	// migrate database
 	if err := r.migrator.Migrate(); err != nil {
