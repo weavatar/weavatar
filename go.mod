@@ -15,7 +15,6 @@ require (
 	github.com/go-rat/utils v1.1.3
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4.0.20250310080611-c0599ee1d427
-	github.com/goki/freetype v1.0.5
 	github.com/google/wire v0.6.0
 	github.com/gookit/color v1.5.4
 	github.com/gookit/validate v1.5.4
@@ -33,9 +32,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tnb-labs/letteravatar v1.1.0
+	github.com/tnb-labs/letteravatar/v2 v2.0.0
 	github.com/urfave/cli/v3 v3.0.0-beta1
 	github.com/wneessen/go-mail v0.6.2
+	golang.org/x/image v0.25.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
@@ -96,7 +96,6 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect

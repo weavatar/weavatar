@@ -22,12 +22,12 @@ import (
 	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/file"
 	"github.com/go-rat/utils/str"
-	"github.com/goki/freetype/truetype"
 	"github.com/imroc/req/v3"
 	"github.com/ipsn/go-adorable"
 	"github.com/issue9/identicon/v2"
 	"github.com/o1egl/govatar"
-	"github.com/tnb-labs/letteravatar"
+	"github.com/tnb-labs/letteravatar/v2"
+	"golang.org/x/image/font/opentype"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"
@@ -38,8 +38,8 @@ import (
 
 type avatarRepo struct {
 	db     *gorm.DB
-	font   *truetype.Font
-	emoji  *truetype.Font
+	font   *opentype.Font
+	emoji  *opentype.Font
 	client *req.Client
 }
 
@@ -48,7 +48,7 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	if err != nil {
 		return nil, err
 	}
-	font, err := truetype.Parse(font1)
+	font, err := opentype.Parse(font1)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	if err != nil {
 		return nil, err
 	}
-	emoji, err := truetype.Parse(font2)
+	emoji, err := opentype.Parse(font2)
 	if err != nil {
 		return nil, err
 	}
