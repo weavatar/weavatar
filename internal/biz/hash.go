@@ -1,6 +1,6 @@
 package biz
 
 type QqHash struct {
-	H string `gorm:"primaryKey"`
+	H []byte `gorm:"primaryKey"`
 	Q string
 }
