@@ -52,7 +52,7 @@ func (r *UserService) Callback(c fiber.Ctx) error {
 		return Error(c, fiber.StatusBadRequest, "状态已过期")
 	}
 
-	accessToken, err := r.oauth.GetToken(req.Code)
+	accessToken, err := r.oauth.GetToken(req.Code, fmt.Sprintf("https://%s/oauth/callback", r.conf.MustString("http.domain")))
 	if err != nil {
 		return Error(c, fiber.StatusInternalServerError, "%v", err)
 	}

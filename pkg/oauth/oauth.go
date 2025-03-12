@@ -43,14 +43,14 @@ func NewOauth(clientID, clientSecret, baseURL string) *Oauth {
 }
 
 // GetToken 获取 AccessToken 和 RefreshToken 信息
-func (r *Oauth) GetToken(code string) (Token, error) {
+func (r *Oauth) GetToken(code, redirectUri string) (Token, error) {
 	var token Token
 	resp, err := r.client.R().SetQueryParams(map[string]string{
 		"grant_type":    "authorization_code",
 		"client_id":     r.clientID,
 		"client_secret": r.clientSecret,
 		"code":          code,
-		"redirect_uri":  "https://weavatar/oauth/callback",
+		"redirect_uri":  redirectUri,
 	}).SetSuccessResult(&token).Get("/api/v1/oauth/token")
 	if err != nil {
 		return token, err
