@@ -76,7 +76,7 @@ type AvatarCreate struct {
 	VerifyCode string                `form:"verify_code" validate:"required|verifyCode:Raw,avatar"`
 	Avatar     *multipart.FileHeader `form:"avatar" validate:"required|image"`
 
-	Captcha geetest.Ticket `validate:"required|geetest"`
+	Captcha geetest.Ticket `form:"-" validate:"required|geetest"`
 }
 
 func (r *AvatarCreate) Prepare(c fiber.Ctx) error {
@@ -90,7 +90,7 @@ type AvatarUpdate struct {
 	Hash   string                `uri:"hash" validate:"required"`
 	Avatar *multipart.FileHeader `form:"avatar" validate:"required|image"`
 
-	Captcha geetest.Ticket `validate:"required|geetest"`
+	Captcha geetest.Ticket `form:"-" validate:"required|geetest"`
 }
 
 func (r *AvatarUpdate) Prepare(c fiber.Ctx) error {
