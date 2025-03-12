@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/base64"
+	"errors"
 	"math/rand/v2"
 	"net/http"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
+	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"
 	"github.com/weavatar/weavatar/internal/http/request"
@@ -167,7 +169,9 @@ func (r *AvatarService) Check(c fiber.Ctx) error {
 
 	avatar, err := r.avatarRepo.GetByRaw(req.Raw)
 	if err != nil {
-		return Error(c, fiber.StatusInternalServerError, "%v", err)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return Error(c, fiber.StatusInternalServerError, "%v", err)
+		}
 	}
 
 	return Success(c, fiber.Map{
