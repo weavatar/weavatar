@@ -7,8 +7,8 @@ import (
 
 type User struct {
 	ID        string          `gorm:"type:char(10);primaryKey" json:"id"`
-	OpenID    string          `gorm:"type:char(10);not null" json:"-"`
-	UnionID   string          `gorm:"type:char(10);not null" json:"-"`
+	OpenID    string          `gorm:"type:char(64);not null" json:"-"`
+	UnionID   string          `gorm:"type:char(64);not null" json:"-"`
 	Nickname  string          `gorm:"type:varchar(255);not null" json:"nickname"`
 	Avatar    string          `gorm:"type:varchar(255);not null" json:"avatar"`
 	RealName  bool            `gorm:"not null" json:"real_name"`
