@@ -130,9 +130,9 @@ func (_c *AvatarRepo_Delete_Call) RunAndReturn(run func(string, string) error) *
 	return _c
 }
 
-// Get provides a mock function with given fields: hash
-func (_m *AvatarRepo) Get(hash string) (*biz.Avatar, error) {
-	ret := _m.Called(hash)
+// Get provides a mock function with given fields: userID, hash
+func (_m *AvatarRepo) Get(userID string, hash string) (*biz.Avatar, error) {
+	ret := _m.Called(userID, hash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -140,19 +140,19 @@ func (_m *AvatarRepo) Get(hash string) (*biz.Avatar, error) {
 
 	var r0 *biz.Avatar
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*biz.Avatar, error)); ok {
-		return rf(hash)
+	if rf, ok := ret.Get(0).(func(string, string) (*biz.Avatar, error)); ok {
+		return rf(userID, hash)
 	}
-	if rf, ok := ret.Get(0).(func(string) *biz.Avatar); ok {
-		r0 = rf(hash)
+	if rf, ok := ret.Get(0).(func(string, string) *biz.Avatar); ok {
+		r0 = rf(userID, hash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*biz.Avatar)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(hash)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(userID, hash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -166,14 +166,15 @@ type AvatarRepo_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
+//   - userID string
 //   - hash string
-func (_e *AvatarRepo_Expecter) Get(hash interface{}) *AvatarRepo_Get_Call {
-	return &AvatarRepo_Get_Call{Call: _e.mock.On("Get", hash)}
+func (_e *AvatarRepo_Expecter) Get(userID interface{}, hash interface{}) *AvatarRepo_Get_Call {
+	return &AvatarRepo_Get_Call{Call: _e.mock.On("Get", userID, hash)}
 }
 
-func (_c *AvatarRepo_Get_Call) Run(run func(hash string)) *AvatarRepo_Get_Call {
+func (_c *AvatarRepo_Get_Call) Run(run func(userID string, hash string)) *AvatarRepo_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
@@ -183,7 +184,7 @@ func (_c *AvatarRepo_Get_Call) Return(_a0 *biz.Avatar, _a1 error) *AvatarRepo_Ge
 	return _c
 }
 
-func (_c *AvatarRepo_Get_Call) RunAndReturn(run func(string) (*biz.Avatar, error)) *AvatarRepo_Get_Call {
+func (_c *AvatarRepo_Get_Call) RunAndReturn(run func(string, string) (*biz.Avatar, error)) *AvatarRepo_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
