@@ -252,7 +252,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 		return "", nil, time.Now(), err
 	}
 
-	cache := filepath.Join("storage", "cache", "qq", convert.UnsafeString(qqHash.H)[:2], convert.UnsafeString(qqHash.H))
+	cache := filepath.Join("storage", "cache", "qq", qqHash.Q[:2], qqHash.Q)
 	if file.Exists(cache) {
 		img, err := os.ReadFile(cache)
 		lastModified, err2 := file.LastModified(cache, "UTC")
