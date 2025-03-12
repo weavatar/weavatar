@@ -17,7 +17,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4.0.20250310080611-c0599ee1d427
 	github.com/google/wire v0.6.0
 	github.com/gookit/color v1.5.4
-	github.com/gookit/validate v1.5.4
+	github.com/gookit/validate v1.5.5-0.20250306021352-dd6d13692aa9
 	github.com/imroc/req/v3 v3.50.0
 	github.com/ipsn/go-adorable v1.0.0
 	github.com/issue9/identicon/v2 v2.1.2
