@@ -34,7 +34,13 @@ func (r *Middlewares) Globals(app *fiber.App) []fiber.Handler {
 		cors.New(),
 		compress.New(),
 		etag.New(),
-		helmet.New(),
+		helmet.New(helmet.Config{
+			XSSProtection:             "0",
+			ContentTypeNosniff:        "nosniff",
+			XFrameOptions:             "SAMEORIGIN",
+			CrossOriginResourcePolicy: "cross-origin",
+			XDNSPrefetchControl:       "on",
+		}),
 		requestid.New(),
 		logger.New(),
 	}
