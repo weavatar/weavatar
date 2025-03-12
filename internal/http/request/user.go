@@ -1,8 +1,8 @@
 package request
 
 type UserCallback struct {
-	Code  string `query:"code" form:"code" validate:"required"`
-	State string `query:"state" form:"state" validate:"required"`
+	Code  string `json:"code" form:"code" validate:"required"`
+	State string `json:"state" form:"state" validate:"required"`
 }
 
 type UserUpdate struct {
