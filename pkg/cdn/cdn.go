@@ -1,6 +1,7 @@
 package cdn
 
 import (
+	"github.com/go-rat/utils/debug"
 	"sync"
 
 	"github.com/dromara/carbon/v2"
@@ -19,8 +20,10 @@ type Cdn struct {
 func NewCdn(conf *koanf.Koanf) *Cdn {
 	once.Do(func() {
 		names := conf.MustStrings("cdn.driver")
+		debug.Dump(names)
 		var drivers []Driver
 		for _, driver := range names {
+			debug.Dump(driver)
 			switch driver {
 			case "baishan":
 				drivers = append(drivers, &BaiShan{
@@ -43,13 +46,17 @@ func NewCdn(conf *koanf.Koanf) *Cdn {
 		instance = &Cdn{
 			drivers: drivers,
 		}
+
+		debug.Dump(instance.drivers)
 	})
 
 	return instance
 }
 
 func (c *Cdn) RefreshUrl(urls []string) error {
+	debug.Dump(urls)
 	for _, driver := range c.drivers {
+		debug.Dump(driver)
 		if err := driver.RefreshUrl(urls); err != nil {
 			return err
 		}
