@@ -64,12 +64,12 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 		img, _, err = r.avatarRepo.GetGravatarByHash(hash)
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("%w, hash: %s", err, hash)
 	}
 
 	imgHash := str.SHA256(convert.UnsafeString(img))
 	if err = file.Write(filepath.Join("storage", "checker", imgHash[:2], imgHash), img); err != nil {
-		return err
+		return fmt.Errorf("%w, hash: %s, imgHash: %s", err, hash, imgHash)
 	}
 
 	image := new(biz.Image)
@@ -78,10 +78,10 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 		auditor := audit.NewAudit(r.conf)
 		image.Banned, image.Remark, err = auditor.Check("https://weavatar.com/avatar/" + hash + ".png?s=600&d=404")
 		if err != nil {
-			return err
+			return fmt.Errorf("%w, hash: %s, imgHash: %s", err, hash, imgHash)
 		}
 		if err = r.db.Create(image).Error; err != nil {
-			return err
+			return fmt.Errorf("%w, hash: %s, imgHash: %s", err, hash, imgHash)
 		}
 	}
 
