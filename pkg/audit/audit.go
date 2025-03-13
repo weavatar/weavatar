@@ -26,8 +26,9 @@ func NewAudit(conf *koanf.Koanf) *Audit {
 			instance = &Audit{
 				driver: NewCOS(conf.MustString("audit.cos.secretId"), conf.MustString("audit.cos.secretKey"), conf.MustString("audit.cos.bucket")),
 			}
+		default:
+			panic("failed to initialize image audit, unsupported driver: " + conf.MustString("audit.driver"))
 		}
-		panic("failed to initialize image audit, unsupported driver: " + conf.MustString("audit.driver"))
 	})
 
 	return instance
