@@ -11,14 +11,14 @@ var gravatarBase = sync.OnceValue(func() string {
 		return v
 	}
 	return "https://gravatar.com"
-})()
+})
 
 func Gravatar(hash string) ([]byte, error) {
-	resp, err := client.R().SetQueryParams(map[string]string{
+	resp, err := client().R().SetQueryParams(map[string]string{
 		"r": "g",
 		"d": "404",
 		"s": "1000",
-	}).Get(gravatarBase + "/avatar/" + hash)
+	}).Get(gravatarBase() + "/avatar/" + hash)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func Qq(qq string) ([]byte, error) {
-	resp, err := client.R().SetQueryParams(map[string]string{
+	resp, err := client().R().SetQueryParams(map[string]string{
 		"b":  "qq",
 		"nk": qq,
 		"s":  "640",
@@ -34,7 +34,7 @@ func Qq(qq string) ([]byte, error) {
 		defer image.Close()
 	}
 	if err != nil || (image.Width() < 100 || image.Height() < 100) {
-		resp, err = client.R().SetQueryParams(map[string]string{
+		resp, err = client().R().SetQueryParams(map[string]string{
 			"b":  "qq",
 			"nk": qq,
 			"s":  "100",

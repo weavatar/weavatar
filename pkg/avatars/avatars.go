@@ -13,4 +13,4 @@ var client = sync.OnceValue(func() *req.Client {
 	c.SetCommonRetryCount(2)
 	c.ImpersonateSafari()
 	return c
-})()
+})

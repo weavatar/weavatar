@@ -12,13 +12,18 @@ type Message struct {
 	Content string
 }
 
+var (
+	instance *SMS
+	once     sync.Once
+)
+
 type SMS struct {
 	driver Driver
 }
 
 func New(conf *koanf.Koanf) *SMS {
-	return sync.OnceValue(func() *SMS {
-		return &SMS{
+	once.Do(func() {
+		instance = &SMS{
 			driver: &Tencent{
 				SecretId:   conf.MustString("sms.secretId"),
 				SecretKey:  conf.MustString("sms.secretKey"),
@@ -28,7 +33,9 @@ func New(conf *koanf.Koanf) *SMS {
 				ExpireTime: conf.MustString("code.expireTime"),
 			},
 		}
-	})()
+	})
+
+	return instance
 }
 
 // Send 发送短信

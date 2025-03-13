@@ -7,12 +7,17 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
+var (
+	instance *Cdn
+	once     sync.Once
+)
+
 type Cdn struct {
 	drivers []Driver
 }
 
 func NewCdn(conf *koanf.Koanf) *Cdn {
-	return sync.OnceValue(func() *Cdn {
+	once.Do(func() {
 		names := conf.MustStrings("cdn.driver")
 		var drivers []Driver
 		for _, driver := range names {
@@ -35,10 +40,12 @@ func NewCdn(conf *koanf.Koanf) *Cdn {
 			}
 		}
 
-		return &Cdn{
+		instance = &Cdn{
 			drivers: drivers,
 		}
-	})()
+	})
+
+	return instance
 }
 
 func (c *Cdn) RefreshUrl(urls []string) error {
