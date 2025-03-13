@@ -19,12 +19,14 @@ import (
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/forPelevin/gomoji"
+	"github.com/go-rat/cache"
 	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/file"
 	"github.com/go-rat/utils/str"
 	"github.com/imroc/req/v3"
 	"github.com/ipsn/go-adorable"
 	"github.com/issue9/identicon/v2"
+	"github.com/knadh/koanf/v2"
 	"github.com/o1egl/govatar"
 	"github.com/tnb-labs/letteravatar/v2"
 	"golang.org/x/image/font/opentype"
@@ -32,18 +34,23 @@ import (
 
 	"github.com/weavatar/weavatar/internal/biz"
 	"github.com/weavatar/weavatar/internal/http/request"
+	"github.com/weavatar/weavatar/internal/queuejob"
 	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/embed"
+	"github.com/weavatar/weavatar/pkg/queue"
 )
 
 type avatarRepo struct {
+	cache  cache.Cache
+	conf   *koanf.Koanf
 	db     *gorm.DB
 	font   *opentype.Font
 	emoji  *opentype.Font
 	client *req.Client
+	queue  *queue.Queue
 }
 
-func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
+func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, queue *queue.Queue) (biz.AvatarRepo, error) {
 	font1, err := embed.FontFS.ReadFile("font/SourceHanSans-VF-700.ttf")
 	if err != nil {
 		return nil, err
@@ -67,10 +74,13 @@ func NewAvatarRepo(db *gorm.DB) (biz.AvatarRepo, error) {
 	client.ImpersonateSafari()
 
 	return &avatarRepo{
+		cache:  cache,
+		conf:   conf,
 		db:     db,
 		font:   font,
 		emoji:  emoji,
 		client: client,
+		queue:  queue,
 	}, nil
 }
 
@@ -252,10 +262,10 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 		return "", nil, time.Now(), err
 	}
 
-	cache := filepath.Join("storage", "cache", "qq", qqHash.Q[:2], qqHash.Q)
-	if file.Exists(cache) {
-		img, err := os.ReadFile(cache)
-		lastModified, err2 := file.LastModified(cache, "UTC")
+	fn := filepath.Join("storage", "cache", "qq", qqHash.Q[:2], qqHash.Q)
+	if file.Exists(fn) {
+		img, err := os.ReadFile(fn)
+		lastModified, err2 := file.LastModified(fn, "UTC")
 		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
 			return qqHash.Q, img, lastModified, nil
 		}
@@ -265,7 +275,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 	if err != nil {
 		return "", nil, time.Now(), err
 	}
-	if err = file.Write(cache, img, 0644); err != nil {
+	if err = file.Write(fn, img, 0644); err != nil {
 		return "", nil, time.Now(), err
 	}
 
@@ -276,10 +286,10 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 // Gravatar 支持 SHA256 和 MD5，可以直接缓存
 // 但这样对于一个邮箱，可能会有两个头像，但是这个概率非常小，且不会造成问题，所以不做处理
 func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
-	cache := filepath.Join("storage", "cache", "gravatar", hash[:2], hash)
-	if file.Exists(cache) {
-		img, err := os.ReadFile(cache)
-		lastModified, err2 := file.LastModified(cache, "UTC")
+	fn := filepath.Join("storage", "cache", "gravatar", hash[:2], hash)
+	if file.Exists(fn) {
+		img, err := os.ReadFile(fn)
+		lastModified, err2 := file.LastModified(fn, "UTC")
 		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
 			return img, lastModified, nil
 		}
@@ -289,7 +299,7 @@ func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
 	if err != nil {
 		return nil, time.Now(), err
 	}
-	if err = file.Write(cache, img, 0644); err != nil {
+	if err = file.Write(fn, img, 0644); err != nil {
 		return nil, time.Now(), err
 	}
 
@@ -400,12 +410,14 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 }
 
 // IsBanned 通过哈希判断头像是否被封禁
-func (r *avatarRepo) IsBanned(img []byte) (bool, error) {
+func (r *avatarRepo) IsBanned(hash, appID string, img []byte) (bool, error) {
 	var count int64
 	if err := r.db.Model(&biz.Image{}).Where("hash = ? AND banned = 1", str.SHA256(convert.UnsafeString(img))).Count(&count).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// TODO 审核头像
-			return false, nil
+			return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r), []any{
+				hash,
+				appID,
+			})
 		}
 		return false, err
 	}

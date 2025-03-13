@@ -60,7 +60,7 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 		from = "qq"
 	}
 	if err == nil && (from == "weavatar" || from == "gravatar") {
-		if ban, _ := r.avatarRepo.IsBanned(avatar); ban {
+		if ban, _ := r.avatarRepo.IsBanned(req.Hash, req.AppID, avatar); ban {
 			avatar, err = embed.DefaultFS.ReadFile(filepath.Join("default", "ban.png"))
 			lmt = time.Now()
 		}

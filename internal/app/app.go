@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/davidbyttow/govips/v2/vips"
@@ -9,6 +10,8 @@ import (
 	"github.com/gookit/validate"
 	"github.com/knadh/koanf/v2"
 	"github.com/robfig/cron/v3"
+
+	"github.com/weavatar/weavatar/pkg/queue"
 )
 
 type App struct {
@@ -16,14 +19,16 @@ type App struct {
 	router   *fiber.App
 	migrator *gormigrate.Gormigrate
 	cron     *cron.Cron
+	queue    *queue.Queue
 }
 
-func NewApp(conf *koanf.Koanf, router *fiber.App, migrator *gormigrate.Gormigrate, cron *cron.Cron, _ *validate.Validation) *App {
+func NewApp(conf *koanf.Koanf, router *fiber.App, migrator *gormigrate.Gormigrate, cron *cron.Cron, queue *queue.Queue, _ *validate.Validation) *App {
 	return &App{
 		conf:     conf,
 		router:   router,
 		migrator: migrator,
 		cron:     cron,
+		queue:    queue,
 	}
 }
 
@@ -42,6 +47,9 @@ func (r *App) Run() error {
 	// start cron scheduler
 	r.cron.Start()
 	fmt.Println("[CRON] cron scheduler started")
+
+	// start queue
+	r.queue.Run(context.TODO())
 
 	// run http server
 	return r.runServer()

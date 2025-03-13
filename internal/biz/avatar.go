@@ -32,5 +32,5 @@ type AvatarRepo interface {
 	GetQqByHash(hash string) (string, []byte, time.Time, error)
 	GetGravatarByHash(hash string) ([]byte, time.Time, error)
 	GetByType(avatarType string, option ...string) ([]byte, time.Time, error)
-	IsBanned(img []byte) (bool, error)
+	IsBanned(hash, appID string, img []byte) (bool, error)
 }
