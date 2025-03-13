@@ -37,7 +37,9 @@ func (r *Http) Register(router fiber.Router) {
 	api.Get("/monitor", monitor.New(monitor.Config{Title: "WeAvatar Monitor", ChartJSURL: "https://fastly.jsdelivr.net/npm/chart.js@2.9/dist/Chart.bundle.min.js"}))
 
 	api.Get("/avatar", r.avatar.Avatar)
+	api.Head("/avatar", r.avatar.Avatar)
 	api.Get("/avatar/:hash", r.avatar.Avatar)
+	api.Head("/avatar/:hash", r.avatar.Avatar)
 
 	verifyCode := api.Group("/verify_code")
 	verifyCode.Use(middleware.Throttle(5, time.Minute))
