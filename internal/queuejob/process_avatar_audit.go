@@ -3,6 +3,7 @@ package queuejob
 import (
 	"errors"
 	"fmt"
+	"github.com/go-rat/utils/debug"
 	"log/slog"
 	"path/filepath"
 	"time"
@@ -85,7 +86,10 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 		}
 	}
 
+	debug.Dump("[ProcessAvatarAudit] image", slog.String("hash", hash), slog.String("imgHash", imgHash), slog.Bool("banned", image.Banned), slog.String("remark", image.Remark))
+
 	if image.Banned {
+		debug.Dump("[ProcessAvatarAudit] image banned", slog.String("hash", hash), slog.String("imgHash", imgHash), slog.String("remark", image.Remark))
 		if err = cdn.NewCdn(r.conf).RefreshUrl([]string{fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)}); err != nil {
 			r.log.Error("[ProcessAvatarAudit] failed to refresh url", slog.String("url", fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)), slog.Any("err", err))
 		}

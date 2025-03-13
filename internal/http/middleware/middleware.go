@@ -5,7 +5,6 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/etag"
-	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/pprof"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
@@ -35,7 +34,7 @@ func (r *Middlewares) Globals(app *fiber.App) []fiber.Handler {
 		compress.New(),
 		etag.New(),
 		requestid.New(),
-		logger.New(),
+		//logger.New(),
 		pprof.New(pprof.Config{Prefix: "/api"}),
 	}
 }
