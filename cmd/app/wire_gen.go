@@ -35,7 +35,7 @@ func initApp() (*app.App, error) {
 		return nil, err
 	}
 	queue := bootstrap.NewQueue()
-	avatarRepo, err := data.NewAvatarRepo(cache, koanf, db, queue)
+	avatarRepo, err := data.NewAvatarRepo(cache, koanf, db, logger, queue)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func initApp() (*app.App, error) {
 	verifyCodeService := service.NewVerifyCodeService(koanf, cache)
 	userRepo := data.NewUserRepo(koanf, db)
 	userService := service.NewUserService(cache, koanf, userRepo)
-	systemService := service.NewSystemService()
+	systemService := service.NewSystemService(koanf, cache)
 	http := route.NewHttp(koanf, avatarService, verifyCodeService, userService, systemService)
 	fiberApp := bootstrap.NewRouter(koanf, middlewares, http)
 	gormigrate := bootstrap.NewMigrate(db)
