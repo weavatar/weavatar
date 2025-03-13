@@ -57,8 +57,9 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 	if r.cache.Has("avatar:check:" + hash) {
 		return nil
 	}
-	_ = r.cache.Put("avatar:check:"+hash, true, 30*time.Second)
-	defer r.cache.Forget("avatar:check:" + hash)
+	if err := r.cache.Put("avatar:check:"+hash, true, 30*time.Second); err != nil {
+		return fmt.Errorf("%w, hash: %s", err, hash)
+	}
 
 	_, img, _, err := r.avatarRepo.GetWeAvatar(hash, appID)
 	if err != nil {
