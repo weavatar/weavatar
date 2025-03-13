@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-rat/cache"
+	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
@@ -33,7 +34,7 @@ func NewUserService(cache cache.Cache, conf *koanf.Koanf, user biz.UserRepo) *Us
 
 func (r *UserService) Login(c fiber.Ctx) error {
 	state := fmt.Sprintf("login-%s", str.Random(16))
-	if err := r.cache.Put(state, c.IP(), 5*time.Minute); err != nil {
+	if err := r.cache.Put(state, convert.CopyString(c.IP()), 5*time.Minute); err != nil {
 		return ErrorSystem(c)
 	}
 

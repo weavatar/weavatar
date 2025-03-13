@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/go-rat/cache"
+	"github.com/go-rat/utils/convert"
 	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
@@ -46,7 +47,7 @@ func (r *VerifyCodeService) Sms(c fiber.Ctx) error {
 	}
 
 	code := str.RandomN(6)
-	if err = r.cache.Put("code:"+req.UseFor+":"+req.Phone, code, r.conf.Duration("code.expireTime")*time.Minute); err != nil {
+	if err = r.cache.Put("code:"+convert.CopyString(req.UseFor)+":"+convert.CopyString(req.Phone), code, r.conf.Duration("code.expireTime")*time.Minute); err != nil {
 		return ErrorSystem(c)
 	}
 
@@ -80,7 +81,7 @@ func (r *VerifyCodeService) Email(c fiber.Ctx) error {
 	}
 
 	code := str.RandomN(6)
-	if err = r.cache.Put("code:"+req.UseFor+":"+req.Email, code, r.conf.Duration("code.expireTime")*time.Minute); err != nil {
+	if err = r.cache.Put("code:"+convert.CopyString(req.UseFor)+":"+convert.CopyString(req.Email), code, r.conf.Duration("code.expireTime")*time.Minute); err != nil {
 		return ErrorSystem(c)
 	}
 
