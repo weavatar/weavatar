@@ -537,9 +537,9 @@ func (_c *AvatarRepo_GetWeAvatar_Call) RunAndReturn(run func(string, string) (st
 	return _c
 }
 
-// IsBanned provides a mock function with given fields: img
-func (_m *AvatarRepo) IsBanned(img []byte) (bool, error) {
-	ret := _m.Called(img)
+// IsBanned provides a mock function with given fields: hash, appID, img
+func (_m *AvatarRepo) IsBanned(hash string, appID string, img []byte) (bool, error) {
+	ret := _m.Called(hash, appID, img)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsBanned")
@@ -547,17 +547,17 @@ func (_m *AvatarRepo) IsBanned(img []byte) (bool, error) {
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]byte) (bool, error)); ok {
-		return rf(img)
+	if rf, ok := ret.Get(0).(func(string, string, []byte) (bool, error)); ok {
+		return rf(hash, appID, img)
 	}
-	if rf, ok := ret.Get(0).(func([]byte) bool); ok {
-		r0 = rf(img)
+	if rf, ok := ret.Get(0).(func(string, string, []byte) bool); ok {
+		r0 = rf(hash, appID, img)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func([]byte) error); ok {
-		r1 = rf(img)
+	if rf, ok := ret.Get(1).(func(string, string, []byte) error); ok {
+		r1 = rf(hash, appID, img)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -571,14 +571,16 @@ type AvatarRepo_IsBanned_Call struct {
 }
 
 // IsBanned is a helper method to define mock.On call
+//   - hash string
+//   - appID string
 //   - img []byte
-func (_e *AvatarRepo_Expecter) IsBanned(img interface{}) *AvatarRepo_IsBanned_Call {
-	return &AvatarRepo_IsBanned_Call{Call: _e.mock.On("IsBanned", img)}
+func (_e *AvatarRepo_Expecter) IsBanned(hash interface{}, appID interface{}, img interface{}) *AvatarRepo_IsBanned_Call {
+	return &AvatarRepo_IsBanned_Call{Call: _e.mock.On("IsBanned", hash, appID, img)}
 }
 
-func (_c *AvatarRepo_IsBanned_Call) Run(run func(img []byte)) *AvatarRepo_IsBanned_Call {
+func (_c *AvatarRepo_IsBanned_Call) Run(run func(hash string, appID string, img []byte)) *AvatarRepo_IsBanned_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte))
+		run(args[0].(string), args[1].(string), args[2].([]byte))
 	})
 	return _c
 }
@@ -588,7 +590,7 @@ func (_c *AvatarRepo_IsBanned_Call) Return(_a0 bool, _a1 error) *AvatarRepo_IsBa
 	return _c
 }
 
-func (_c *AvatarRepo_IsBanned_Call) RunAndReturn(run func([]byte) (bool, error)) *AvatarRepo_IsBanned_Call {
+func (_c *AvatarRepo_IsBanned_Call) RunAndReturn(run func(string, string, []byte) (bool, error)) *AvatarRepo_IsBanned_Call {
 	_c.Call.Return(run)
 	return _c
 }
