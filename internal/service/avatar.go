@@ -205,7 +205,7 @@ func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, er
 	}
 	defer img.Close()
 
-	if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLinear); err != nil {
+	if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLanczos3); err != nil {
 		return nil, err
 	}
 
