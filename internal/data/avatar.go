@@ -445,8 +445,8 @@ func (r *avatarRepo) IsBanned(hash, appID string, img []byte) (bool, error) {
 
 	if count == 0 {
 		return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r.log, r), []any{
-			hash,
-			appID,
+			convert.CopyString(hash),
+			convert.CopyString(appID),
 		})
 	}
 
