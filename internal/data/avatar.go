@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"log/slog"
 	"math"
 	"math/rand/v2"
 	"os"
@@ -36,6 +37,7 @@ import (
 	"github.com/weavatar/weavatar/internal/http/request"
 	"github.com/weavatar/weavatar/internal/queuejob"
 	"github.com/weavatar/weavatar/pkg/avatars"
+	"github.com/weavatar/weavatar/pkg/cdn"
 	"github.com/weavatar/weavatar/pkg/embed"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
@@ -44,13 +46,15 @@ type avatarRepo struct {
 	cache  cache.Cache
 	conf   *koanf.Koanf
 	db     *gorm.DB
+	log    *slog.Logger
+	queue  *queue.Queue
 	font   *opentype.Font
 	emoji  *opentype.Font
 	client *req.Client
-	queue  *queue.Queue
+	cdn    *cdn.Cdn
 }
 
-func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, queue *queue.Queue) (biz.AvatarRepo, error) {
+func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue) (biz.AvatarRepo, error) {
 	font1, err := embed.FontFS.ReadFile("font/SourceHanSans-VF-700.ttf")
 	if err != nil {
 		return nil, err
@@ -77,10 +81,12 @@ func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, queue *que
 		cache:  cache,
 		conf:   conf,
 		db:     db,
+		log:    log,
+		queue:  queue,
 		font:   font,
 		emoji:  emoji,
 		client: client,
-		queue:  queue,
+		cdn:    cdn.NewCdn(conf),
 	}, nil
 }
 
@@ -141,7 +147,13 @@ func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avat
 		return nil, err
 	}
 
-	// TODO 刷新缓存
+	if err = r.cdn.RefreshUrl([]string{
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.SHA256),
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.MD5),
+	}); err != nil {
+		r.log.Error("[AvatarRepo] failed to refresh url", slog.String("hash", avatar.SHA256), slog.String("err", err.Error()))
+	}
+
 	return avatar, nil
 }
 
@@ -179,7 +191,13 @@ func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avat
 		return nil, err
 	}
 
-	// TODO 刷新缓存
+	if err = r.cdn.RefreshUrl([]string{
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.SHA256),
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.MD5),
+	}); err != nil {
+		r.log.Error("[AvatarRepo] failed to refresh url", slog.String("hash", avatar.SHA256), slog.String("err", err.Error()))
+	}
+
 	return avatar, nil
 }
 
@@ -194,7 +212,7 @@ func (r *avatarRepo) Delete(userID string, hash string) error {
 			return err
 		}
 
-		fp := filepath.Join("storage", "upload", "default", hash[:2], hash)
+		fp := filepath.Join("storage", "upload", "default", avatar.SHA256[:2], avatar.SHA256)
 		if err = os.Remove(fp); err != nil {
 			return err
 		}
@@ -205,7 +223,13 @@ func (r *avatarRepo) Delete(userID string, hash string) error {
 		return err
 	}
 
-	// TODO 刷新缓存
+	if err = r.cdn.RefreshUrl([]string{
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.SHA256),
+		fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), avatar.MD5),
+	}); err != nil {
+		r.log.Error("[AvatarRepo] failed to refresh url", slog.String("hash", avatar.SHA256), slog.String("err", err.Error()))
+	}
+
 	return nil
 }
 
@@ -414,7 +438,7 @@ func (r *avatarRepo) IsBanned(hash, appID string, img []byte) (bool, error) {
 	var count int64
 	if err := r.db.Model(&biz.Image{}).Where("hash = ? AND banned = 1", str.SHA256(convert.UnsafeString(img))).Count(&count).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r), []any{
+			return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r.log, r), []any{
 				hash,
 				appID,
 			})

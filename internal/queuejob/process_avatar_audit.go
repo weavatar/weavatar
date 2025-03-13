@@ -2,6 +2,8 @@ package queuejob
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 	"path/filepath"
 	"time"
 
@@ -14,20 +16,23 @@ import (
 
 	"github.com/weavatar/weavatar/internal/biz"
 	"github.com/weavatar/weavatar/pkg/audit"
+	"github.com/weavatar/weavatar/pkg/cdn"
 )
 
 type ProcessAvatarAudit struct {
 	cache      cache.Cache
 	conf       *koanf.Koanf
 	db         *gorm.DB
+	log        *slog.Logger
 	avatarRepo biz.AvatarRepo
 }
 
-func NewProcessAvatarAudit(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, avatarRepo biz.AvatarRepo) *ProcessAvatarAudit {
+func NewProcessAvatarAudit(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, avatarRepo biz.AvatarRepo) *ProcessAvatarAudit {
 	return &ProcessAvatarAudit{
 		cache:      cache,
 		conf:       conf,
 		db:         db,
+		log:        log,
 		avatarRepo: avatarRepo,
 	}
 }
@@ -80,9 +85,10 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 		}
 	}
 
-	// TODO 刷新CDN
 	if image.Banned {
-
+		if err = cdn.NewCdn(r.conf).RefreshUrl([]string{fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)}); err != nil {
+			r.log.Error("[ProcessAvatarAudit] failed to refresh url", slog.String("url", fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)), slog.Any("error", err))
+		}
 	}
 
 	return nil
