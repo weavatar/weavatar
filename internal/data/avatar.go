@@ -42,6 +42,10 @@ import (
 	"github.com/weavatar/weavatar/pkg/queue"
 )
 
+const (
+	CacheThreshold = 14 * 24 * time.Hour
+)
+
 type avatarRepo struct {
 	cache  cache.Cache
 	conf   *koanf.Koanf
@@ -289,9 +293,9 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 	fn := filepath.Join("storage", "cache", "qq", qqHash.Q[:2], qqHash.Q)
 	if file.Exists(fn) {
 		img, err := os.ReadFile(fn)
-		lastModified, err2 := file.LastModified(fn, "UTC")
-		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
-			return qqHash.Q, img, lastModified, nil
+		lmt, err2 := file.LastModified(fn, "UTC")
+		if err == nil && err2 == nil && lmt.Add(CacheThreshold).After(time.Now()) {
+			return qqHash.Q, img, lmt, nil
 		}
 	}
 
@@ -313,9 +317,9 @@ func (r *avatarRepo) GetGravatarByHash(hash string) ([]byte, time.Time, error) {
 	fn := filepath.Join("storage", "cache", "gravatar", hash[:2], hash)
 	if file.Exists(fn) {
 		img, err := os.ReadFile(fn)
-		lastModified, err2 := file.LastModified(fn, "UTC")
-		if err == nil && err2 == nil && lastModified.Add(14*24*time.Hour).After(time.Now()) {
-			return img, lastModified, nil
+		lmt, err2 := file.LastModified(fn, "UTC")
+		if err == nil && err2 == nil && lmt.Add(CacheThreshold).After(time.Now()) {
+			return img, lmt, nil
 		}
 	}
 

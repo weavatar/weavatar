@@ -7,6 +7,7 @@ import (
 
 	"github.com/weavatar/weavatar/internal/app"
 	"github.com/weavatar/weavatar/internal/bootstrap"
+	"github.com/weavatar/weavatar/internal/cronjob"
 	"github.com/weavatar/weavatar/internal/data"
 	"github.com/weavatar/weavatar/internal/http/middleware"
 	"github.com/weavatar/weavatar/internal/route"
@@ -15,5 +16,5 @@ import (
 
 // initApp init application.
 func initApp() (*app.App, error) {
-	panic(wire.Build(bootstrap.ProviderSet, middleware.ProviderSet, route.ProviderSet, service.ProviderSet, data.ProviderSet, app.NewApp))
+	panic(wire.Build(bootstrap.ProviderSet, middleware.ProviderSet, route.ProviderSet, service.ProviderSet, data.ProviderSet, cronjob.ProviderSet, app.NewApp))
 }

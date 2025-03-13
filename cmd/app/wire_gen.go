@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/weavatar/weavatar/internal/app"
 	"github.com/weavatar/weavatar/internal/bootstrap"
+	"github.com/weavatar/weavatar/internal/cronjob"
 	"github.com/weavatar/weavatar/internal/data"
 	"github.com/weavatar/weavatar/internal/http/middleware"
 	"github.com/weavatar/weavatar/internal/route"
@@ -28,8 +29,8 @@ func initApp() (*app.App, error) {
 		return nil, err
 	}
 	middlewares := middleware.NewMiddlewares(koanf)
-	cache := bootstrap.NewCache()
 	logger := bootstrap.NewLog(koanf)
+	cache := bootstrap.NewCache()
 	db, err := bootstrap.NewDB(koanf, logger)
 	if err != nil {
 		return nil, err
@@ -39,7 +40,7 @@ func initApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	avatarService := service.NewAvatarService(avatarRepo)
+	avatarService := service.NewAvatarService(logger, avatarRepo)
 	verifyCodeService := service.NewVerifyCodeService(koanf, cache)
 	userRepo := data.NewUserRepo(koanf, db)
 	userService := service.NewUserService(cache, koanf, userRepo)
@@ -47,7 +48,11 @@ func initApp() (*app.App, error) {
 	http := route.NewHttp(koanf, avatarService, verifyCodeService, userService, systemService)
 	fiberApp := bootstrap.NewRouter(koanf, middlewares, http)
 	gormigrate := bootstrap.NewMigrate(db)
-	cron := bootstrap.NewCron(koanf, logger)
+	jobs := cronjob.NewJobs(logger)
+	cron, err := bootstrap.NewCron(koanf, logger, jobs)
+	if err != nil {
+		return nil, err
+	}
 	validation := bootstrap.NewValidator(koanf, db, cache)
 	appApp := app.NewApp(koanf, fiberApp, gormigrate, cron, queue, validation)
 	return appApp, nil
