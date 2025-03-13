@@ -28,17 +28,18 @@ func initApp() (*app.App, error) {
 		return nil, err
 	}
 	middlewares := middleware.NewMiddlewares(koanf)
+	cache := bootstrap.NewCache()
 	logger := bootstrap.NewLog(koanf)
 	db, err := bootstrap.NewDB(koanf, logger)
 	if err != nil {
 		return nil, err
 	}
-	avatarRepo, err := data.NewAvatarRepo(db)
+	queue := bootstrap.NewQueue()
+	avatarRepo, err := data.NewAvatarRepo(cache, koanf, db, queue)
 	if err != nil {
 		return nil, err
 	}
 	avatarService := service.NewAvatarService(avatarRepo)
-	cache := bootstrap.NewCache()
 	verifyCodeService := service.NewVerifyCodeService(koanf, cache)
 	userRepo := data.NewUserRepo(koanf, db)
 	userService := service.NewUserService(cache, koanf, userRepo)
@@ -48,6 +49,6 @@ func initApp() (*app.App, error) {
 	gormigrate := bootstrap.NewMigrate(db)
 	cron := bootstrap.NewCron(koanf, logger)
 	validation := bootstrap.NewValidator(koanf, db, cache)
-	appApp := app.NewApp(koanf, fiberApp, gormigrate, cron, validation)
+	appApp := app.NewApp(koanf, fiberApp, gormigrate, cron, queue, validation)
 	return appApp, nil
 }
