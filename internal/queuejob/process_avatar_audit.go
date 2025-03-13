@@ -87,7 +87,7 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 
 	if image.Banned {
 		if err = cdn.NewCdn(r.conf).RefreshUrl([]string{fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)}); err != nil {
-			r.log.Error("[ProcessAvatarAudit] failed to refresh url", slog.String("url", fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)), slog.Any("error", err))
+			r.log.Error("[ProcessAvatarAudit] failed to refresh url", slog.String("url", fmt.Sprintf("https://%s/avatar/%s", r.conf.MustString("http.domain"), hash)), slog.Any("err", err))
 		}
 	}
 
@@ -96,6 +96,6 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 
 func (r *ProcessAvatarAudit) ErrHandle(err error) {
 	if err != nil {
-		r.log.Error("[ProcessAvatarAudit] failed to process avatar audit", slog.Any("error", err))
+		r.log.Error("[ProcessAvatarAudit] failed to process avatar audit", slog.Any("err", err))
 	}
 }

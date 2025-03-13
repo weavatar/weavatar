@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/base64"
 	"errors"
+	"log/slog"
 	"math/rand/v2"
 	"net/http"
 	"path/filepath"
@@ -20,11 +21,13 @@ import (
 )
 
 type AvatarService struct {
+	log        *slog.Logger
 	avatarRepo biz.AvatarRepo
 }
 
-func NewAvatarService(avatar biz.AvatarRepo) *AvatarService {
+func NewAvatarService(log *slog.Logger, avatar biz.AvatarRepo) *AvatarService {
 	return &AvatarService{
+		log:        log,
 		avatarRepo: avatar,
 	}
 }
@@ -85,11 +88,13 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	}
 
 	if err != nil {
+		r.log.Error("[AvatarService] failed to get avatar", slog.Any("req", req), slog.Any("err", err.Error()))
 		return ErrorSystem(c)
 	}
 
 	avatar, err = r.convert(avatar, req.Ext, req.Size)
 	if err != nil {
+		r.log.Error("[AvatarService] failed to convert avatar", slog.Any("req", req), slog.Any("err", err.Error()))
 		return ErrorSystem(c)
 	}
 
