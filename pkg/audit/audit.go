@@ -34,6 +34,6 @@ func NewAudit(conf *koanf.Koanf) *Audit {
 }
 
 // Check 检查图片是否违规 true: 违规 false: 未违规
-func (c *Audit) Check(url string) (bool, error) {
+func (c *Audit) Check(url string) (bool, string, error) {
 	return c.driver.Check(url)
 }

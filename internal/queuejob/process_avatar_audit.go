@@ -76,7 +76,7 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 	image.Hash = imgHash
 	if err = r.db.Where("hash = ?", imgHash).First(image).Error; err != nil {
 		auditor := audit.NewAudit(r.conf)
-		image.Banned, err = auditor.Check("https://weavatar.com/avatar/" + hash + ".png?s=600&d=404")
+		image.Banned, image.Remark, err = auditor.Check("https://weavatar.com/avatar/" + hash + ".png?s=600&d=404")
 		if err != nil {
 			return err
 		}
@@ -92,4 +92,10 @@ func (r *ProcessAvatarAudit) Handle(args ...any) error {
 	}
 
 	return nil
+}
+
+func (r *ProcessAvatarAudit) ErrHandle(err error) {
+	if err != nil {
+		r.log.Error("[ProcessAvatarAudit] failed to process avatar audit", slog.Any("error", err))
+	}
 }

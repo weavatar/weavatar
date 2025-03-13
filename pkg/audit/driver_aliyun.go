@@ -2,6 +2,7 @@ package audit
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -25,17 +26,17 @@ func NewAliyun(accessKeyId, accessKeySecret string) Driver {
 }
 
 // Check 检查图片是否违规 true: 违规 false: 未违规
-func (a *Aliyun) Check(url string) (bool, error) {
-	client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "shanghai")
+func (a *Aliyun) Check(url string) (bool, string, error) {
+	client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "beijing")
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	parameters, err := json.Marshal(map[string]string{
 		"imageUrl": url,
 	})
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	imageModerationRequest := &green20220302.ImageModerationRequest{
@@ -45,16 +46,14 @@ func (a *Aliyun) Check(url string) (bool, error) {
 	runtime := &util.RuntimeOptions{
 		Autoretry:   tea.Bool(true),
 		MaxAttempts: tea.Int(3),
-		IgnoreSSL:   tea.Bool(true),
 	}
 	response, _err := client.ImageModerationWithOptions(imageModerationRequest, runtime)
 
 	// 自动切换地域
 	flag := false
 	if _err != nil {
-		var err = &tea.SDKError{}
-		if _t, ok := _err.(*tea.SDKError); ok {
-			err = _t
+		var err *tea.SDKError
+		if errors.As(_err, &err) {
 			// 系统异常，切换到下个地域调用。
 			if *err.StatusCode == 500 {
 				flag = true
@@ -65,13 +64,13 @@ func (a *Aliyun) Check(url string) (bool, error) {
 		flag = true
 	}
 	if flag {
-		client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "beijing")
+		client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "shanghai")
 		if err != nil {
-			return false, err
+			return false, "", err
 		}
 		response, _err = client.ImageModerationWithOptions(imageModerationRequest, runtime)
 		if _err != nil {
-			return false, _err
+			return false, "", _err
 		}
 	}
 
@@ -82,20 +81,24 @@ func (a *Aliyun) Check(url string) (bool, error) {
 		if statusCode == http.StatusOK {
 			if tea.IntValue(tea.ToInt(body.Code)) == 200 {
 				result := imageModerationResponseData.Result
+				remark := ""
+				flag := false
 				for i := 0; i < len(result); i++ {
 					if tea.Float32Value(result[i].Confidence) > 80 {
-						return true, nil
+						flag = true
 					}
+					remark += fmt.Sprintf("%f-%s(%s), ", tea.Float32Value(result[i].Confidence), tea.StringValue(result[i].Description), tea.StringValue(result[i].Label))
 				}
+				return flag, remark, nil
 			} else {
-				return false, fmt.Errorf("aliyun audit failed, url:%s, httpCode:%d, requestId:%s, msg:%s", url, statusCode, tea.StringValue(body.RequestId), tea.StringValue(body.Msg))
+				return false, "", fmt.Errorf("aliyun audit failed, url:%s, httpCode:%d, requestId:%s, msg:%s", url, statusCode, tea.StringValue(body.RequestId), tea.StringValue(body.Msg))
 			}
 		} else {
-			return false, fmt.Errorf("aliyun audit request failed, url:%s, httpCode:%d, requestId:%s, msg:%s", url, statusCode, tea.StringValue(body.RequestId), tea.StringValue(body.Msg))
+			return false, "", fmt.Errorf("aliyun audit request failed, url:%s, httpCode:%d, requestId:%s, msg:%s", url, statusCode, tea.StringValue(body.RequestId), tea.StringValue(body.Msg))
 		}
 	}
 
-	return false, nil
+	return false, "", nil
 }
 
 func (a *Aliyun) createClient(accessKeyId *string, accessKeySecret *string, endpoint string) (_result *green20220302.Client, _err error) {

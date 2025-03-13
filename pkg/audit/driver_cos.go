@@ -28,10 +28,10 @@ func NewCOS(secretId, secretKey, bucket string) *COS {
 }
 
 // Check 检查图片是否违规 true: 违规 false: 未违规
-func (c *COS) Check(url string) (bool, error) {
+func (c *COS) Check(url string) (bool, string, error) {
 	authorization, err := c.getAuthorization("GET", "/", 0)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	client := req.C()
@@ -40,10 +40,10 @@ func (c *COS) Check(url string) (bool, error) {
 		"detect-url": url,
 	}).SetHeader("Authorization", authorization).Get("https://" + c.bucket + "/")
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	if !resp.IsSuccessState() {
-		return false, fmt.Errorf("cos audit failed: %s", resp.String())
+		return false, "", fmt.Errorf("cos audit failed: %s", resp.String())
 	}
 
 	type checkResponse struct {
@@ -58,14 +58,14 @@ func (c *COS) Check(url string) (bool, error) {
 	var response checkResponse
 	err = xml.Unmarshal(resp.Bytes(), &response)
 	if err != nil {
-		return false, fmt.Errorf("cos audit response unmarshal failed: %s", err)
+		return false, "", fmt.Errorf("cos audit response unmarshal failed: %s", err)
 	}
 
 	if response.Result == 1 {
-		return true, nil
+		return true, fmt.Sprintf("%d-%s(%s)", response.Score, response.Label, response.SubLabel), nil
 	}
 
-	return false, nil
+	return false, "", nil
 }
 
 func (c *COS) getAuthorization(method, path string, expires time.Duration) (string, error) {
