@@ -2,7 +2,6 @@ package data
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"hash/fnv"
 	"image"
@@ -441,13 +440,14 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 func (r *avatarRepo) IsBanned(hash, appID string, img []byte) (bool, error) {
 	var count int64
 	if err := r.db.Model(&biz.Image{}).Where("hash = ? AND banned = 1", str.SHA256(convert.UnsafeString(img))).Count(&count).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r.log, r), []any{
-				hash,
-				appID,
-			})
-		}
 		return false, err
+	}
+
+	if count == 0 {
+		return false, r.queue.Push(queuejob.NewProcessAvatarAudit(r.cache, r.conf, r.db, r.log, r), []any{
+			hash,
+			appID,
+		})
 	}
 
 	return count > 0, nil
