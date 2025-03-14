@@ -11,7 +11,6 @@ import (
 	"image/png"
 	"io"
 	"log/slog"
-	"math"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -459,7 +458,7 @@ func (r *avatarRepo) randomColor(hash string) (color.Color, error) {
 	return palette.WebSafe[rd.IntN(len(palette.WebSafe))], nil
 }
 
-func (r *avatarRepo) contrastColor(bgR, bgG, bgB int) (int, int, int) {
+/*func (r *avatarRepo) contrastColor(bgR, bgG, bgB int) (int, int, int) {
 	fgR := 255 - bgR
 	fgG := 255 - bgG
 	fgB := 255 - bgB
@@ -475,7 +474,7 @@ func (r *avatarRepo) contrastColor(bgR, bgG, bgB int) (int, int, int) {
 	}
 
 	return fgR, fgG, fgB
-}
+}*/
 
 func (r *avatarRepo) formatAvatar(avatar []byte, size int) ([]byte, error) {
 	img, err := vips.NewImageFromBuffer(avatar)
