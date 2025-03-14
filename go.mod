@@ -38,7 +38,7 @@ require (
 	github.com/weavatar/initials v1.1.1
 	github.com/weavatar/monsterid v1.0.1
 	github.com/weavatar/retricon v1.0.1
-	github.com/weavatar/robohash v1.1.0
+	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/image v0.25.0

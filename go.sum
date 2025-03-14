@@ -296,8 +296,8 @@ github.com/weavatar/monsterid v1.0.1 h1:ZhXhDXKhkxELfgQGNTBqOv1wi0CTA+t2ZFy06bdB
 github.com/weavatar/monsterid v1.0.1/go.mod h1:VPaf0pz1d+/kkXy6gk3qs+g+AHUD8uiEwm6oojmh1HY=
 github.com/weavatar/retricon v1.0.1 h1:qHtaXtskgpDZsdSPci3GMkXFV80DdvkitY54YF0IZZQ=
 github.com/weavatar/retricon v1.0.1/go.mod h1:bKMMRp5kxAPydnqYTpBIOB2C2KrY8VAqZPTJLXtGk7s=
-github.com/weavatar/robohash v1.1.0 h1:iiFnFoQf6AtKJcUCFmzMxM4DYd/swL48Ols93c/ppoA=
-github.com/weavatar/robohash v1.1.0/go.mod h1:Q5azybbVyqkP7GLNs57ADXMLqdPcyiUODEStB1W9omQ=
+github.com/weavatar/robohash v1.1.1 h1:9hbNH/IBvTwjHvh7TViJCTrMGW7pHJphxkTbCr57Gxg=
+github.com/weavatar/robohash v1.1.1/go.mod h1:Q5azybbVyqkP7GLNs57ADXMLqdPcyiUODEStB1W9omQ=
 github.com/weavatar/wavatar v1.0.0 h1:iu28GMZQDZdCaUlv6EA5xCkGcF08it4u0+hj5ewjEbc=
 github.com/weavatar/wavatar v1.0.0/go.mod h1:uT3CRkN8+fSoMULJDvZ5waYUfbMs3XtKLrCAxboKbYw=
 github.com/wneessen/go-mail v0.6.2 h1:c6V7c8D2mz868z9WJ+8zDKtUyLfZ1++uAZmo2GRFji8=
