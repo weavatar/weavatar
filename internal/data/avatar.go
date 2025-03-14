@@ -494,7 +494,7 @@ func (r *avatarRepo) formatAvatar(avatar []byte, size int) ([]byte, error) {
 		return nil, fmt.Errorf("头像必须大于 40px")
 	}
 	if img.Width() > size {
-		if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLanczos3); err != nil {
+		if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLinear); err != nil {
 			return nil, err
 		}
 	}
