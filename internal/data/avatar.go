@@ -376,7 +376,7 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		err := png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "robohash":
-		rh, err := robohash.New(convert.UnsafeBytes(options[0]), "any", "any")
+		rh, err := robohash.New(convert.UnsafeBytes(options[0]), "set1", "")
 		if err != nil {
 			return nil, time.Now(), err
 		}
