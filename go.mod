@@ -1,6 +1,6 @@
 module github.com/weavatar/weavatar
 
-go 1.24.0
+go 1.24.1
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.4
@@ -22,13 +22,10 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/gookit/validate v1.5.5-0.20250306021352-dd6d13692aa9
 	github.com/imroc/req/v3 v3.50.0
-	github.com/ipsn/go-adorable v1.0.0
-	github.com/issue9/identicon/v2 v2.1.2
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/file v1.1.2
 	github.com/knadh/koanf/v2 v2.1.2
-	github.com/o1egl/govatar v0.4.1
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-limiter v1.0.0
@@ -36,8 +33,13 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1122
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tnb-labs/letteravatar/v2 v2.0.1
 	github.com/urfave/cli/v3 v3.0.0-beta1
+	github.com/weavatar/identicon v1.1.0
+	github.com/weavatar/initials v1.1.1
+	github.com/weavatar/monsterid v1.0.1
+	github.com/weavatar/retricon v1.0.0
+	github.com/weavatar/robohash v1.1.0
+	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/image v0.25.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -78,7 +80,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/knadh/koanf/maps v0.1.1 // indirect
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250303091104-876f3ea5145d // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

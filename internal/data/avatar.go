@@ -6,6 +6,8 @@ import (
 	"hash/fnv"
 	"image"
 	"image/color"
+	"image/color/palette"
+	"image/draw"
 	"image/png"
 	"io"
 	"log/slog"
@@ -24,11 +26,14 @@ import (
 	"github.com/go-rat/utils/file"
 	"github.com/go-rat/utils/str"
 	"github.com/imroc/req/v3"
-	"github.com/ipsn/go-adorable"
-	"github.com/issue9/identicon/v2"
 	"github.com/knadh/koanf/v2"
-	"github.com/o1egl/govatar"
-	"github.com/tnb-labs/letteravatar/v2"
+	"github.com/spf13/cast"
+	"github.com/weavatar/identicon"
+	"github.com/weavatar/initials"
+	"github.com/weavatar/monsterid"
+	"github.com/weavatar/retricon"
+	"github.com/weavatar/robohash"
+	"github.com/weavatar/wavatar"
 	"golang.org/x/image/font/opentype"
 	"gorm.io/gorm"
 
@@ -340,43 +345,39 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		img, err := embed.DefaultFS.ReadFile(filepath.Join("default", "mp.png"))
 		return img, time.Now(), err
 	case "identicon":
-		red, green, blue, err := r.randomColor(options[0])
+		id, err := identicon.New(
+			cast.ToInt(options[1]),
+			color.White,
+			identicon.DarkColors...,
+		)
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2 := r.contrastColor(red, green, blue)
-		img := identicon.Make(identicon.Style1, 600,
-			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
-			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
-			convert.UnsafeBytes(options[0]))
+		img := id.Make(convert.UnsafeBytes(options[0]))
 		buf := new(bytes.Buffer)
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "monsterid":
-		img, err := govatar.GenerateForUsername(govatar.FEMALE, options[0])
-		if err != nil {
-			return nil, time.Now(), err
-		}
+		img := monsterid.New(convert.UnsafeBytes(options[0]))
 		buf := new(bytes.Buffer)
-		err = png.Encode(buf, img)
+		err := png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "wavatar":
-		return adorable.PseudoRandom(convert.UnsafeBytes(options[0])), time.Now(), nil
+		img := wavatar.New(convert.UnsafeBytes(options[0]))
+		buf := new(bytes.Buffer)
+		err := png.Encode(buf, img)
+		return buf.Bytes(), time.Now(), err
 	case "retro":
-		red, green, blue, err := r.randomColor(options[0])
+		img := retricon.MustNew(options[0], retricon.Gravatar)
+		buf := new(bytes.Buffer)
+		err := png.Encode(buf, img)
+		return buf.Bytes(), time.Now(), err
+	case "robohash":
+		rh, err := robohash.New(convert.UnsafeBytes(options[0]), "any", "any")
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		red2, green2, blue2 := r.contrastColor(red, green, blue)
-		img := identicon.Make(identicon.Style2, 600,
-			color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255},
-			color.RGBA{R: uint8(red2), G: uint8(green2), B: uint8(blue2), A: 255},
-			convert.UnsafeBytes(options[0]))
-		buf := new(bytes.Buffer)
-		err = png.Encode(buf, img)
-		return buf.Bytes(), time.Now(), err
-	case "robohash":
-		img, err := govatar.GenerateForUsername(govatar.MALE, options[0])
+		img, err := rh.Assemble()
 		if err != nil {
 			return nil, time.Now(), err
 		}
@@ -390,36 +391,32 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		}
 		return img, time.Now(), nil
 	case "color":
-		red, green, blue, err := r.randomColor(options[0])
+		bg, err := r.randomColor(options[0])
 		if err != nil {
 			return nil, time.Now(), err
 		}
-		img := image.NewRGBA(image.Rect(0, 0, 10, 10))
-		backgroundColor := color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}
-		for y := 0; y < 10; y++ {
-			for x := 0; x < 10; x++ {
-				img.Set(x, y, backgroundColor)
-			}
-		}
+		size := cast.ToInt(options[1])
+		img := image.NewRGBA(image.Rect(0, 0, size, size))
+		draw.Draw(img, img.Bounds(), image.NewUniform(bg), image.Point{}, draw.Src)
 		buf := new(bytes.Buffer)
 		err = png.Encode(buf, img)
 		return buf.Bytes(), time.Now(), err
 	case "letter", "initials": // TODO deprecated letter in the future
 		font := r.font
 		fontSize := 500
-		initials := []rune(strings.ToUpper(options[1]))
-		length := len(initials)
+		words := []rune(strings.ToUpper(options[1]))
+		length := len(words)
 		if length > 1 {
 			fontSize = 400
-			initials = initials[:2]
+			words = words[:2]
 		}
 		// 存在 emoji 时，只取找到的第一个 emoji
-		if gomoji.FindAll(string(initials)) != nil {
-			initials = initials[:1]
+		if gomoji.FindAll(string(words)) != nil {
+			words = words[:1]
 			font = r.emoji
 			fontSize = 500
 		}
-		img, err := letteravatar.Draw(1000, initials, &letteravatar.Options{
+		img, err := initials.Draw(1000, words, &initials.Options{
 			Font:       font,
 			FontSize:   fontSize,
 			PaletteKey: options[0], // 对相同的字符串使用相同的颜色
@@ -453,13 +450,13 @@ func (r *avatarRepo) IsBanned(hash, appID string, img []byte) (bool, error) {
 	return count > 0, nil
 }
 
-func (r *avatarRepo) randomColor(hash string) (int, int, int, error) {
+func (r *avatarRepo) randomColor(hash string) (color.Color, error) {
 	h := fnv.New64a()
 	if _, err := h.Write(convert.UnsafeBytes(hash)); err != nil {
-		return 0, 0, 0, err
+		return nil, err
 	}
 	rd := rand.New(rand.NewPCG(h.Sum64(), (h.Sum64()>>1)|1))
-	return rd.IntN(256), rd.IntN(256), rd.IntN(256), nil
+	return palette.WebSafe[rd.IntN(len(palette.WebSafe))], nil
 }
 
 func (r *avatarRepo) contrastColor(bgR, bgG, bgB int) (int, int, int) {

@@ -12,6 +12,7 @@ import (
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"
@@ -79,6 +80,9 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 				initials = r.getEmoji(name)
 			}
 			options = append(options, initials)
+		}
+		if req.Default == "identicon" || req.Default == "color" {
+			options = append(options, cast.ToString(req.Size))
 		}
 		if options[0] == "" {
 			options[0] = "weavatar" // 默认赋值，防止颜色乱跳
