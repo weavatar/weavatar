@@ -344,8 +344,12 @@ func (r *avatarRepo) GetByType(avatarType string, options ...string) ([]byte, ti
 		img, err := embed.DefaultFS.ReadFile(filepath.Join("default", "mp.png"))
 		return img, time.Now(), err
 	case "identicon":
+		size := cast.ToInt(options[1])
+		if size < 16 {
+			size = 16 // identicon need at least 16px
+		}
 		id, err := identicon.New(
-			cast.ToInt(options[1]),
+			size,
 			color.White,
 			identicon.DarkColors...,
 		)
