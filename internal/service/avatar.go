@@ -44,16 +44,6 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 	from := "weavatar"
 	nickname := ""
 
-	// 快速路径
-	if req.Force {
-		if req.Default == "404" {
-			return c.Status(fiber.StatusNotFound).SendString("404 Not Found\nWeAvatar")
-		}
-		if str.IsURL(req.Default) {
-			return c.Redirect().Status(fiber.StatusFound).To(req.Default)
-		}
-	}
-
 	nickname, avatar, lmt, err = r.avatarRepo.GetWeAvatar(req.Hash, req.AppID)
 	if err != nil && !req.Force {
 		avatar, lmt, err = r.avatarRepo.GetGravatarByHash(req.Hash)
@@ -72,6 +62,12 @@ func (r *AvatarService) Avatar(c fiber.Ctx) error {
 
 	// 如果前面取不到头像或者要求强制默认头像
 	if err != nil || avatar == nil || req.Force {
+		if req.Default == "404" {
+			return c.Status(fiber.StatusNotFound).SendString("404 Not Found\nWeAvatar")
+		}
+		if str.IsURL(req.Default) {
+			return c.Redirect().Status(fiber.StatusFound).To(req.Default)
+		}
 		options := []string{req.Hash}
 		if req.Default == "letter" || req.Default == "initials" {
 			initials := c.Query("initials", c.Query("letter")) // TODO deprecated letter in the future
