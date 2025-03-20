@@ -27,8 +27,8 @@ github.com/alibabacloud-go/debug v1.0.1/go.mod h1:8gfgZCCAC3+SCzjWtY053FrOcd4/ql
 github.com/alibabacloud-go/endpoint-util v1.1.0/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
 github.com/alibabacloud-go/endpoint-util v1.1.1 h1:ZkBv2/jnghxtU0p+upSU0GGzW1VL9GQdZO3mcSUTUy8=
 github.com/alibabacloud-go/endpoint-util v1.1.1/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
-github.com/alibabacloud-go/green-20220302/v2 v2.20.1 h1:S7UiilyuegLZ7KPzmqrE3TrLl2jakNNL2IfUHUXn64E=
-github.com/alibabacloud-go/green-20220302/v2 v2.20.1/go.mod h1:BlloSmjAG/aBsYrM1KLkbSuqRakhYb/f8V2/dmLlaj4=
+github.com/alibabacloud-go/green-20220302/v2 v2.20.4 h1:Di8TEiA6DzVCSl9ttLl6OSf40ABvFFnu1CleDIngmS8=
+github.com/alibabacloud-go/green-20220302/v2 v2.20.4/go.mod h1:BlloSmjAG/aBsYrM1KLkbSuqRakhYb/f8V2/dmLlaj4=
 github.com/alibabacloud-go/openapi-util v0.1.0/go.mod h1:sQuElr4ywwFRlCCberQwKRFhRzIyG4QTP/P4y1CJ6Ws=
 github.com/alibabacloud-go/openapi-util v0.1.1 h1:ujGErJjG8ncRW6XtBBMphzHTvCxn4DjrVw4m04HsS28=
 github.com/alibabacloud-go/openapi-util v0.1.1/go.mod h1:/UehBSE2cf1gYT43GV4E+RxTdLRzURImCYY0aRmlXpw=
@@ -63,8 +63,8 @@ github.com/clbanning/mxj/v2 v2.7.0/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/circl v1.6.0 h1:cr5JKic4HI+LkINy2lg3W2jF8sHCVTBncJr5gIIq7qk=
 github.com/cloudflare/circl v1.6.0/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
-github.com/cloudflare/cloudflare-go/v4 v4.1.0 h1:1SjQZaPbUe23fSoCuMuN7EblVo+RIldNGd4pfkPCpW4=
-github.com/cloudflare/cloudflare-go/v4 v4.1.0/go.mod h1:XcYpLe7Mf6FN87kXzEWVnJ6z+vskW/k6eUqgqfhFE9k=
+github.com/cloudflare/cloudflare-go/v4 v4.2.0 h1:Mm/jSSdv7vGFUzkb6xiMuD/7EkT1Qx1hHgUHArBTc5E=
+github.com/cloudflare/cloudflare-go/v4 v4.2.0/go.mod h1:XcYpLe7Mf6FN87kXzEWVnJ6z+vskW/k6eUqgqfhFE9k=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cristalhq/jwt/v5 v5.4.0 h1:Wxi1TocFHaijyV608j7v7B9mPc4ZNjvWT3LKBO0d4QI=
 github.com/cristalhq/jwt/v5 v5.4.0/go.mod h1:+b/BzaCWEpFDmXxspJ5h4SdJ1N/45KMjKOetWzmHvDA=
