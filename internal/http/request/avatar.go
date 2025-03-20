@@ -72,7 +72,7 @@ func (r *Avatar) Prepare(c fiber.Ctx) error {
 }
 
 type AvatarCreate struct {
-	Raw        string                `form:"raw" validate:"required"`
+	Raw        string                `form:"raw" validate:"required|notExists:avatars,raw"`
 	VerifyCode string                `form:"verify_code" validate:"required|verifyCode:Raw,avatar"`
 	Avatar     *multipart.FileHeader `form:"avatar" validate:"required"`
 
