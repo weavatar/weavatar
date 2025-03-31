@@ -23,7 +23,7 @@ jobs:
           sudo apt-get -y install libvips-dev
           go mod tidy
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           skip-cache: true
           version: latest
