@@ -79,10 +79,9 @@ func (r *Cli) Commands() []*cli.Command {
 							},
 						},
 						&cli.BoolWithInverseFlag{
-							BoolFlag: &cli.BoolFlag{
-								Name:  "rocksdb",
-								Usage: "是否使用 rocksdb",
-							},
+							Name:  "rocksdb",
+							Usage: "是否使用 rocksdb",
+							Value: true,
 						},
 					},
 				},
