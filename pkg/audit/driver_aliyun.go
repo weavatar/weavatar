@@ -13,21 +13,21 @@ import (
 )
 
 type Aliyun struct {
-	AccessKeyId     string
-	AccessKeySecret string
+	accessKeyId     string
+	accessKeySecret string
 }
 
 // NewAliyun 创建阿里云图片审核实例
 func NewAliyun(accessKeyId, accessKeySecret string) Driver {
 	return &Aliyun{
-		AccessKeyId:     accessKeyId,
-		AccessKeySecret: accessKeySecret,
+		accessKeyId:     accessKeyId,
+		accessKeySecret: accessKeySecret,
 	}
 }
 
 // Check 检查图片是否违规 true: 违规 false: 未违规
-func (a *Aliyun) Check(url string) (bool, string, error) {
-	client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "beijing")
+func (r *Aliyun) Check(url string) (bool, string, error) {
+	client, err := r.createClient("beijing")
 	if err != nil {
 		return false, "", err
 	}
@@ -64,7 +64,7 @@ func (a *Aliyun) Check(url string) (bool, string, error) {
 		flag = true
 	}
 	if flag {
-		client, err := a.createClient(tea.String(a.AccessKeyId), tea.String(a.AccessKeySecret), "shanghai")
+		client, err := r.createClient("shanghai")
 		if err != nil {
 			return false, "", err
 		}
@@ -101,10 +101,10 @@ func (a *Aliyun) Check(url string) (bool, string, error) {
 	return false, "", nil
 }
 
-func (a *Aliyun) createClient(accessKeyId *string, accessKeySecret *string, endpoint string) (_result *green20220302.Client, _err error) {
+func (r *Aliyun) createClient(endpoint string) (*green20220302.Client, error) {
 	config := &openapi.Config{
-		AccessKeyId:     accessKeyId,
-		AccessKeySecret: accessKeySecret,
+		AccessKeyId:     &r.accessKeyId,
+		AccessKeySecret: &r.accessKeySecret,
 	}
 	if endpoint == "shanghai" {
 		config.RegionId = tea.String("cn-shanghai")
@@ -115,6 +115,5 @@ func (a *Aliyun) createClient(accessKeyId *string, accessKeySecret *string, endp
 		config.Endpoint = tea.String("green-cip.cn-beijing.aliyuncs.com")
 	}
 
-	_result, _err = green20220302.NewClient(config)
-	return _result, _err
+	return green20220302.NewClient(config)
 }

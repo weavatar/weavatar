@@ -9,13 +9,13 @@ import (
 )
 
 type Tencent struct {
-	SecretId, SecretKey, SignName, TemplateId, SdkAppId, ExpireTime string
+	secretId, secretKey, signName, templateId, sdkAppId, expireTime string
 }
 
 func (r *Tencent) Send(phone string, message Message) error {
 	credential := common.NewCredential(
-		r.SecretId,
-		r.SecretKey,
+		r.secretId,
+		r.secretKey,
 	)
 	cpf := profile.NewClientProfile()
 	cpf.HttpProfile.Endpoint = "sms.tencentcloudapi.com"
@@ -23,10 +23,10 @@ func (r *Tencent) Send(phone string, message Message) error {
 
 	request := tencentsms.NewSendSmsRequest()
 	request.PhoneNumberSet = common.StringPtrs([]string{phone})
-	request.SignName = common.StringPtr(r.SignName)
-	request.TemplateId = common.StringPtr(r.TemplateId)
-	request.TemplateParamSet = common.StringPtrs([]string{message.Data["code"], r.ExpireTime})
-	request.SmsSdkAppId = common.StringPtr(r.SdkAppId)
+	request.SignName = common.StringPtr(r.signName)
+	request.TemplateId = common.StringPtr(r.templateId)
+	request.TemplateParamSet = common.StringPtrs([]string{message.Data["code"], r.expireTime})
+	request.SmsSdkAppId = common.StringPtr(r.sdkAppId)
 
 	response, err := client.SendSms(request)
 

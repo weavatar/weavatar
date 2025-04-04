@@ -28,11 +28,18 @@ geetest:
 code:
   expireTime: 5
 sms:
-  secretId: ""
-  secretKey: ""
-  signName: ""
-  templateId: 123456
-  sdkAppId: 123456
+  driver: "aliyun"
+  aliyun:
+    accessKeyId: "your-access-key-id"
+    accessKeySecret: "your-access-key-secret"
+    signName: ""
+    templateCode: 123456
+  tencent:
+    secretId: "your-secret-id"
+    secretKey: "your-secret-key"
+    signName: ""
+    templateId: 123456
+    sdkAppId: 123456
 oauth:
   baseUrl: "https://account.haozi.net"
   clientID: "1234567890"

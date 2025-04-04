@@ -23,15 +23,30 @@ type SMS struct {
 
 func New(conf *koanf.Koanf) *SMS {
 	once.Do(func() {
-		instance = &SMS{
-			driver: &Tencent{
-				SecretId:   conf.MustString("sms.secretId"),
-				SecretKey:  conf.MustString("sms.secretKey"),
-				SignName:   conf.MustString("sms.signName"),
-				TemplateId: conf.MustString("sms.templateId"),
-				SdkAppId:   conf.MustString("sms.sdkAppId"),
-				ExpireTime: conf.MustString("code.expireTime"),
-			},
+		switch conf.MustString("audit.driver") {
+		case "aliyun":
+			instance = &SMS{
+				driver: &Aliyun{
+					accessKeyId:     conf.MustString("sms.aliyun.accessKeyId"),
+					accessKeySecret: conf.MustString("sms.aliyun.accessKeySecret"),
+					signName:        conf.MustString("sms.aliyun.signName"),
+					templateCode:    conf.MustString("sms.aliyun.templateCode"),
+					expireTime:      conf.MustString("code.expireTime"),
+				},
+			}
+		case "tencent":
+			instance = &SMS{
+				driver: &Tencent{
+					secretId:   conf.MustString("sms.tencent.secretId"),
+					secretKey:  conf.MustString("sms.tencent.secretKey"),
+					signName:   conf.MustString("sms.tencent.signName"),
+					templateId: conf.MustString("sms.tencent.templateId"),
+					sdkAppId:   conf.MustString("sms.tencent.sdkAppId"),
+					expireTime: conf.MustString("code.expireTime"),
+				},
+			}
+		default:
+			panic("failed to initialize sms, unsupported driver: " + conf.MustString("sms.driver"))
 		}
 	})
 
