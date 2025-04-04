@@ -23,7 +23,7 @@ type SMS struct {
 
 func New(conf *koanf.Koanf) *SMS {
 	once.Do(func() {
-		switch conf.MustString("audit.driver") {
+		switch conf.MustString("sms.driver") {
 		case "aliyun":
 			instance = &SMS{
 				driver: &Aliyun{
