@@ -6,15 +6,15 @@ import (
 )
 
 type User struct {
-	ID        string          `gorm:"type:char(10);primaryKey" json:"id"`
-	OpenID    string          `gorm:"type:char(64);not null" json:"-"`
-	UnionID   string          `gorm:"type:char(64);not null" json:"-"`
-	Nickname  string          `gorm:"type:varchar(255);not null" json:"nickname"`
-	Avatar    string          `gorm:"type:varchar(255);not null" json:"avatar"`
-	RealName  bool            `gorm:"not null" json:"real_name"`
-	CreatedAt carbon.DateTime `gorm:"type:datetime;not null" json:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"type:datetime;not null" json:"updated_at"`
-	DeletedAt gorm.DeletedAt  `gorm:"type:datetime" json:"-"`
+	ID        string                             `gorm:"type:char(10);primaryKey" json:"id"`
+	OpenID    string                             `gorm:"type:char(64);not null" json:"-"`
+	UnionID   string                             `gorm:"type:char(64);not null" json:"-"`
+	Nickname  string                             `gorm:"type:varchar(255);not null" json:"nickname"`
+	Avatar    string                             `gorm:"type:varchar(255);not null" json:"avatar"`
+	RealName  bool                               `gorm:"not null" json:"real_name"`
+	CreatedAt carbon.LayoutType[carbon.DateTime] `gorm:"type:datetime;not null" json:"created_at"`
+	UpdatedAt carbon.LayoutType[carbon.DateTime] `gorm:"type:datetime;not null" json:"updated_at"`
+	DeletedAt gorm.DeletedAt                     `gorm:"type:datetime" json:"-"`
 
 	App []*App `json:"-"`
 }

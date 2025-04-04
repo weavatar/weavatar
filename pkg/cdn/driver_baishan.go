@@ -78,7 +78,7 @@ func (b *BaiShan) RefreshPath(paths []string) error {
 }
 
 // GetUsage 获取使用量
-func (b *BaiShan) GetUsage(domain string, startTime, endTime carbon.Carbon) (uint, error) {
+func (b *BaiShan) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
 	client := req.C()
 	client.SetTimeout(60 * time.Second)
 

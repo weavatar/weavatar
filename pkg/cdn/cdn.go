@@ -66,7 +66,7 @@ func (c *Cdn) RefreshPath(paths []string) error {
 	return nil
 }
 
-func (c *Cdn) GetUsage(domain string, start, end carbon.Carbon) (uint, error) {
+func (c *Cdn) GetUsage(domain string, start, end *carbon.Carbon) (uint, error) {
 	var total uint
 	for _, driver := range c.drivers {
 		usage, err := driver.GetUsage(domain, start, end)

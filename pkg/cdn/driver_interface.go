@@ -8,5 +8,5 @@ type Driver interface {
 	// RefreshPath 通过路径刷新缓存
 	RefreshPath(paths []string) error
 	// GetUsage 获取域名请求量
-	GetUsage(domain string, startTime, endTime carbon.Carbon) (uint, error)
+	GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error)
 }

@@ -77,7 +77,7 @@ func (s *CloudFlare) RefreshPath(paths []string) error {
 }
 
 // GetUsage 获取用量
-func (s *CloudFlare) GetUsage(domain string, startTime, endTime carbon.Carbon) (uint, error) {
+func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
 	client := req.C()
 	client.SetBaseURL("https://api.cloudflare.com/client/v4")
 	client.SetTimeout(10 * time.Second)
@@ -104,11 +104,12 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime carbon.Carbon) (
 		Variables: map[string]any{
 			"zoneTag": s.ZoneID,
 			// CloudFlare 不这样写的话取不到数据
-			"start": startTime.Yesterday().ToDateString(),
+			"start": startTime.SubDay().ToDateString(),
 			"end":   endTime.ToDateString(),
 		},
 	}
 
+	carbon.Now().IsYesterday()
 	var resp CloudFlareHttpRequests
 	_, err := client.R().SetBodyJsonMarshal(query).SetSuccessResult(&resp).SetErrorResult(&resp).Post("/graphql")
 	if err != nil {

@@ -102,7 +102,7 @@ func (r *HuaWei) RefreshPath(paths []string) error {
 }
 
 // GetUsage 获取用量
-func (r *HuaWei) GetUsage(domain string, startTime, endTime carbon.Carbon) (uint, error) {
+func (r *HuaWei) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
 	auth, err := global.NewCredentialsBuilder().
 		WithAk(r.AccessKey).
 		WithSk(r.SecretKey).
