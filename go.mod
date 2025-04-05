@@ -15,7 +15,7 @@ require (
 	github.com/forPelevin/gomoji v1.3.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.4
 	github.com/go-rat/cache v1.1.0
-	github.com/go-rat/utils v1.1.4
+	github.com/go-rat/utils v1.1.5
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/contrib/monitor v0.1.1
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4.0.20250403123159-551570326cbd
