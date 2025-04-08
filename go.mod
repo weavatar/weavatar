@@ -11,7 +11,7 @@ require (
 	github.com/cloudflare/cloudflare-go/v4 v4.2.0
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
-	github.com/dromara/carbon/v2 v2.6.1
+	github.com/dromara/carbon/v2 v2.6.2
 	github.com/forPelevin/gomoji v1.3.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.4
 	github.com/go-rat/cache v1.1.0
