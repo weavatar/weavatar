@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"math/rand/v2"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -124,7 +125,9 @@ func (r *avatarRepo) Create(userID string, req *request.AvatarCreate) (*biz.Avat
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func(f multipart.File) {
+		_ = f.Close()
+	}(f)
 
 	b, _ := io.ReadAll(f)
 	img, err := r.formatAvatar(b, 2048)
@@ -174,7 +177,9 @@ func (r *avatarRepo) Update(userID string, req *request.AvatarUpdate) (*biz.Avat
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func(f multipart.File) {
+		_ = f.Close()
+	}(f)
 
 	b, _ := io.ReadAll(f)
 	img, err := r.formatAvatar(b, 2048)
