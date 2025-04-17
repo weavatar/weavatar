@@ -25,7 +25,7 @@ require (
 	github.com/imroc/req/v3 v3.50.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/jdcloud-api/jdcloud-sdk-go v1.64.0
-	github.com/knadh/koanf/parsers/yaml v0.1.0
+	github.com/knadh/koanf/parsers/yaml v1.0.0
 	github.com/knadh/koanf/providers/file v1.2.0
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/orandin/slog-gorm v1.4.0
