@@ -9,7 +9,7 @@ import (
 )
 
 type BaiShan struct {
-	Token string
+	token string
 }
 
 type BaiShanRefreshResponse struct {
@@ -38,14 +38,14 @@ func (b *BaiShan) RefreshUrl(urls []string) error {
 		}).
 		SetSuccessResult(&resp).
 		SetErrorResult(&resp).
-		SetQueryParam("token", b.Token).
+		SetQueryParam("token", b.token).
 		Post("https://cdn.api.baishan.com/v2/cache/refresh")
 	if err != nil {
 		return err
 	}
 
 	if resp.Code != 0 {
-		return fmt.Errorf("fail to refresh URL: %d", resp.Code)
+		return fmt.Errorf("cdn: fail to refresh baishan url: %d", resp.Code)
 	}
 
 	return nil
@@ -64,14 +64,14 @@ func (b *BaiShan) RefreshPath(paths []string) error {
 		}).
 		SetSuccessResult(&resp).
 		SetErrorResult(&resp).
-		SetQueryParam("token", b.Token).
+		SetQueryParam("token", b.token).
 		Post("https://cdn.api.baishan.com/v2/cache/refresh")
 	if err != nil {
 		return err
 	}
 
 	if resp.Code != 0 {
-		return fmt.Errorf("fail to refresh path: %d", resp.Code)
+		return fmt.Errorf("cdn: fail to refresh baishan path: %d", resp.Code)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func (b *BaiShan) GetUsage(domain string, startTime, endTime *carbon.Carbon) (ui
 	var usage BaiShanUsageResponse
 	_, err := client.R().
 		SetQueryParams(map[string]string{
-			"token":      b.Token,
+			"token":      b.token,
 			"domains":    domain,
 			"start_time": startTime.ToDateString(),
 			"end_time":   endTime.ToDateString(),
@@ -97,7 +97,7 @@ func (b *BaiShan) GetUsage(domain string, startTime, endTime *carbon.Carbon) (ui
 	}
 
 	if usage.Code != 0 {
-		return 0, fmt.Errorf("fail to get usage: %d", usage.Code)
+		return 0, fmt.Errorf("cdn: fail to get baishan usage: %d", usage.Code)
 	}
 
 	sum := uint(0)

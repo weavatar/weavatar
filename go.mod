@@ -24,6 +24,7 @@ require (
 	github.com/gookit/validate v1.5.5-0.20250331013130-3d8c39a0c628
 	github.com/imroc/req/v3 v3.50.0
 	github.com/jaevor/go-nanoid v1.4.0
+	github.com/jdcloud-api/jdcloud-sdk-go v1.64.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/file v1.2.0
 	github.com/knadh/koanf/v2 v2.2.0
@@ -70,6 +71,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gofiber/schema v1.3.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-beta.8 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/pprof v0.0.0-20250302191652-9094ed2288e7 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/filter v1.2.2 // indirect

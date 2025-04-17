@@ -24,18 +24,45 @@ func NewCdn(conf *koanf.Koanf) *Cdn {
 			switch driver {
 			case "baishan":
 				drivers = append(drivers, &BaiShan{
-					Token: conf.MustString("cdn.baishan.token"),
+					token: conf.MustString("cdn.baishan.token"),
 				})
 			case "cloudflare":
 				drivers = append(drivers, &CloudFlare{
-					APIKey:   conf.MustString("cdn.cloudflare.apiKey"),
-					APIEmail: conf.MustString("cdn.cloudflare.apiEmail"),
-					ZoneID:   conf.MustString("cdn.cloudflare.zoneID"),
+					apiKey:   conf.MustString("cdn.cloudflare.apiKey"),
+					apiEmail: conf.MustString("cdn.cloudflare.apiEmail"),
+					zoneID:   conf.MustString("cdn.cloudflare.zoneID"),
+				})
+			case "ctyun":
+				drivers = append(drivers, &CTYun{
+					appID:       conf.MustString("cdn.ctyun.appID"),
+					appSecret:   conf.MustString("cdn.ctyun.appSecret"),
+					apiEndpoint: "https://open.ctcdn.cn",
 				})
 			case "huawei":
 				drivers = append(drivers, &HuaWei{
-					AccessKey: conf.MustString("cdn.huawei.accessKey"),
-					SecretKey: conf.MustString("cdn.huawei.secretKey"),
+					accessKey: conf.MustString("cdn.huawei.accessKey"),
+					secretKey: conf.MustString("cdn.huawei.secretKey"),
+				})
+			case "starshield":
+				drivers = append(drivers, &StarShield{
+					accessKey:  conf.MustString("cdn.starshield.accessKey"),
+					secretKey:  conf.MustString("cdn.starshield.secretKey"),
+					instanceID: conf.MustString("cdn.starshield.instanceID"),
+					zoneID:     conf.MustString("cdn.starshield.zoneID"),
+				})
+			case "upyun":
+				drivers = append(drivers, &UpYun{
+					token: conf.MustString("cdn.upyun.token"),
+				})
+			case "wafpro":
+				drivers = append(drivers, &WafPro{
+					apiKey:    conf.MustString("cdn.wafpro.apiKey"),
+					apiSecret: conf.MustString("cdn.wafpro.apiSecret"),
+				})
+			case "yundun":
+				drivers = append(drivers, &YunDun{
+					username: conf.MustString("cdn.yundun.username"),
+					password: conf.MustString("cdn.yundun.password"),
 				})
 			}
 		}

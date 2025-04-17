@@ -55,14 +55,29 @@ audit:
     bucket: "your-bucket.cos.ap-xx.myqcloud.com"
 cdn:
   driver:
-    - "huawei"
     - "baishan"
-  huawei:
-    accessKey: "your-access-key"
-    secretKey: "your-secret-key"
   baishan:
     token: "your-token"
   cloudflare:
     apiKey: "your-api-key"
     apiEmail: "your-email"
     zoneID: "your-zone-id"
+  ctyun:
+    appID: "your-app-id"
+    appSecret: "your-app-secret"
+  huawei:
+    accessKey: "your-access-key"
+    secretKey: "your-secret-key"
+  starshield:
+    accessKey: "your-access-key"
+    secretKey: "your-secret-key"
+    instanceID: "your-instance-id"
+    zoneID: "your-zone-id"
+  upyun:
+    token: "your-token"
+  wafpro:
+    apiKey: "your-api-key"
+    apiSecret: "your-api-secret"
+  yundun:
+    username: "your-username"
+    password: "your-password"

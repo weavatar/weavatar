@@ -12,14 +12,14 @@ import (
 )
 
 type HuaWei struct {
-	AccessKey, SecretKey string // 密钥
+	accessKey, secretKey string // 密钥
 }
 
 // RefreshUrl 刷新URL
 func (r *HuaWei) RefreshUrl(urls []string) error {
 	auth, err := global.NewCredentialsBuilder().
-		WithAk(r.AccessKey).
-		WithSk(r.SecretKey).
+		WithAk(r.accessKey).
+		WithSk(r.secretKey).
 		SafeBuild()
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (r *HuaWei) RefreshUrl(urls []string) error {
 	}
 
 	if response.HttpStatusCode != 200 {
-		return fmt.Errorf("fail to refresh URL: %s", *response.RefreshTask)
+		return fmt.Errorf("cdn: fail to refresh huawei url: %s", *response.RefreshTask)
 	}
 
 	return nil
@@ -61,8 +61,8 @@ func (r *HuaWei) RefreshUrl(urls []string) error {
 // RefreshPath 刷新路径
 func (r *HuaWei) RefreshPath(paths []string) error {
 	auth, err := global.NewCredentialsBuilder().
-		WithAk(r.AccessKey).
-		WithSk(r.SecretKey).
+		WithAk(r.accessKey).
+		WithSk(r.secretKey).
 		SafeBuild()
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (r *HuaWei) RefreshPath(paths []string) error {
 	}
 
 	if response.HttpStatusCode != 200 {
-		return fmt.Errorf("fail to refresh path: %s", *response.RefreshTask)
+		return fmt.Errorf("cdn: fail to refresh huawei path: %s", *response.RefreshTask)
 	}
 
 	return nil
@@ -104,8 +104,8 @@ func (r *HuaWei) RefreshPath(paths []string) error {
 // GetUsage 获取用量
 func (r *HuaWei) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
 	auth, err := global.NewCredentialsBuilder().
-		WithAk(r.AccessKey).
-		WithSk(r.SecretKey).
+		WithAk(r.accessKey).
+		WithSk(r.secretKey).
 		SafeBuild()
 	if err != nil {
 		return 0, err
@@ -132,7 +132,7 @@ func (r *HuaWei) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uin
 	}
 
 	if response.HttpStatusCode != 200 {
-		return 0, fmt.Errorf("fail to get usage: %s", response.Result)
+		return 0, fmt.Errorf("cdn: fail to get huawei usage: %s", response.Result)
 	}
 
 	if _, ok := response.Result["req_num"]; ok {

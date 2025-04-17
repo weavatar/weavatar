@@ -14,8 +14,8 @@ import (
 )
 
 type CloudFlare struct {
-	APIKey, APIEmail string // 密钥
-	ZoneID           string // 域名标识
+	apiKey, apiEmail string // 密钥
+	zoneID           string // 域名标识
 }
 
 // CloudFlareGraphQLQuery 结构体用于构造 GraphQL 查询
@@ -45,8 +45,8 @@ type CloudFlareHttpRequests struct {
 // RefreshUrl 刷新URL
 func (s *CloudFlare) RefreshUrl(urls []string) error {
 	client := cloudflare.NewClient(
-		option.WithAPIKey(s.APIKey),
-		option.WithAPIEmail(s.APIEmail),
+		option.WithAPIKey(s.apiKey),
+		option.WithAPIEmail(s.apiEmail),
 	)
 
 	for i, url := range urls {
@@ -58,14 +58,14 @@ func (s *CloudFlare) RefreshUrl(urls []string) error {
 	newUrls.Files = cloudflare.F(urls)
 
 	resp, err := client.Cache.Purge(context.Background(), cache.CachePurgeParams{
-		ZoneID: cloudflare.F(s.ZoneID),
+		ZoneID: cloudflare.F(s.zoneID),
 		Body:   newUrls,
 	})
 	if err != nil {
 		return err
 	}
 	if resp.ID == "" {
-		return fmt.Errorf("fail to refresh URL: %s", resp.JSON.RawJSON())
+		return fmt.Errorf("cdn: fail to refresh cloudflare url: %s", resp.JSON.RawJSON())
 	}
 
 	return nil
@@ -83,8 +83,8 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) 
 	client.SetTimeout(10 * time.Second)
 	client.SetCommonRetryCount(2)
 	client.SetCommonHeaders(map[string]string{
-		"X-Auth-Email": s.APIEmail,
-		"X-Auth-Key":   s.APIKey,
+		"X-Auth-Email": s.apiEmail,
+		"X-Auth-Key":   s.apiKey,
 	})
 
 	query := CloudFlareGraphQLQuery{
@@ -102,7 +102,7 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) 
 		}
         `,
 		Variables: map[string]any{
-			"zoneTag": s.ZoneID,
+			"zoneTag": s.zoneID,
 			// CloudFlare 不这样写的话取不到数据
 			"start": startTime.SubDay().ToDateString(),
 			"end":   endTime.ToDateString(),
@@ -118,7 +118,7 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) 
 
 	// 数据可能为空，需要判断
 	if len(resp.Data.Viewer.Zones) == 0 || len(resp.Data.Viewer.Zones[0].HttpRequests1DGroups) == 0 {
-		return 0, fmt.Errorf("fail to get usage: %v", resp.Errors)
+		return 0, fmt.Errorf("cdn: fail to get cloudflare usage: %v", resp.Errors)
 	}
 
 	return uint(resp.Data.Viewer.Zones[0].HttpRequests1DGroups[0].Sum.Requests), nil
