@@ -195,35 +195,27 @@ func (c *CTYun) encrypt(content, key string) (signature string, err error) {
 	}
 
 	signedByte := c.hmacSha256Byte(content, string(b64Code))
-
 	signedStr := base64.URLEncoding.EncodeToString(signedByte)
-
-	signature = strings.Replace(signedStr, "=", "", -1)
+	signature = strings.ReplaceAll(signedStr, "=", "")
 
 	return signature, nil
 }
 
 func (c *CTYun) getSignature(url string) (string, string, error) {
-
 	timestampMs := time.Now().Unix() * 1000
-
 	timestampDay := timestampMs / 86400000
-
 	timestampMsStr := strconv.FormatInt(timestampMs, 10)
 
 	signStr := fmt.Sprintf("%s\n%v\n%s", c.appID, timestampMs, url)
-
 	identity := fmt.Sprintf("%s:%v", c.appID, timestampDay)
 
 	tmpSignature, err := c.encrypt(identity, c.appSecret)
-
 	if err != nil {
 		return "", "", err
 
 	}
 
 	signature, err := c.encrypt(signStr, tmpSignature)
-
 	if err != nil {
 		return "", "", err
 

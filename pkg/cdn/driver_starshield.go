@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/dromara/carbon/v2"
-	. "github.com/jdcloud-api/jdcloud-sdk-go/core"
-	. "github.com/jdcloud-api/jdcloud-sdk-go/services/starshield/apis"
-	. "github.com/jdcloud-api/jdcloud-sdk-go/services/starshield/client"
+	"github.com/jdcloud-api/jdcloud-sdk-go/core"
+	"github.com/jdcloud-api/jdcloud-sdk-go/services/starshield/apis"
+	"github.com/jdcloud-api/jdcloud-sdk-go/services/starshield/client"
 )
 
 type StarShield struct {
@@ -33,14 +33,13 @@ type StarShieldUsageResponse struct {
 
 // RefreshUrl 刷新URL
 func (s *StarShield) RefreshUrl(urls []string) error {
-	credentials := NewCredentials(s.accessKey, s.secretKey)
-	client := NewStarshieldClient(credentials)
-	client.DisableLogger()
-	request := NewPurgeFilesByCache_TagsAndHostOrPrefixRequest(s.zoneID)
+	jdClient := client.NewStarshieldClient(core.NewCredentials(s.accessKey, s.secretKey))
+	jdClient.DisableLogger()
+	request := apis.NewPurgeFilesByCache_TagsAndHostOrPrefixRequest(s.zoneID)
 	request.AddHeader("x-jdcloud-account-id", s.instanceID)
 	request.SetPrefixes(urls)
 
-	resp, err := client.PurgeFilesByCache_TagsAndHostOrPrefix(request)
+	resp, err := jdClient.PurgeFilesByCache_TagsAndHostOrPrefix(request)
 	if err != nil {
 		return err
 	}
@@ -53,14 +52,13 @@ func (s *StarShield) RefreshUrl(urls []string) error {
 
 // RefreshPath 刷新路径
 func (s *StarShield) RefreshPath(paths []string) error {
-	credentials := NewCredentials(s.accessKey, s.secretKey)
-	client := NewStarshieldClient(credentials)
-	client.DisableLogger()
-	request := NewPurgeFilesByCache_TagsAndHostOrPrefixRequest(s.zoneID)
+	jdClient := client.NewStarshieldClient(core.NewCredentials(s.accessKey, s.secretKey))
+	jdClient.DisableLogger()
+	request := apis.NewPurgeFilesByCache_TagsAndHostOrPrefixRequest(s.zoneID)
 	request.AddHeader("x-jdcloud-account-id", s.instanceID)
 	request.SetPrefixes(paths)
 
-	resp, err := client.PurgeFilesByCache_TagsAndHostOrPrefix(request)
+	resp, err := jdClient.PurgeFilesByCache_TagsAndHostOrPrefix(request)
 	if err != nil {
 		return err
 	}
@@ -73,13 +71,12 @@ func (s *StarShield) RefreshPath(paths []string) error {
 
 // GetUsage 获取用量
 func (s *StarShield) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
-	credentials := NewCredentials(s.accessKey, s.secretKey)
-	client := NewStarshieldClient(credentials)
-	client.DisableLogger()
-	request := NewZoneRequestSumRequest(s.zoneID, "all", domain, startTime.ToDateString()+"T00:00:00.000Z", endTime.ToDateString()+"T00:00:00.000Z")
+	jdClient := client.NewStarshieldClient(core.NewCredentials(s.accessKey, s.secretKey))
+	jdClient.DisableLogger()
+	request := apis.NewZoneRequestSumRequest(s.zoneID, "all", domain, startTime.ToDateString()+"T00:00:00.000Z", endTime.ToDateString()+"T00:00:00.000Z")
 	request.AddHeader("x-jdcloud-account-id", s.instanceID)
 
-	resp, err := client.ZoneRequestSum(request)
+	resp, err := jdClient.ZoneRequestSum(request)
 	if err != nil {
 		return 0, err
 	}
