@@ -17,12 +17,12 @@ type WafProClean struct {
 }
 
 type WafProRefreshResponse struct {
-	Code    uint   `json:"code"`
+	Code    string `json:"code"`
 	Message string `json:"msg"`
 }
 
 type WafProUsageResponse struct {
-	Code    uint      `json:"code"`
+	Code    string    `json:"code"`
 	Data    [][2]uint `json:"data"`
 	Message string    `json:"msg"`
 }
@@ -48,8 +48,8 @@ func (d *WafPro) RefreshUrl(urls []string) error {
 		return err
 	}
 
-	if resp.Code != 0 {
-		return fmt.Errorf("cdn: failed to refresh wafpro url, code: %d, message: %s", resp.Code, resp.Message)
+	if resp.Code != "0" {
+		return fmt.Errorf("cdn: failed to refresh wafpro url, code: %s, message: %s", resp.Code, resp.Message)
 	}
 
 	return nil
@@ -76,8 +76,8 @@ func (d *WafPro) RefreshPath(paths []string) error {
 		return err
 	}
 
-	if resp.Code != 0 {
-		return fmt.Errorf("cdn: failed to refresh wafpro path, code: %d, message: %s", resp.Code, resp.Message)
+	if resp.Code != "0" {
+		return fmt.Errorf("cdn: failed to refresh wafpro path, code: %s, message: %s", resp.Code, resp.Message)
 	}
 
 	return nil
@@ -97,8 +97,8 @@ func (d *WafPro) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uin
 		return 0, err
 	}
 
-	if resp.Code != 0 {
-		return 0, fmt.Errorf("cdn: failed to get wafpro usage, code: %d, message: %s", resp.Code, resp.Message)
+	if resp.Code != "0" {
+		return 0, fmt.Errorf("cdn: failed to get wafpro usage, code: %s, message: %s", resp.Code, resp.Message)
 	}
 
 	sum := uint(0)
