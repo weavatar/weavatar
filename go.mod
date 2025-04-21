@@ -6,12 +6,12 @@ require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.7
 	github.com/alibabacloud-go/dysmsapi-20170525/v4 v4.1.3
 	github.com/alibabacloud-go/green-20220302/v2 v2.20.4
-	github.com/alibabacloud-go/tea v1.3.8
+	github.com/alibabacloud-go/tea v1.3.9
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/cloudflare/cloudflare-go/v4 v4.2.0
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
-	github.com/dromara/carbon/v2 v2.6.2
+	github.com/dromara/carbon/v2 v2.6.3
 	github.com/forPelevin/gomoji v1.3.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.4
 	github.com/go-rat/cache v1.1.0
@@ -35,7 +35,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/urfave/cli/v3 v3.1.1
+	github.com/urfave/cli/v3 v3.2.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
 	github.com/weavatar/monsterid v1.0.1
