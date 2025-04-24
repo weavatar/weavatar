@@ -35,7 +35,7 @@ func (d *WafPro) RefreshUrl(urls []string) error {
 	for i, url := range urls {
 		data[i] = WafProClean{
 			Type: "clean_url",
-			Data: map[string]string{"url": "https://" + url + "*"},
+			Data: map[string]string{"url": url + "*"},
 		}
 	}
 
@@ -63,7 +63,7 @@ func (d *WafPro) RefreshPath(paths []string) error {
 	for i, url := range paths {
 		data[i] = WafProClean{
 			Type: "clean_dir",
-			Data: map[string]string{"url": "https://" + url},
+			Data: map[string]string{"url": url},
 		}
 	}
 

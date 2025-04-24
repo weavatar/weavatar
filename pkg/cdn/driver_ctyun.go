@@ -63,10 +63,6 @@ func (c *CTYun) RefreshUrl(urls []string) error {
 		"x-alogic-signature": signature,
 	})
 
-	for i, url := range urls {
-		urls[i] = "https://" + url
-	}
-
 	data := map[string]any{
 		"values":    urls,
 		"task_type": 1,
@@ -106,7 +102,7 @@ func (c *CTYun) RefreshPath(paths []string) error {
 
 	// 天翼云文档要求统一使用 http 协议
 	for i, path := range paths {
-		paths[i] = "http://" + path
+		paths[i] = strings.ReplaceAll(path, "https://", "http://")
 	}
 
 	data := map[string]any{

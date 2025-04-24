@@ -35,7 +35,7 @@ func (d *WjDun) RefreshUrl(urls []string) error {
 	for i, url := range urls {
 		data[i] = WjDunClean{
 			Type: "clean_url",
-			Data: map[string]string{"url": "https://" + url + "*"},
+			Data: map[string]string{"url": url + "*"},
 		}
 	}
 
@@ -63,7 +63,7 @@ func (d *WjDun) RefreshPath(paths []string) error {
 	for i, url := range paths {
 		data[i] = WjDunClean{
 			Type: "clean_dir",
-			Data: map[string]string{"url": "https://" + url},
+			Data: map[string]string{"url": url},
 		}
 	}
 
