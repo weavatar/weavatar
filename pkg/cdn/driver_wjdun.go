@@ -5,6 +5,7 @@ import (
 
 	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
+	"github.com/spf13/cast"
 )
 
 type WjDun struct {
@@ -17,12 +18,12 @@ type WjDunClean struct {
 }
 
 type WjDunRefreshResponse struct {
-	Code    string `json:"code"`
+	Code    any    `json:"code"`
 	Message string `json:"msg"`
 }
 
 type WjDunUsageResponse struct {
-	Code    string    `json:"code"`
+	Code    any       `json:"code"`
 	Data    [][2]uint `json:"data"`
 	Message string    `json:"msg"`
 }
@@ -48,8 +49,8 @@ func (d *WjDun) RefreshUrl(urls []string) error {
 		return err
 	}
 
-	if resp.Code != "0" {
-		return fmt.Errorf("cdn: failed to refresh wjdun url, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return fmt.Errorf("cdn: failed to refresh wjdun url, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	return nil
@@ -76,8 +77,8 @@ func (d *WjDun) RefreshPath(paths []string) error {
 		return err
 	}
 
-	if resp.Code != "0" {
-		return fmt.Errorf("cdn: failed to refresh wjdun path, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return fmt.Errorf("cdn: failed to refresh wjdun path, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	return nil
@@ -97,8 +98,8 @@ func (d *WjDun) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint
 		return 0, err
 	}
 
-	if resp.Code != "0" {
-		return 0, fmt.Errorf("cdn: failed to get wjdun usage, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return 0, fmt.Errorf("cdn: failed to get wjdun usage, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	sum := uint(0)

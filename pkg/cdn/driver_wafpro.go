@@ -5,6 +5,7 @@ import (
 
 	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
+	"github.com/spf13/cast"
 )
 
 type WafPro struct {
@@ -17,12 +18,12 @@ type WafProClean struct {
 }
 
 type WafProRefreshResponse struct {
-	Code    string `json:"code"`
+	Code    any    `json:"code"`
 	Message string `json:"msg"`
 }
 
 type WafProUsageResponse struct {
-	Code    string    `json:"code"`
+	Code    any       `json:"code"`
 	Data    [][2]uint `json:"data"`
 	Message string    `json:"msg"`
 }
@@ -48,8 +49,8 @@ func (d *WafPro) RefreshUrl(urls []string) error {
 		return err
 	}
 
-	if resp.Code != "0" {
-		return fmt.Errorf("cdn: failed to refresh wafpro url, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return fmt.Errorf("cdn: failed to refresh wafpro url, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	return nil
@@ -76,8 +77,8 @@ func (d *WafPro) RefreshPath(paths []string) error {
 		return err
 	}
 
-	if resp.Code != "0" {
-		return fmt.Errorf("cdn: failed to refresh wafpro path, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return fmt.Errorf("cdn: failed to refresh wafpro path, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	return nil
@@ -97,8 +98,8 @@ func (d *WafPro) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uin
 		return 0, err
 	}
 
-	if resp.Code != "0" {
-		return 0, fmt.Errorf("cdn: failed to get wafpro usage, code: %s, message: %s", resp.Code, resp.Message)
+	if cast.ToString(resp.Code) != "0" {
+		return 0, fmt.Errorf("cdn: failed to get wafpro usage, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
 	}
 
 	sum := uint(0)
