@@ -27,7 +27,7 @@ func NewCliService(db *gorm.DB) *CliService {
 }
 
 func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
-	start := uint64(10000)
+	start := uint(10000)
 	end := cmd.Uint("sum")
 	dir := cmd.String("dir")
 	hashType := cmd.String("type")
@@ -71,7 +71,7 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 
 	// 工作池
 	numWorkers := runtime.NumCPU()
-	batchSize := 10000
+	batchSize := uint(10000)
 	workChan := make(chan struct {
 		start, end uint64
 	}, numWorkers)
@@ -131,10 +131,10 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 	writeWg.Add(1)
 	go func() {
 		defer writeWg.Done()
-		count := uint64(0)
+		count := uint(0)
 		total := end - start + 1
 		progressStep := total / 100 // 1%的进度
-		lastProgress := uint64(0)
+		lastProgress := uint(0)
 
 		for {
 			select {
@@ -179,14 +179,14 @@ func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
 
 	// 分配工作
 	go func() {
-		for batch := start; batch <= end; batch += uint64(batchSize) {
-			endBatch := batch + uint64(batchSize) - 1
+		for batch := start; batch <= end; batch += batchSize {
+			endBatch := batch + batchSize - 1
 			if endBatch > end {
 				endBatch = end
 			}
 			workChan <- struct {
 				start, end uint64
-			}{batch, endBatch}
+			}{uint64(batch), uint64(endBatch)}
 		}
 		close(workChan)
 	}()
