@@ -78,6 +78,9 @@ cdn:
   wafpro:
     apiKey: "your-api-key"
     apiSecret: "your-api-secret"
+  wjdun:
+    apiKey: "your-api-key"
+    apiSecret: "your-api-secret"
   yundun:
     username: "your-username"
     password: "your-password"

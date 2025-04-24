@@ -59,6 +59,11 @@ func NewCdn(conf *koanf.Koanf) *Cdn {
 					apiKey:    conf.MustString("cdn.wafpro.apiKey"),
 					apiSecret: conf.MustString("cdn.wafpro.apiSecret"),
 				})
+			case "wjdun":
+				drivers = append(drivers, &WjDun{
+					apiKey:    conf.MustString("cdn.wjdun.apiKey"),
+					apiSecret: conf.MustString("cdn.wjdun.apiSecret"),
+				})
 			case "yundun":
 				drivers = append(drivers, &YunDun{
 					username: conf.MustString("cdn.yundun.username"),
