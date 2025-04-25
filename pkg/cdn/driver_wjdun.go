@@ -92,7 +92,13 @@ func (d *WjDun) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint
 	_, err := client.R().SetSuccessResult(&resp).SetErrorResult(&resp).SetHeaders(map[string]string{
 		"api-key":    d.apiKey,
 		"api-secret": d.apiSecret,
-	}).Get("https://user.wjdun.cn/v1/monitor/site/realtime?type=req&start=" + startTime.ToDateString() + "%2000:00:00" + "&end=" + endTime.ToDateString() + "%2000:00:00" + "&domain=" + domain + "&server_post=")
+	}).SetQueryParams(map[string]string{
+		"type":        "req",
+		"start":       startTime.ToDateTimeString(),
+		"end":         endTime.ToDateTimeString(),
+		"domain":      domain,
+		"server_post": "",
+	}).Get("https://user.wjdun.cn/v1/monitor/site/realtime")
 
 	if err != nil {
 		return 0, err

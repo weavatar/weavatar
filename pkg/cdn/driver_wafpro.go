@@ -92,7 +92,13 @@ func (d *WafPro) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uin
 	_, err := client.R().SetSuccessResult(&resp).SetErrorResult(&resp).SetHeaders(map[string]string{
 		"api-key":    d.apiKey,
 		"api-secret": d.apiSecret,
-	}).Get("https://scdn.console.waf.pro/v1/monitor/site/realtime?type=req&start=" + startTime.ToDateString() + "%2000:00:00" + "&end=" + endTime.ToDateString() + "%2000:00:00" + "&domain=" + domain + "&server_post=")
+	}).SetQueryParams(map[string]string{
+		"type":        "req",
+		"start":       startTime.ToDateTimeString(),
+		"end":         endTime.ToDateTimeString(),
+		"domain":      domain,
+		"server_post": "",
+	}).Get("https://scdn.console.waf.pro/v1/monitor/site/realtime")
 
 	if err != nil {
 		return 0, err
