@@ -26,8 +26,8 @@ func NewSystemService(conf *koanf.Koanf, cache cache.Cache) *SystemService {
 }
 
 func (r *SystemService) Count(c fiber.Ctx) error {
-	yesterday := carbon.Now().SubDay().StartOfDay()
-	today := carbon.Now().StartOfDay()
+	yesterday := carbon.Now(carbon.PRC).SubDay().StartOfDay()
+	today := carbon.Now(carbon.PRC).StartOfDay()
 	domain := r.conf.MustString("http.domain")
 
 	// 先判断下有没有缓存
@@ -46,7 +46,7 @@ func (r *SystemService) Count(c fiber.Ctx) error {
 	}
 
 	usage = int64(data)
-	ct := time.Duration(carbon.Now().EndOfDay().Timestamp() - carbon.Now().Timestamp() + 7200)
+	ct := time.Duration(carbon.Now(carbon.PRC).EndOfDay().Timestamp() - carbon.Now(carbon.PRC).Timestamp() + 7200)
 	_ = r.cache.Put("cdn:usage", usage, ct*time.Second)
 
 	return Success(c, fiber.Map{

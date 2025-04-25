@@ -109,7 +109,6 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) 
 		},
 	}
 
-	carbon.Now().IsYesterday()
 	var resp CloudFlareHttpRequests
 	_, err := client.R().SetBodyJsonMarshal(query).SetSuccessResult(&resp).SetErrorResult(&resp).Post("/graphql")
 	if err != nil {

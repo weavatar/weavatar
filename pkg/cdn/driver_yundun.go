@@ -185,7 +185,7 @@ func (y *YunDun) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uin
 
 // login 登录平台
 func (y *YunDun) login() (*req.Client, error) {
-	timeStamp := strconv.Itoa(int(carbon.Now().TimestampMilli()))
+	timeStamp := strconv.Itoa(int(carbon.Now(carbon.PRC).TimestampMilli()))
 	rand.NewSource(time.Now().UnixNano())
 	random := str.RandomN(16)
 	callback := "jsonp_" + timeStamp + "_" + random
