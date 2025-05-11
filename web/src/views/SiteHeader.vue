@@ -1,10 +1,10 @@
 <template>
-  <NLayoutHeader bordered class="fixed top-0 z-999 w-full bg-white">
+  <NLayoutHeader bordered class="fixed top-0 z-999 w-full bg-white dark:bg-dark">
     <div class="max-w-7xl px-4 mx-auto h-16 flex items-center justify-between">
       <!-- Logo区域 -->
       <div class="flex items-center cursor-pointer" @click="router.push({ name: 'home' })">
         <NImage
-          :src="logo"
+          :src="currentLogo"
           alt="WeAvatar"
           :height="32"
           preview-disabled
@@ -43,6 +43,16 @@
               开始使用
             </NButton>
           </div>
+
+          <!-- 深色模式切换 -->
+          <NButton text @click="toggleDark()">
+            <template #icon>
+              <NIcon size="18">
+                <SunIcon v-if="isDark" />
+                <MoonIcon v-else />
+              </NIcon>
+            </template>
+          </NButton>
         </div>
       </div>
     </div>
@@ -60,11 +70,20 @@ import {
   InformationCircleOutline as InformationCircleIcon,
   LogInOutline as LoginIcon,
   Menu as MenuIcon,
-  PersonCircleOutline as PersonCircleIcon
+  PersonCircleOutline as PersonCircleIcon,
+  SunnyOutline as SunIcon,
+  MoonOutline as MoonIcon
 } from '@vicons/ionicons5'
+import { useDark, useToggle } from '@vueuse/core'
 
 import logo from '@/assets/logo.png'
+import logoWhite from '@/assets/logo-white.png'
 import { useUserStore } from '@/stores'
+
+const isDark = useDark()
+const toggleDark = useToggle(isDark)
+
+const currentLogo = computed(() => isDark.value ? logoWhite : logo)
 
 const route = useRoute()
 const router = useRouter()
@@ -155,5 +174,4 @@ function handleSelect(key: string): void {
 </script>
 
 <style scoped>
-
 </style>

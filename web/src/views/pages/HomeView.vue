@@ -1,7 +1,7 @@
 <template>
   <main>
     <!-- Hero Section -->
-    <div class="hero-section bg-white">
+    <div class="hero-section bg-white dark:bg-dark">
       <div class="mx-auto py-12 lg:py-32">
         <div class="grid grid-cols-1 lg:grid-cols-[55%_45%] items-center max-w-7xl mx-auto px-6">
           <!-- 左侧文字区域 -->
@@ -10,10 +10,10 @@
               <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-blue-600 !leading-[1.2]">
                 您的免费网络资料卡
               </h1>
-              <p class="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                将您的邮箱或手机号变成您的数字护照，您在互联网上发帖、评论或在线互动均可使用。
+              <p class="text-lg lg:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                将电子邮箱或手机号变成您的数字护照，您在互联网上发帖、评论或在线互动时均可使用。
               </p>
-              <p class="text-base lg:text-lg text-gray-500">
+              <p class="text-base lg:text-lg text-gray-500 dark:text-gray-400">
                 一次设置，随处可见。
               </p>
               <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
@@ -68,6 +68,16 @@
                           class="avatar-item shadow-sm"
                         />
                       </div>
+                      <div class="flex flex-col gap-4">
+                        <NAvatar
+                          v-for="(avatar, index) in column1"
+                          :key="'copy-' + avatar + index"
+                          :src="avatar"
+                          round
+                          :size="56"
+                          class="avatar-item shadow-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -78,6 +88,16 @@
                         <NAvatar
                           v-for="(avatar, index) in column2"
                           :key="avatar + index"
+                          :src="avatar"
+                          round
+                          :size="56"
+                          class="avatar-item shadow-sm"
+                        />
+                      </div>
+                      <div class="flex flex-col gap-4">
+                        <NAvatar
+                          v-for="(avatar, index) in column2"
+                          :key="'copy-' + avatar + index"
                           :src="avatar"
                           round
                           :size="56"
@@ -100,6 +120,16 @@
                           class="avatar-item shadow-sm"
                         />
                       </div>
+                      <div class="flex flex-col gap-4">
+                        <NAvatar
+                          v-for="(avatar, index) in column3"
+                          :key="'copy-' + avatar + index"
+                          :src="avatar"
+                          round
+                          :size="56"
+                          class="avatar-item shadow-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -111,11 +141,11 @@
     </div>
 
     <!-- Features Section -->
-    <div class="features-section py-16 sm:py-24 bg-gray-50 dark:bg-gray-800">
+    <div class="features-section py-16 sm:py-24 bg-gray-50 dark:bg-dark">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-3xl sm:text-4xl font-bold mb-4">为什么选择 WeAvatar</h2>
-          <p class="text-gray-600">
+          <h2 class="text-3xl sm:text-4xl font-bold mb-4 text-gray-900 dark:text-white">为什么选择 WeAvatar</h2>
+          <p class="text-gray-600 dark:text-gray-300">
             WeAvatar 是超越 Gravatar 的新一代头像服务，相比 Gravatar 具有以下优势
           </p>
         </div>
@@ -136,8 +166,8 @@
                   <component :is="feature.icon" />
                 </NIcon>
               </div>
-              <h3 class="text-xl font-bold mb-3 text-gray-800">{{ feature.title }}</h3>
-              <p class="text-gray-600 flex-grow" v-html="feature.description"></p>
+              <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white">{{ feature.title }}</h3>
+              <p class="text-gray-600 dark:text-gray-300 flex-grow" v-html="feature.description"></p>
             </div>
           </div>
         </div>
@@ -145,11 +175,11 @@
     </div>
 
     <!-- Users Section -->
-    <div class="py-16 sm:py-24 bg-gray-50 dark:bg-gray-800">
+    <div class="py-16 sm:py-24 bg-gray-50 dark:bg-dark">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-3xl sm:text-4xl font-bold mb-4">他们都在用</h2>
-          <p class="text-gray-600">一些你可能认识的 TA 也在使用 WeAvatar，不妨来试试？</p>
+          <h2 class="text-3xl sm:text-4xl font-bold mb-4 text-gray-900 dark:text-white">他们都在用</h2>
+          <p class="text-gray-600 dark:text-gray-300">一些你可能认识的 TA 也在使用 WeAvatar，不妨来试试？</p>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
           <a
@@ -178,11 +208,11 @@
     </div>
 
     <!-- Sponsors Section -->
-    <div class="py-16 sm:py-24 bg-gray-50 dark:bg-gray-800">
+    <div class="py-16 sm:py-24 bg-gray-50 dark:bg-dark">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-3xl sm:text-4xl font-bold mb-4">我们的赞助商</h2>
-          <p class="text-gray-600">作为公益性质的项目，WeAvatar 的稳定运行离不开它们的帮助</p>
+          <h2 class="text-3xl sm:text-4xl font-bold mb-4 text-gray-900 dark:text-white">我们的赞助商</h2>
+          <p class="text-gray-600 dark:text-gray-300">作为公益性质的项目，WeAvatar 的稳定运行离不开它们的帮助</p>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
           <a
@@ -353,6 +383,7 @@ const sponsors = [
 .hero-section {
   min-height: auto;
   padding: 2rem 0;
+  @apply bg-white dark:bg-dark transition-colors duration-300;
 }
 
 @media (min-width: 1024px) {
@@ -383,6 +414,16 @@ const sponsors = [
 
 .scroll-content {
   animation: scroll var(--scroll-duration) linear infinite;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll-content > div {
+  padding: 8px 0;
+}
+
+.scroll-content > div:first-child {
+  padding-top: 0;
 }
 
 .scroll-reverse {
@@ -403,7 +444,7 @@ const sponsors = [
     transform: translateY(0);
   }
   100% {
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% - 8px));
   }
 }
 
@@ -422,14 +463,13 @@ const sponsors = [
 
 .user-card,
 .sponsor-card {
-  background-color: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  @apply bg-white/5 backdrop-blur transition-all duration-300;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .dark .user-card,
 .dark .sponsor-card {
-  background-color: rgba(0, 0, 0, 0.2);
+  @apply bg-black/20;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -437,11 +477,11 @@ const sponsors = [
 .user-card:hover,
 .sponsor-card:hover {
   transform: translateY(-5px);
-  background-color: rgba(255, 255, 255, 0.1);
+  @apply bg-white/10;
 }
 
 .dark .user-card:hover,
 .dark .sponsor-card:hover {
-  background-color: rgba(30, 30, 30, 0.4);
+  @apply bg-gray-800/40;
 }
 </style>
