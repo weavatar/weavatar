@@ -42,7 +42,7 @@
     "eslint-plugin-vue": "^10.0.0",
     "jsdom": "^26.0.0",
     "naive-ui": "^2.38.2",
-    "npm-run-all2": "^7.0.0",
+    "npm-run-all2": "^8.0.0",
     "prettier": "^3.2.5",
     "sass-embedded": "^1.88.0",
     "typescript": "^5.4.5",
