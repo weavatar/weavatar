@@ -524,7 +524,7 @@ a {
 
 @media screen and (max-width: 719px) {
   .doc {
-    padding: 100px 0 100px 0;
+    padding: 40px 0;
   }
 
   .show-menu {

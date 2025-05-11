@@ -1,45 +1,47 @@
 <template>
   <div class="crop-avatar">
-    <NModal :show="showModal">
-      <NCard
+    <n-modal :show="showModal">
+      <n-card
         closable
         :mask-closable="false"
         @close="handleClose"
         title="裁剪头像"
-        style="width: 40vh; height: 40vh"
+        style="width: 40vh; height: 50vh"
       >
-        <div style="width: 100%; height: 80%">
-          <VueCropper
-            ref="cropper"
-            :img="option.img"
-            :info="option.info"
-            :outputSize="option.outputSize"
-            :outputType="option.outputType"
-            :canMove="option.canMove"
-            :autoCrop="option.autoCrop"
-            :autoCropWidth="option.autoCropWidth"
-            :autoCropHeight="option.autoCropHeight"
-            :fixedBox="option.fixedBox"
-            :original="option.original"
-            :centerBox="option.centerBox"
-            :canMoveBox="option.canMoveBox"
-            :canScale="option.canScale"
-            :fixed="option.fixed"
-            :fixedNumber="option.fixedNumber"
-            :limitMinSize="option.limitMinSize"
-          ></VueCropper>
-        </div>
-        <NDivider />
-        <NButton
-          type="primary"
-          size="large"
-          style="display: block; margin-left: auto; margin-right: auto"
-          @click="handleConfirm"
-        >
-          确定
-        </NButton>
-      </NCard>
-    </NModal>
+        <n-flex vertical>
+          <div style="width: 100%; height: 80%">
+            <vue-cropper
+              ref="cropper"
+              :img="option.img"
+              :info="option.info"
+              :outputSize="option.outputSize"
+              :outputType="option.outputType"
+              :canMove="option.canMove"
+              :autoCrop="option.autoCrop"
+              :autoCropWidth="option.autoCropWidth"
+              :autoCropHeight="option.autoCropHeight"
+              :fixedBox="option.fixedBox"
+              :original="option.original"
+              :centerBox="option.centerBox"
+              :canMoveBox="option.canMoveBox"
+              :canScale="option.canScale"
+              :fixed="option.fixed"
+              :fixedNumber="option.fixedNumber"
+              :limitMinSize="option.limitMinSize"
+            ></vue-cropper>
+          </div>
+          <br />
+          <n-button
+            type="primary"
+            size="large"
+            style="display: block; margin-left: auto; margin-right: auto"
+            @click="handleConfirm"
+          >
+            确定
+          </n-button>
+        </n-flex>
+      </n-card>
+    </n-modal>
   </div>
 </template>
 

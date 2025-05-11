@@ -618,12 +618,12 @@ const doChangeAvatar = async (captcha: any) => {
 
 <style scoped>
 .avatar {
-  padding: 100px;
+  padding: 40px;
 }
 
 @media screen and (max-width: 719px) {
   .avatar {
-    padding: 100px 0 100px 0;
+    padding: 40px 0;
   }
 }
 

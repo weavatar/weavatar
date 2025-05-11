@@ -74,7 +74,7 @@ a {
 
 @media screen and (max-width: 719px) {
   .about {
-    padding: 100px 0 100px 0;
+    padding: 40px 0;
   }
 }
 </style>
