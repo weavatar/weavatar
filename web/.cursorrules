@@ -3,6 +3,32 @@
 该项目的目标是创建中国版本的 Gravatar，允许用户使用电子邮件地址或中国手机号上传头像。
 你的任务是重构现有的前端代码，优化样式并确保其符合以下最佳实践和性能优化建议。
 
+项目结构
+└── src
+    ├── api 所有 API 请求的文件
+    │   ├── auth 登录授权
+    │   ├── avatar 头像管理
+    │   ├── captcha 验证码
+    │   ├── system 系统设置
+    │   └── user 用户信息
+    ├── assets 静态资源（目前只有赞助商的logo）
+    ├── components
+    │   ├── avatar 头像管理相关的组件
+    │   └── captcha 验证码相关的组件
+    ├── router 路由配置
+    ├── stores Pinia 状态管理
+    │   └── models Pinia 模型
+    │       └── user
+    ├── styles 全局样式
+    ├── utils 工具函数
+    │   ├── is 类型判断函数
+    │   ├── request HTTP 请求函数
+    │   └── storage 本地存储函数
+    └── views
+        ├── auth 登录授权相关的视图
+        ├── pages 首页页面视图
+        └── user 用户相关的视图
+
 代码风格和结构
 - 编写简洁、可维护且技术准确的 TypeScript 代码，并提供相关示例。
 - 使用函数式和声明式编程模式，避免使用类。
