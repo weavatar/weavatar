@@ -1,35 +1,63 @@
 <template>
-  <NLayoutHeader bordered class="nav">
-    <NText tag="div" :depth="1">
-      <NImage
-        :src="logo"
-        alt="logo"
-        :height="32"
-        preview-disabled
-        @click="router.push({ name: 'home' })"
-      />
-    </NText>
-    <div class="right">
-      <div class="pc-menu">
-        <NMenu
-          v-model:value="activeKey"
-          mode="horizontal"
-          :options="menuOptions"
-          :watch-props="['defaultValue']"
+  <NLayoutHeader bordered class="fixed top-0 z-10 w-full bg-white">
+    <div class="mx-auto px-16 h-16 flex items-center justify-between">
+      <!-- Logo区域 -->
+      <div class="flex items-center cursor-pointer" @click="router.push({ name: 'home' })">
+        <NImage
+          :src="logo"
+          alt="WeAvatar"
+          :height="32"
+          preview-disabled
+          class="mr-2"
         />
       </div>
-      <div class="nav-end">
-        <NDropdown trigger="hover" :options="userOptions" @select="handleSelect">
-          <NSpace>
-            <NAvatar size="small" :src="userStore.info.avatar" />
-            <NText>{{ userStore.info.nickname }}</NText>
-          </NSpace>
-        </NDropdown>
-      </div>
-      <div class="mobile-menu">
-        <NDropdown trigger="click" :options="menuOptions" @select="handleSelect">
-          <NIcon :component="MenuIcon" color="#2080f0" size="40" :depth="1" />
-        </NDropdown>
+
+      <!-- 导航区域 -->
+      <div class="flex-1 flex justify-between items-center">
+        <!-- PC端菜单 -->
+        <div class="hidden md:block ml-8">
+          <NMenu
+            v-model:value="activeKey"
+            mode="horizontal"
+            :options="menuOptions"
+            :watch-props="['defaultValue']"
+          />
+        </div>
+        
+        <!-- 右侧用户区域 -->
+        <div class="flex items-center gap-4">
+          <!-- 登录用户下拉菜单 -->
+          <NDropdown v-if="userStore.auth.login" trigger="hover" :options="userOptions" @select="handleSelect">
+            <div class="flex items-center gap-2 cursor-pointer">
+              <NAvatar size="small" :src="userStore.info.avatar" />
+              <NText class="hidden sm:block">{{ userStore.info.nickname }}</NText>
+            </div>
+          </NDropdown>
+          
+          <!-- 未登录状态的按钮 -->
+          <div v-else class="flex gap-3">
+            <NButton 
+              quaternary 
+              @click="router.push({ name: 'login' })"
+              class="hidden sm:flex items-center border border-[#e5e7eb] hover:bg-gray-50"
+            >
+              登录
+            </NButton>
+            <NButton 
+              type="primary" 
+              @click="router.push({ name: 'login' })"
+            >
+              开始使用
+            </NButton>
+          </div>
+
+          <!-- 移动端菜单按钮 -->
+          <div class="md:hidden">
+            <NDropdown trigger="click" :options="menuOptions" @select="handleSelect">
+              <NIcon :component="MenuIcon" color="#2080f0" size="24" />
+            </NDropdown>
+          </div>
+        </div>
       </div>
     </div>
   </NLayoutHeader>
@@ -39,7 +67,7 @@
 import type { Component } from 'vue'
 import { computed, h, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NAvatar, NDropdown, NIcon, NImage, NLayoutHeader, NMenu, NSpace, NText } from 'naive-ui'
+import { NAvatar, NButton, NDropdown, NIcon, NImage, NLayoutHeader, NMenu, NText } from 'naive-ui'
 import {
   DocumentTextOutline as DocumentTextIcon,
   HomeOutline as HomeIcon,
@@ -50,12 +78,10 @@ import {
 } from '@vicons/ionicons5'
 
 import logo from '@/assets/logo.png'
-
 import { useUserStore } from '@/stores'
 
 const route = useRoute()
 const router = useRouter()
-
 const userStore = useUserStore()
 
 function renderIcon(icon: Component) {
@@ -95,13 +121,7 @@ watch(
         show: true
       },
       {
-        label: '登录',
-        key: 'login',
-        icon: renderIcon(LoginIcon),
-        show: !login
-      },
-      {
-        label: '头像管理',
+        label: '头像',
         key: 'user-avatar',
         icon: renderIcon(PersonCircleIcon),
         show: login
@@ -118,13 +138,9 @@ watch(
         icon: renderIcon(InformationCircleIcon),
         show: true
       }
-    ]
+    ].filter(item => item.show)
+    
     userOptions.value = [
-      {
-        label: '登录',
-        key: 'login',
-        show: !login
-      },
       {
         label: '头像管理',
         key: 'user-avatar',
@@ -140,7 +156,7 @@ watch(
         key: 'logout',
         show: login
       }
-    ]
+    ].filter(item => item.show)
   },
   { immediate: true }
 )

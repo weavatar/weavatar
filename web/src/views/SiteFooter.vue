@@ -1,128 +1,70 @@
 <template>
-  <div class="footer">
-    <div class="footer-content">
-      <NGrid x-gap="12" cols="4" item-responsive responsive="screen">
-        <NGridItem span="4 s:1">
-          <div class="footer-logo">
-            <div class="footer-item">
-              <img :src="logo" alt="weavatar" />
-              <hr />
-              <p>WeAvatar 是注册商标，受国家有关法律保护</p>
-              <NSpace>
-                <NButton type="info" @click="handleJoinGroup">联系我们</NButton>
-                <NButton type="info" @click="handleJoinGroup">加 QQ 群</NButton>
-              </NSpace>
-            </div>
-          </div>
-        </NGridItem>
-        <NGridItem span="4 s:1">
-          <div class="footer-nav">
-            <div class="footer-item">
-              <div class="footer-title">
-                <h2>WeAvatar</h2>
-              </div>
-              <div class="footer-list">
-                <ul>
-                  <li>
-                    <RouterLink :to="{ name: 'home' }">网站首页</RouterLink>
-                  </li>
-                  <li>
-                    <RouterLink :to="{ name: 'user-avatar' }">头像管理</RouterLink>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://status.haozi.net">服务状态</a>
-                  </li>
-                  <li>
-                    <RouterLink :to="{ name: 'about' }">关于我们</RouterLink>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </NGridItem>
-        <NGridItem span="4 s:1">
-          <div class="footer-nav">
-            <div class="footer-item">
-              <div class="footer-title">
-                <h2>相关项目</h2>
-              </div>
-              <div class="footer-list">
-                <ul>
-                  <li>
-                    <a target="_blank" href="https://account.haozi.net/">耗子通行证</a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://tom.moe/">Moe Tom</a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://twikoo.js.org/">Twikoo</a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://artalk.js.org/">Artalk</a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </NGridItem>
-        <NGridItem span="4 s:1">
-          <div class="footer-nav">
-            <div class="footer-item">
-              <div class="footer-title">
-                <h2>耗子开源</h2>
-              </div>
-              <div class="footer-list">
-                <ul>
-                  <li>
-                    <a target="_blank" href="https://github.com/tnb-labs/wp-china-plus">
-                      WP-China-Plus
-                    </a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://github.com/tnb-labs/panel"> Linux 面板 </a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://github.com/tnb-labs/LaravelInstaller">
-                      LaravelInstaller
-                    </a>
-                  </li>
-                  <li>
-                    <a target="_blank" href="https://github.com/tnb-labs/wp-setting-api">
-                      WP-Setting-API
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </NGridItem>
-      </NGrid>
+  <footer class="w-full bg-[#18181c] py-16 px-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-start md:justify-between gap-16">
+      <!-- 品牌区 -->
+      <div class="flex-1 flex flex-col items-start mb-8 md:mb-0 min-w-64">
+        <div class="flex items-center gap-4">
+          <img :src="logo" alt="WeAvatar" class="h-12 w-auto" />
+        </div>
+        <div class="text-gray-400 my-8">WeAvatar · 统一你的数字身份</div>
+        <div class="flex gap-4">
+          <NButton type="info" @click="handleJoinGroup">加 QQ 群</NButton>
+          <NButton type="info" @click="handleJoinGroup">商务合作</NButton>
+        </div>
+      </div>
+      <!-- 多列导航 -->
+      <div class="flex-[2] grid grid-cols-2 sm:grid-cols-3 gap-16">
+        <div>
+          <div class="font-bold mb-6 text-white text-lg">WeAvatar</div>
+          <ul class="space-y-4 list-none">
+            <li><RouterLink :to="{ name: 'home' }" class="text-gray-400 hover:text-primary transition-colors">首页</RouterLink></li>
+            <li><RouterLink :to="{ name: 'user-avatar' }" class="text-gray-400 hover:text-primary transition-colors">头像管理</RouterLink></li>
+            <li><a href="https://status.haozi.net" target="_blank" class="text-gray-400 hover:text-primary transition-colors">服务状态</a></li>
+            <li><RouterLink :to="{ name: 'about' }" class="text-gray-400 hover:text-primary transition-colors">关于我们</RouterLink></li>
+          </ul>
+        </div>
+        <div>
+          <div class="font-bold mb-6 text-white text-lg">相关项目</div>
+          <ul class="space-y-4 list-none">
+            <li><a href="https://account.haozi.net/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">耗子通行证</a></li>
+            <li><a href="https://tom.moe/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Moe Tom</a></li>
+            <li><a href="https://twikoo.js.org/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Twikoo</a></li>
+            <li><a href="https://artalk.js.org/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Artalk</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="font-bold mb-6 text-white text-lg">开源项目</div>
+          <ul class="space-y-4 list-none">
+            <li><a href="https://github.com/tnb-labs/panel" target="_blank" class="text-gray-400 hover:text-primary transition-colors">耗子面板</a></li>
+            <li><a href="https://github.com/WenPai-org/wp-china-yes" target="_blank" class="text-gray-400 hover:text-primary transition-colors">WP-China-Yes</a></li>
+            <li><a href="https://github.com/tnb-labs/LaravelInstaller" target="_blank" class="text-gray-400 hover:text-primary transition-colors">LaravelInstaller</a></li>
+            <li><a href="https://github.com/tnb-labs/wp-setting-api" target="_blank" class="text-gray-400 hover:text-primary transition-colors">WP-Setting-API</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
-    <p class="copyright">Copyright &copy; 2022 - 2024 WeAvatar All Rights Reserved.</p>
-    <p class="beian" style="display: flex; justify-content: center; align-items: center">
-      <a target="_blank" href="https://beian.miit.gov.cn" rel="noreferrer">津ICP备2022009678号-2</a>
-      <NImage
-        :src="beian_gongan"
-        width="16"
-        alt="备案图标"
-        lazy
-        preview-disabled
-        style="padding-left: 10px"
-      />
-      <a
-        target="_blank"
-        href="https://beian.mps.gov.cn/#/query/webSearch?code=12011502000847"
-        rel="noreferrer"
-        style="padding-left: 4px"
-      >
-        津公网安备12011502000847号
-      </a>
-    </p>
-  </div>
+    <!-- 版权和备案 -->
+    <div class="mt-16 text-center text-gray-500 flex flex-col items-center gap-3">
+      <div>
+        Copyright © 2022-{{ new Date().getFullYear() }} WeAvatar. All Rights Reserved.
+      </div>
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <a href="https://beian.miit.gov.cn" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津ICP备2022009678号-2</a>
+        <div class="hidden sm:flex items-center gap-2">
+          <NImage :src="beian_gongan" width="16" alt="备案图标" lazy preview-disabled class="inline-block align-middle" />
+          <a href="https://beian.mps.gov.cn/#/query/webSearch?code=12011502000847" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津公网安备12011502000847号</a>
+        </div>
+        <div class="flex sm:hidden items-center justify-center gap-2">
+          <NImage :src="beian_gongan" width="16" alt="备案图标" lazy preview-disabled class="inline-block align-middle" />
+          <a href="https://beian.mps.gov.cn/#/query/webSearch?code=12011502000847" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津公网安备12011502000847号</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </template>
 
 <script setup lang="ts">
-import { NButton, NGrid, NGridItem, NImage, NSpace } from 'naive-ui'
+import { NButton, NImage } from 'naive-ui'
 import logo from '@/assets/logo-white.png'
 import beian_gongan from '@/assets/beian-gongan.png'
 
@@ -130,77 +72,3 @@ const handleJoinGroup = () => {
   window.open('https://jq.qq.com/?_wv=1027&k=I1oJKSTH')
 }
 </script>
-
-<style scoped>
-.footer {
-  margin-top: auto;
-  width: 100%;
-  background-color: #333;
-  color: #fff;
-  padding: 10px;
-}
-
-.footer a {
-  color: #fff;
-  text-decoration: none;
-}
-
-.copyright,
-.beian {
-  text-align: center;
-}
-
-.footer-content {
-  max-width: 1440px;
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.footer-item img {
-  width: 80%;
-}
-
-.footer-nav {
-  width: 100%;
-  text-align: right;
-}
-
-.footer-logo {
-  width: 100%;
-}
-
-.footer-logo,
-.footer-nav {
-  margin-top: 20px;
-}
-
-.footer-item {
-  margin: 20px;
-}
-
-.footer-list ul {
-  list-style: none;
-  padding: 0;
-}
-
-.footer-list li {
-  margin: 14px 0;
-}
-
-.footer-content {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-@media screen and (max-width: 768px) {
-  .footer-content {
-    display: block;
-  }
-
-  .footer-logo,
-  .footer-nav {
-    width: 100%;
-    text-align: left;
-  }
-}
-</style>

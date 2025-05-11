@@ -1,7 +1,7 @@
 <template>
-  <NLayout class="root-layout">
+  <NLayout class="min-h-screen flex flex-col">
     <SiteHeader />
-    <SiteContent />
+    <SiteContent class="mt-16" />
     <SiteFooter />
   </NLayout>
 </template>
