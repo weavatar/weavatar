@@ -65,12 +65,11 @@ const toSponsor = () => {
 
 <style scoped>
 a {
-  text-decoration: none;
   color: #409eff;
 }
 
 .about {
-  padding: 100px;
+  padding: 40px;
 }
 
 @media screen and (max-width: 719px) {

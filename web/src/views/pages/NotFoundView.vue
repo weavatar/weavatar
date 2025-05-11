@@ -19,7 +19,7 @@ const goHome = () => {
 
 <style scoped>
 .not-found {
-  padding: 100px;
+  padding: 40px;
   height: 100%;
   display: flex;
   flex-direction: column;

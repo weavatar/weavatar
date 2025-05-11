@@ -195,7 +195,7 @@ import { NCard, NDivider } from 'naive-ui'
 
 <style scoped>
 .privacy {
-  padding: 100px;
+  padding: 40px;
 }
 
 @media screen and (max-width: 719px) {

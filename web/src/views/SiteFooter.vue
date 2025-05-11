@@ -6,12 +6,12 @@
         <div class="flex items-center gap-4">
           <img :src="logo" alt="WeAvatar" class="h-12 w-auto" />
         </div>
-        <div class="text-gray-400 my-8">WeAvatar · 统一你的数字身份</div>
+        <div class="text-gray-400 my-8">WeAvatar · 您的免费网络资料卡</div>
         <div class="flex gap-4">
-          <NButton type="info" @click="handleJoinGroup">加 QQ 群</NButton>
+                <NButton type="info" @click="handleJoinGroup">加 QQ 群</NButton>
           <NButton type="info" @click="handleJoinGroup">商务合作</NButton>
-        </div>
-      </div>
+            </div>
+          </div>
       <!-- 多列导航 -->
       <div class="flex-[2] grid grid-cols-2 sm:grid-cols-3 gap-16">
         <div>
@@ -22,7 +22,7 @@
             <li><a href="https://status.haozi.net" target="_blank" class="text-gray-400 hover:text-primary transition-colors">服务状态</a></li>
             <li><RouterLink :to="{ name: 'about' }" class="text-gray-400 hover:text-primary transition-colors">关于我们</RouterLink></li>
           </ul>
-        </div>
+              </div>
         <div>
           <div class="font-bold mb-6 text-white text-lg">相关项目</div>
           <ul class="space-y-4 list-none">
@@ -30,8 +30,8 @@
             <li><a href="https://tom.moe/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Moe Tom</a></li>
             <li><a href="https://twikoo.js.org/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Twikoo</a></li>
             <li><a href="https://artalk.js.org/" target="_blank" class="text-gray-400 hover:text-primary transition-colors">Artalk</a></li>
-          </ul>
-        </div>
+                </ul>
+              </div>
         <div>
           <div class="font-bold mb-6 text-white text-lg">开源项目</div>
           <ul class="space-y-4 list-none">
@@ -39,26 +39,26 @@
             <li><a href="https://github.com/WenPai-org/wp-china-yes" target="_blank" class="text-gray-400 hover:text-primary transition-colors">WP-China-Yes</a></li>
             <li><a href="https://github.com/tnb-labs/LaravelInstaller" target="_blank" class="text-gray-400 hover:text-primary transition-colors">LaravelInstaller</a></li>
             <li><a href="https://github.com/tnb-labs/wp-setting-api" target="_blank" class="text-gray-400 hover:text-primary transition-colors">WP-Setting-API</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
+                </ul>
+              </div>
+            </div>
+          </div>
     <!-- 版权和备案 -->
     <div class="mt-16 text-center text-gray-500 flex flex-col items-center gap-3">
       <div>
         Copyright © 2022-{{ new Date().getFullYear() }} WeAvatar. All Rights Reserved.
-      </div>
+              </div>
       <div class="flex flex-col sm:flex-row items-center gap-3">
         <a href="https://beian.miit.gov.cn" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津ICP备2022009678号-2</a>
         <div class="hidden sm:flex items-center gap-2">
           <NImage :src="beian_gongan" width="16" alt="备案图标" lazy preview-disabled class="inline-block align-middle" />
           <a href="https://beian.mps.gov.cn/#/query/webSearch?code=12011502000847" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津公网安备12011502000847号</a>
-        </div>
+              </div>
         <div class="flex sm:hidden items-center justify-center gap-2">
           <NImage :src="beian_gongan" width="16" alt="备案图标" lazy preview-disabled class="inline-block align-middle" />
           <a href="https://beian.mps.gov.cn/#/query/webSearch?code=12011502000847" target="_blank" rel="noreferrer" class="hover:text-primary text-gray-400">津公网安备12011502000847号</a>
-        </div>
-      </div>
+            </div>
+          </div>
     </div>
   </footer>
 </template>

@@ -109,17 +109,9 @@
           </n-alert>
         </div>
         <div class="cont" v-if="value == 'hash'">
-          <ul>
-            <li>
-              <p>去除首位两边的空格</p>
-            </li>
-            <li>
-              <p>所有字母转小写</p>
-            </li>
-            <li>
-              <p>计算 <NTag type="primary">SHA256</NTag> 值</p>
-            </li>
-          </ul>
+          <p>1. 去除首位两边的空格</p>
+          <p>2. 所有字母转小写</p>
+          <p>3. 计算 SHA256 值</p>
         </div>
         <div class="cont" v-if="value == 'format'">
           <p>
@@ -173,63 +165,58 @@
             除了允许你自己指定默认头像外，我们还准备了一组内置的默认头像，只需要传入
             <NText code>d=默认头像ID</NText> 即可调用:
           </p>
-          <ul>
+          <ul class="space-y-4 list-none">
             <li>
-              <p><NText code>d=404</NText>: 返回 <NTag type="primary">404</NTag> 错误</p>
+              <p><NText code>d=404</NText>: 返回 404 错误</p>
             </li>
             <li>
               <p>
-                <NText code>d=mp</NText>: 一个简单的卡通风格的
-                <NTag type="primary">人物轮廓</NTag>
+                <NText code>d=mp</NText>: 简单的、卡通风格的人物剪影轮廓（不随哈希改变）
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=identicon</NText>: 一个
-                <NTag type="primary">几何图案</NTag>（随机生成）
+                <NText code>d=identicon</NText>: 基于哈希生成的几何图案
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=monsterid</NText>: 具有不同颜色、面孔的
-                <NTag type="primary">人头1</NTag>（随机生成）
+                <NText code>d=monsterid</NText>: 基于哈希生成的怪物，有不同的颜色、面孔等
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=wavatar</NText>: 具有不同特征和背景的
-                <NTag type="primary">人脸</NTag>（随机生成）
+                <NText code>d=wavatar</NText>: 基于哈希生成的具有不同特征和背景的人脸
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=retro</NText>: <NTag type="info">8</NTag> 位色的像素
-                <NTag type="primary">人脸</NTag>（随机生成）
+                <NText code>d=retro</NText>: 基于哈希生成的 8 位街机风格的像素化人脸
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=robohash</NText>: 具有不同颜色、面孔的
-                <NTag type="primary">人头2</NTag>（随机生成）
+                <NText code>d=robohash</NText>: 基于哈希生成的机器人，有不同的颜色、面孔等
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=initials&initials=X</NText>: 返回给定
-                <NTag type="primary">initials</NTag> 组成的字母头像（最多支持
-                <NTag type="info">2</NTag> 位，自动裁切）
+                <NText code>d=initials&initials=X</NText>: 生成由 initials 指定的字母头像（最多保留 2 位）
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=initials&name=X</NText>: 返回给定
-                <NTag type="primary">name</NTag> 组成的首字母头像（最多支持
-                <NTag type="info">1</NTag> 位，自动裁切）
+                <NText code>d=initials&name=X</NText>: 生成由 name 指定的首字母头像（最多保留 1 位）
               </p>
             </li>
             <li>
               <p>
-                <NText code>d=blank</NText>: 返回一个透明的 <NTag type="primary">PNG</NTag> 图片
+                <NText code>d=color</NText>: 基于哈希生成的纯色头像，颜色随哈希改变
+              </p>
+            </li>
+            <li>
+              <p>
+                <NText code>d=blank</NText>: 生成一个透明的 PNG 图片
               </p>
             </li>
           </ul>
@@ -248,7 +235,7 @@
             />
             <NImage
               src="https://weavatar.com/avatar/?d=monsterid&f=y&s=60"
-              alt="人头1"
+              alt="怪物"
               width="60"
               height="60"
             />
@@ -266,13 +253,25 @@
             />
             <NImage
               src="https://weavatar.com/avatar/?d=robohash&f=y&s=60"
-              alt="人头2"
+              alt="机器人"
               width="60"
               height="60"
             />
             <NImage
               src="https://weavatar.com/avatar/demo?d=initials&initials=WeAvatar&f=y&s=60"
               alt="字母头像"
+              width="60"
+              height="60"
+            />
+            <NImage
+              src="https://weavatar.com/avatar/demo?d=initials&name=WeAvatar&f=y&s=60"
+              alt="首字母头像"
+              width="60"
+              height="60"
+            />
+            <NImage
+              src="https://weavatar.com/avatar/?d=color&f=y&s=60"
+              alt="纯色头像"
               width="60"
               height="60"
             />
@@ -511,7 +510,7 @@ function renderIcon(icon: Component) {
 
 <style scoped>
 .doc {
-  padding: 100px;
+  padding: 40px;
 }
 
 a {

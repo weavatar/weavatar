@@ -1,5 +1,5 @@
 <template>
-  <NConfigProvider :locale="zhCN" :date-locale="dateZhCN" :theme="theme" :hljs="hljs">
+  <NConfigProvider :locale="zhCN" :date-locale="dateZhCN" :theme="theme" :hljs="hljs" :theme-overrides="themeOverrides">
     <NLoadingBarProvider>
       <NMessageProvider>
         <NNotificationProvider>
@@ -34,4 +34,10 @@ hljs.registerLanguage('php', php)
 
 const osTheme = useOsTheme()
 const theme = computed(() => (osTheme.value === 'dark' ? darkTheme : null))
+
+const themeOverrides = {
+  common: {
+    primaryColor: '#3A84F7'
+  }
+}
 </script>
