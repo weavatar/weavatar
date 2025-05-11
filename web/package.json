@@ -22,7 +22,7 @@
     "pinia-plugin-persistedstate": "^4.3.0",
     "vue": "^3.4.27",
     "vue-cropper": "^1.1.2",
-    "vue-gtag": "^2.0.1",
+    "vue-gtag": "^3.0.0",
     "vue-recaptcha-v3": "^2.0.1",
     "vue-router": "^4.3.2",
     "vue3-geetest": "^1.0.19"
