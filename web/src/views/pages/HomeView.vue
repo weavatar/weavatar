@@ -160,7 +160,7 @@ const sponsors = [
               <p class="text-base lg:text-lg text-gray-500 dark:text-gray-400">
                 一次设置，随处可见。
               </p>
-              <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+              <div class="flex flex-row gap-2 sm:gap-4 justify-center lg:justify-start pt-4">
                 <NButton
                   type="info"
                   size="large"
