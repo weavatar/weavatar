@@ -43,6 +43,11 @@ func NewCdn(conf *koanf.Koanf) *Cdn {
 					accessKey: conf.MustString("cdn.huawei.accessKey"),
 					secretKey: conf.MustString("cdn.huawei.secretKey"),
 				})
+			case "edgeone":
+				drivers = append(drivers, &EdgeOne{
+					secretId:  conf.MustString("cdn.edgeone.secretId"),
+					secretKey: conf.MustString("cdn.edgeone.secretKey"),
+				})
 			case "starshield":
 				drivers = append(drivers, &StarShield{
 					accessKey:  conf.MustString("cdn.starshield.accessKey"),

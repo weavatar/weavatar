@@ -68,6 +68,9 @@ cdn:
   huawei:
     accessKey: "your-access-key"
     secretKey: "your-secret-key"
+  edgeone:
+    secretId: "your-secret-id"
+    secretKey: "your-secret-key"
   starshield:
     accessKey: "your-access-key"
     secretKey: "your-secret-key"
