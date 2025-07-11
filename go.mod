@@ -35,6 +35,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1205
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.0.1205
 	github.com/urfave/cli/v3 v3.2.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
@@ -58,7 +59,7 @@ require (
 	github.com/aliyun/credentials-go v1.4.5 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/cloudflare/circl v1.6.0 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cristalhq/jwt/v5 v5.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
@@ -100,7 +101,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.0.1205 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
