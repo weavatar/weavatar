@@ -29,8 +29,8 @@ github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.1.2/go.mod h1:mYOaEwXaib4RLB2
 github.com/alibabacloud-go/endpoint-util v1.1.0/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
 github.com/alibabacloud-go/endpoint-util v1.1.1 h1:ZkBv2/jnghxtU0p+upSU0GGzW1VL9GQdZO3mcSUTUy8=
 github.com/alibabacloud-go/endpoint-util v1.1.1/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
-github.com/alibabacloud-go/green-20220302/v2 v2.21.3 h1:kdDF7t3QXGL92K2Nm5ACgToKC7PowXG466U1wyGt4uY=
-github.com/alibabacloud-go/green-20220302/v2 v2.21.3/go.mod h1:2PZ/y0LPd7aLETGTxEdKEKNtRvovtcLX1dh7vytQ91A=
+github.com/alibabacloud-go/green-20220302/v2 v2.22.0 h1:V8Qa3BngRgocROhKpwCPv30uEomYOJ0g5Vy81lVoLII=
+github.com/alibabacloud-go/green-20220302/v2 v2.22.0/go.mod h1:sRiJXsXT1iFE3B0AQBUdELUXOmJLAYkt8Hy5thwjktM=
 github.com/alibabacloud-go/openapi-util v0.1.0/go.mod h1:sQuElr4ywwFRlCCberQwKRFhRzIyG4QTP/P4y1CJ6Ws=
 github.com/alibabacloud-go/openapi-util v0.1.1 h1:ujGErJjG8ncRW6XtBBMphzHTvCxn4DjrVw4m04HsS28=
 github.com/alibabacloud-go/openapi-util v0.1.1/go.mod h1:/UehBSE2cf1gYT43GV4E+RxTdLRzURImCYY0aRmlXpw=
@@ -76,8 +76,8 @@ github.com/davidbyttow/govips/v2 v2.16.0 h1:1nH/Rbx8qZP1hd+oYL9fYQjAnm1+KorX9s07
 github.com/davidbyttow/govips/v2 v2.16.0/go.mod h1:clH5/IDVmG5eVyc23qYpyi7kmOT0B/1QNTKtci4RkyM=
 github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7 h1:AjCMD0AEGHHbcIpvRcrI8rMA+Us5F4uUt3B3KSpiYN8=
 github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7/go.mod h1:Gz/Ng6WCvYc1Q2smuPvow9kszfyH47wtnpZzvdD2juA=
-github.com/dromara/carbon/v2 v2.6.10 h1:xcwtsz0yLnalk+S9MxkBM+PHwmxh+mM0r87EiYPj/vs=
-github.com/dromara/carbon/v2 v2.6.10/go.mod h1:7GXqCUplwN1s1b4whGk2zX4+g4CMCoDIZzmjlyt0vLY=
+github.com/dromara/carbon/v2 v2.6.11 h1:wnAWZ+sbza1uXw3r05hExNSCaBPFaarWfUvYAX86png=
+github.com/dromara/carbon/v2 v2.6.11/go.mod h1:7GXqCUplwN1s1b4whGk2zX4+g4CMCoDIZzmjlyt0vLY=
 github.com/ebitengine/purego v0.8.2 h1:jPPGWs2sZ1UgOSgD2bClL0MJIqu58nOmIcBuXr62z1I=
 github.com/ebitengine/purego v0.8.2/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
