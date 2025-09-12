@@ -9,6 +9,7 @@ require (
 	github.com/alibabacloud-go/tea v1.3.9
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/cloudflare/cloudflare-go/v4 v4.6.0
+	github.com/cloudflare/cloudflare-go/v6 v6.0.1
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
 	github.com/dromara/carbon/v2 v2.6.11
