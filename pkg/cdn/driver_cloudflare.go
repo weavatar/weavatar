@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudflare/cloudflare-go/v4"
-	"github.com/cloudflare/cloudflare-go/v4/cache"
-	"github.com/cloudflare/cloudflare-go/v4/option"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/cache"
+	"github.com/cloudflare/cloudflare-go/v6/option"
 	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
 )
