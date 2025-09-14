@@ -3,9 +3,9 @@ package middleware
 import (
 	"time"
 
-	"github.com/go-rat/utils/jwt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/utils/jwt"
 )
 
 func MustLogin(conf *koanf.Koanf) fiber.Handler {

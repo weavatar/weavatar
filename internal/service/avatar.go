@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/davidbyttow/govips/v2/vips"
-	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
+	"github.com/libtnb/utils/str"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 

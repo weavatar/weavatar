@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-rat/utils/convert"
-	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
+	"github.com/libtnb/utils/convert"
+	"github.com/libtnb/utils/str"
 
 	"github.com/weavatar/weavatar/pkg/geetest"
 )

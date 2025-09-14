@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/dromara/carbon/v2"
-	"github.com/go-rat/cache"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/cache"
 
 	"github.com/weavatar/weavatar/pkg/cdn"
 )

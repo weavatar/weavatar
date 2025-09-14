@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-rat/utils/str"
 	"github.com/gookit/color"
+	"github.com/libtnb/utils/str"
 	"github.com/urfave/cli/v3"
 	"gorm.io/gorm"
 )

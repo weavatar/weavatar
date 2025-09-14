@@ -3,11 +3,11 @@ package service
 import (
 	"time"
 
-	"github.com/go-rat/cache"
-	"github.com/go-rat/utils/convert"
-	"github.com/go-rat/utils/str"
 	"github.com/gofiber/fiber/v3"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/cache"
+	"github.com/libtnb/utils/convert"
+	"github.com/libtnb/utils/str"
 
 	"github.com/weavatar/weavatar/internal/http/request"
 	"github.com/weavatar/weavatar/pkg/mail"

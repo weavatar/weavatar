@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-gormigrate/gormigrate/v2"
-	"github.com/go-rat/utils/env"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/utils/env"
 	sloggorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

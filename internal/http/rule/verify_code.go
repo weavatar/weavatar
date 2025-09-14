@@ -1,8 +1,8 @@
 package rule
 
 import (
-	"github.com/go-rat/cache"
 	"github.com/gookit/validate"
+	"github.com/libtnb/cache"
 	"github.com/spf13/cast"
 )
 

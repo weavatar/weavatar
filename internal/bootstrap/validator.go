@@ -1,10 +1,10 @@
 package bootstrap
 
 import (
-	"github.com/go-rat/cache"
 	"github.com/gookit/validate"
 	"github.com/gookit/validate/locales/zhcn"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/cache"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/http/rule"

@@ -3,8 +3,8 @@ package data
 import (
 	"time"
 
-	"github.com/go-rat/utils/jwt"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/utils/jwt"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"

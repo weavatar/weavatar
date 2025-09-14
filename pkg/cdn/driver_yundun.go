@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/dromara/carbon/v2"
-	"github.com/go-rat/utils/str"
 	"github.com/imroc/req/v3"
+	"github.com/libtnb/utils/str"
 )
 
 type YunDun struct {

@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-rat/cache"
-	"github.com/go-rat/utils/convert"
-	"github.com/go-rat/utils/file"
-	"github.com/go-rat/utils/str"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/cache"
+	"github.com/libtnb/utils/convert"
+	"github.com/libtnb/utils/file"
+	"github.com/libtnb/utils/str"
 	"gorm.io/gorm"
 
 	"github.com/weavatar/weavatar/internal/biz"

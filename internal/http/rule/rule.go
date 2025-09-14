@@ -1,9 +1,9 @@
 package rule
 
 import (
-	"github.com/go-rat/cache"
 	"github.com/gookit/validate"
 	"github.com/knadh/koanf/v2"
+	"github.com/libtnb/cache"
 	"gorm.io/gorm"
 )
 

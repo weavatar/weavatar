@@ -1,7 +1,7 @@
 package bootstrap
 
 import (
-	"github.com/go-rat/cache"
+	"github.com/libtnb/cache"
 )
 
 func NewCache() cache.Cache {
