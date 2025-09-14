@@ -23,7 +23,7 @@ func Throttle(tokens uint64, interval time.Duration) fiber.Handler {
 
 	return func(c fiber.Ctx) error {
 		// Take from the store.
-		limit, remaining, reset, ok, err := store.Take(c.Context(), c.IP())
+		limit, remaining, reset, ok, err := store.Take(c, c.IP())
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 				"msg": "系统内部错误",
