@@ -4,14 +4,14 @@ go 1.25.0
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.12
-	github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.1.3
+	github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.2.0
 	github.com/alibabacloud-go/green-20220302/v2 v2.22.1
 	github.com/alibabacloud-go/tea v1.3.12
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/cloudflare/cloudflare-go/v6 v6.0.1
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
-	github.com/dromara/carbon/v2 v2.6.11
+	github.com/dromara/carbon/v2 v2.6.12
 	github.com/forPelevin/gomoji v1.3.1
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/go-resty/resty/v2 v2.16.5
@@ -25,7 +25,7 @@ require (
 	github.com/jdcloud-api/jdcloud-sdk-go v1.64.0
 	github.com/knadh/koanf/parsers/yaml v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.0
-	github.com/knadh/koanf/v2 v2.2.2
+	github.com/knadh/koanf/v2 v2.3.0
 	github.com/libtnb/cache v1.2.0
 	github.com/libtnb/utils v1.2.0
 	github.com/orandin/slog-gorm v1.4.0
@@ -33,9 +33,9 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.19
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.27
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.19
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.27
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
@@ -67,7 +67,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-sql-driver/mysql v1.9.1 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gofiber/schema v1.6.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-rc.1 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
