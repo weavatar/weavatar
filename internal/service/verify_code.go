@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -42,7 +43,7 @@ func (r *VerifyCodeService) Sms(c fiber.Ctx) error {
 		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
 	}
 
-	if r.cache.Has("code:" + req.UseFor + ":" + req.Phone) {
+	if r.cache.Has(fmt.Sprintf("code:%s:%s:cd", req.UseFor, req.Phone)) {
 		return Error(c, fiber.StatusUnprocessableEntity, "请勿频繁发送验证码")
 	}
 
@@ -56,6 +57,8 @@ func (r *VerifyCodeService) Sms(c fiber.Ctx) error {
 	}); err != nil {
 		return ErrorSystem(c)
 	}
+
+	_ = r.cache.Put(fmt.Sprintf("code:%s:%s:cd", req.UseFor, req.Phone), 1, time.Minute)
 
 	return Success(c, nil)
 }
@@ -76,7 +79,7 @@ func (r *VerifyCodeService) Email(c fiber.Ctx) error {
 		return Error(c, fiber.StatusUnprocessableEntity, "%v", err)
 	}
 
-	if r.cache.Has("code:" + req.UseFor + ":" + req.Email) {
+	if r.cache.Has(fmt.Sprintf("code:%s:%s:cd", req.UseFor, req.Email)) {
 		return Error(c, fiber.StatusUnprocessableEntity, "请勿频繁发送验证码")
 	}
 
@@ -93,6 +96,8 @@ func (r *VerifyCodeService) Email(c fiber.Ctx) error {
 		Send(req.Email, "验证码", mail.CodeTmpl("WeAvatar", code)); err != nil {
 		return Error(c, fiber.StatusInternalServerError, "%v", err)
 	}
+
+	_ = r.cache.Put(fmt.Sprintf("code:%s:%s:cd", req.UseFor, req.Email), 1, time.Minute)
 
 	return Success(c, nil)
 }
