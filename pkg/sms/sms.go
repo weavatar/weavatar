@@ -54,18 +54,18 @@ func New(conf *koanf.Koanf) *SMS {
 func (s *SMS) Send(phone string, message Message) error {
 	if _, ok := cache.Load(phone); ok {
 		// 缓存中存在 = 2分钟半内发送过 = 可能被傻逼运营商拦截了
-		// 直接用阿里云重发
-		if err := s.aliyun.Send(phone, message); err != nil {
+		// 直接用腾讯云重发
+		if err := s.tencent.Send(phone, message); err != nil {
 			return err
 		}
 		cache.Delete(phone) // 发送后删除缓存
 		return nil
 	}
 
-	// 首次发送，默认用腾讯云
-	if err := s.tencent.Send(phone, message); err != nil {
-		// 腾讯云接口报错，用阿里云兜底
-		if err = s.aliyun.Send(phone, message); err != nil {
+	// 首次发送，默认用阿里云
+	if err := s.aliyun.Send(phone, message); err != nil {
+		// 阿里云接口报错，用腾讯云兜底
+		if err = s.tencent.Send(phone, message); err != nil {
 			return err
 		}
 	}
