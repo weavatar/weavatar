@@ -43,7 +43,7 @@ require (
 	github.com/weavatar/retricon v1.0.1
 	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
-	github.com/wneessen/go-mail v0.7.0
+	github.com/wneessen/go-mail v0.7.1
 	golang.org/x/image v0.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
