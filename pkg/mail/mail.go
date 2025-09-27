@@ -35,7 +35,7 @@ func (r *Mail) Send(to, subject, content string) error {
 
 	client, err := mail.NewClient(r.host,
 		mail.WithPort(r.port),
-		mail.WithSMTPAuth(mail.SMTPAuthLogin),
+		mail.WithSMTPAuth(mail.SMTPAuthPlain),
 		mail.WithSSL(),
 		mail.WithTLSPolicy(mail.NoTLS),
 		mail.WithTLSPortPolicy(mail.NoTLS),
