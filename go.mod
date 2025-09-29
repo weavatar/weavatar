@@ -33,9 +33,9 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.33
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.36
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.33
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.36
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
