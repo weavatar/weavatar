@@ -60,8 +60,8 @@ github.com/clbanning/mxj/v2 v2.7.0/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
 github.com/cloudflare/circl v1.6.1/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
-github.com/cloudflare/cloudflare-go/v6 v6.0.1 h1:2vgWRGpQ3IaS4n0Mf/sxJgUfsi+En6yetdjM0zOnf7o=
-github.com/cloudflare/cloudflare-go/v6 v6.0.1/go.mod h1:bNIqRTGO0VC9lqJYanVbO+UDJPqo+zoG3Gs9ioL9PIA=
+github.com/cloudflare/cloudflare-go/v6 v6.1.0 h1:208leV/QEyIZuxFKNk3ztiOh4PeNW/qvLHvzafcbpjI=
+github.com/cloudflare/cloudflare-go/v6 v6.1.0/go.mod h1:Lj3MUqjvKctXRpdRhLQxZYRrNZHuRs0XYuH8JtQGyoI=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cristalhq/jwt/v5 v5.4.0 h1:Wxi1TocFHaijyV608j7v7B9mPc4ZNjvWT3LKBO0d4QI=
 github.com/cristalhq/jwt/v5 v5.4.0/go.mod h1:+b/BzaCWEpFDmXxspJ5h4SdJ1N/45KMjKOetWzmHvDA=
