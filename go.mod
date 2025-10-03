@@ -12,7 +12,7 @@ require (
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
 	github.com/dromara/carbon/v2 v2.6.12
-	github.com/forPelevin/gomoji v1.3.1
+	github.com/forPelevin/gomoji v1.4.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/contrib/monitor v0.1.2
