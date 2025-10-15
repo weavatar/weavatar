@@ -11,7 +11,7 @@ require (
 	github.com/cloudflare/cloudflare-go/v6 v6.1.0
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
-	github.com/dromara/carbon/v2 v2.6.12
+	github.com/dromara/carbon/v2 v2.6.13
 	github.com/forPelevin/gomoji v1.4.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/go-resty/resty/v2 v2.16.5
@@ -33,9 +33,9 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.36
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.40
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.36
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.40
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
