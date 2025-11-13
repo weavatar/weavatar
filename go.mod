@@ -20,7 +20,7 @@ require (
 	github.com/google/wire v0.7.0
 	github.com/gookit/color v1.6.0
 	github.com/gookit/validate v1.5.6
-	github.com/imroc/req/v3 v3.55.0
+	github.com/imroc/req/v3 v3.56.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/jdcloud-api/jdcloud-sdk-go v1.64.0
 	github.com/knadh/koanf/parsers/yaml v1.1.0
@@ -33,10 +33,10 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.49
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.1.52
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.49
-	github.com/urfave/cli/v3 v3.5.0
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.1.52
+	github.com/urfave/cli/v3 v3.6.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
 	github.com/weavatar/monsterid v1.0.1
@@ -44,7 +44,7 @@ require (
 	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.7.2
-	golang.org/x/image v0.32.0
+	golang.org/x/image v0.33.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
@@ -59,7 +59,6 @@ require (
 	github.com/aliyun/credentials-go v1.4.5 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cristalhq/jwt/v5 v5.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
@@ -79,7 +78,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250303091104-876f3ea5145d // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -92,8 +91,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.53.0 // indirect
-	github.com/refraction-networking/utls v1.7.3 // indirect
+	github.com/quic-go/quic-go v0.56.0 // indirect
+	github.com/refraction-networking/utls v1.8.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.4 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -109,15 +108,11 @@ require (
 	github.com/valyala/fasthttp v1.65.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.uber.org/mock v0.5.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.3 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.45.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
-	golang.org/x/tools v0.37.0 // indirect
+	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
