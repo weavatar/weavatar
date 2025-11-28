@@ -24,8 +24,8 @@ github.com/alibabacloud-go/debug v0.0.0-20190504072949-9472017b5c68/go.mod h1:6p
 github.com/alibabacloud-go/debug v1.0.0/go.mod h1:8gfgZCCAC3+SCzjWtY053FrOcd4/qlH6IHTI4QyICOc=
 github.com/alibabacloud-go/debug v1.0.1 h1:MsW9SmUtbb1Fnt3ieC6NNZi6aEwrXfDksD4QA6GSbPg=
 github.com/alibabacloud-go/debug v1.0.1/go.mod h1:8gfgZCCAC3+SCzjWtY053FrOcd4/qlH6IHTI4QyICOc=
-github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.2.0 h1:mTMktojLoe9I6r/BFLnE0Ky2pMJ+nK90sBNN34E3yWo=
-github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.2.0/go.mod h1:MtFK/Qi5rtlXFa20Zv+cJICu8H4ireTj/jk1noXpaL8=
+github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.3.0 h1:TS1T1U+IRlcWKYYqoQLKkENJNALg+Jb4W3piYxyalIU=
+github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.3.0/go.mod h1:6ax2auNlAXYhdIqYOTpXWm7vS9AwaWigZFzHKkDm9k8=
 github.com/alibabacloud-go/endpoint-util v1.1.0/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
 github.com/alibabacloud-go/endpoint-util v1.1.1 h1:ZkBv2/jnghxtU0p+upSU0GGzW1VL9GQdZO3mcSUTUy8=
 github.com/alibabacloud-go/endpoint-util v1.1.1/go.mod h1:O5FuCALmCKs2Ff7JFJMudHs0I5EBgecXXxZRyswlEjE=
