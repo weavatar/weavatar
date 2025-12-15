@@ -14,7 +14,7 @@ require (
 	github.com/dromara/carbon/v2 v2.6.15
 	github.com/forPelevin/gomoji v1.4.1
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
-	github.com/go-resty/resty/v2 v2.17.0
+	github.com/go-resty/resty/v2 v2.17.1
 	github.com/gofiber/contrib/monitor v0.1.2
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
 	github.com/google/wire v0.7.0
