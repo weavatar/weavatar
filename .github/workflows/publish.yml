@@ -13,7 +13,7 @@ jobs:
     if: ${{ (github.event.workflow_run.conclusion == 'success') && (github.event.workflow_run.head_repository.full_name == github.repository) }}
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -21,26 +21,26 @@ jobs:
       - name: Get image repository
         run: |
           echo GHCR_IMAGE_REPOSITORY=$(echo ghcr.io/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo GITLAB_IMAGE_REPOSITORY=$(echo registry.haozi.net/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          echo GITEA_IMAGE_REPOSITORY=$(echo git.haozi.net/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Gitlab Container Registry
+      - name: Login to Gitea Container Registry
         uses: docker/login-action@v3
         with:
-          registry: registry.haozi.net
-          username: ${{ secrets.GITLAB_USERNAME }}
-          password: ${{ secrets.GITLAB_TOKEN }}
+          registry: git.haozi.net
+          username: ${{ secrets.GITEA_USERNAME }}
+          password: ${{ secrets.GITEA_TOKEN }}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.GHCR_IMAGE_REPOSITORY }}
-            ${{ env.GITLAB_IMAGE_REPOSITORY }}
+            ${{ env.GITEA_IMAGE_REPOSITORY }}
           tags: |
             type=raw,value=latest
       - name: Build and push Docker image
