@@ -30,7 +30,7 @@
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.10.2",
     "@tsconfig/node24": "^24.0.0",
-    "@types/jsdom": "^21.1.6",
+    "@types/jsdom": "^27.0.0",
     "@types/node": "^24.0.0",
     "@vicons/ionicons5": "^0.13.0",
     "@vitejs/plugin-vue": "^6.0.0",
