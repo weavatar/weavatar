@@ -24,7 +24,7 @@
     "vue-cropper": "^1.1.2",
     "vue-gtag": "^3.0.0",
     "vue-recaptcha-v3": "^2.0.1",
-    "vue-router": "^4.3.2",
+    "vue-router": "^5.0.0",
     "vue3-geetest": "^1.0.19"
   },
   "devDependencies": {
