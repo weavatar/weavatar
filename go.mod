@@ -16,7 +16,7 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/go-resty/resty/v2 v2.17.1
 	github.com/gofiber/contrib/monitor v0.1.2
-	github.com/gofiber/fiber/v3 v3.0.0-rc.3
+	github.com/gofiber/fiber/v3 v3.0.0
 	github.com/google/wire v0.7.0
 	github.com/gookit/color v1.6.0
 	github.com/gookit/validate v1.5.6
@@ -33,9 +33,9 @@ require (
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.41
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.44
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.41
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.44
 	github.com/urfave/cli/v3 v3.6.2
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
@@ -78,7 +78,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250303091104-876f3ea5145d // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -99,17 +99,17 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	github.com/tinylib/msgp v1.5.0 // indirect
+	github.com/tinylib/msgp v1.6.3 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.68.0 // indirect
+	github.com/valyala/fasthttp v1.69.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.3 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
