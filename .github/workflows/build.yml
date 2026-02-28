@@ -37,7 +37,7 @@ jobs:
           go build -ldflags "${LDFLAGS}" -o app-${{ matrix.goarch }} ./cmd/app
           go build -ldflags "${LDFLAGS}" -o cli-${{ matrix.goarch }} ./cmd/cli
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.goarch }}
           path: |
