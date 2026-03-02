@@ -9,7 +9,7 @@ require (
 	github.com/alibabacloud-go/tea v1.4.0
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/cloudflare/cloudflare-go/v6 v6.8.0
-	github.com/davidbyttow/govips/v2 v2.16.0
+	github.com/davidbyttow/govips/v2 v2.17.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/forPelevin/gomoji v1.4.1
@@ -36,7 +36,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.48
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.1115
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.48
-	github.com/urfave/cli/v3 v3.6.2
+	github.com/urfave/cli/v3 v3.7.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
 	github.com/weavatar/monsterid v1.0.1
