@@ -14,7 +14,6 @@ RUN apk --update add \
     build-base       \
     pkgconfig        \
     jemalloc-dev     \
-    upx              \
     vips-dev         \
     vips-heif        \
     vips-jxl         \
@@ -26,7 +25,6 @@ COPY . ./
 
 RUN go mod tidy
 RUN go build -ldflags "-s -w" -o app ./cmd/app
-RUN upx --best --lzma app
 
 # Run the binary on an empty container
 FROM alpine
