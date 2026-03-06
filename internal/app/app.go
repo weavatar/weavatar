@@ -37,7 +37,9 @@ func NewApp(conf *koanf.Koanf, router *fiber.App, migrator *gormigrate.Gormigrat
 func (r *App) Run() error {
 	// init vips
 	vips.LoggingSettings(nil, vips.LogLevelError)
-	vips.Startup(nil)
+	if err := vips.Startup(nil); err != nil {
+		return err
+	}
 	defer vips.Shutdown()
 
 	// migrate database
