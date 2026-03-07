@@ -4,13 +4,17 @@ on:
     workflows: [ Test ]
     branches: [ main ]
     types: [ completed ]
+  workflow_dispatch:
 concurrency:
-  group: ${{ github.event.workflow_run.head_repository.full_name }}::${{ github.event.workflow_run.head_branch }}::${{ github.workflow }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
+permissions:
+  contents: read
+  packages: write
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ (github.event.workflow_run.conclusion == 'success') && (github.event.workflow_run.head_repository.full_name == github.repository) }}
+    if: ${{ (github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch') }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
