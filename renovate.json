@@ -14,6 +14,7 @@
   "platformAutomerge": true,
   "postUpdateOptions": [
     "gomodTidy",
+    "gomodUpdateImportPaths",
     "pnpmDedupe"
   ],
   "packageRules": [
@@ -29,7 +30,6 @@
     }
   ],
   "ignoreDeps": [
-    "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common",
-    "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms"
+    "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
   ]
 }
