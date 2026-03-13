@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.15
 	github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.5.0
-	github.com/alibabacloud-go/green-20220302/v3 v3.2.1
+	github.com/alibabacloud-go/green-20220302/v3 v3.2.2
 	github.com/alibabacloud-go/tea v1.4.0
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/cloudflare/cloudflare-go/v6 v6.8.0
@@ -33,8 +33,8 @@ require (
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.51
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.1.49
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.56
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.56
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.48
 	github.com/urfave/cli/v3 v3.7.0
 	github.com/weavatar/identicon v1.1.0
