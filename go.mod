@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.16
 	github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.5.0
-	github.com/alibabacloud-go/green-20220302/v3 v3.2.2
+	github.com/alibabacloud-go/green-20220302/v3 v3.2.3
 	github.com/alibabacloud-go/tea v1.4.0
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/cloudflare/cloudflare-go/v6 v6.8.0
@@ -19,7 +19,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.1.0
 	github.com/google/wire v0.7.0
 	github.com/gookit/color v1.6.0
-	github.com/gookit/validate v1.5.6
+	github.com/gookit/validate v1.5.7
 	github.com/imroc/req/v3 v3.57.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/jdcloud-api/jdcloud-sdk-go v1.64.0
@@ -73,7 +73,7 @@ require (
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/filter v1.2.3 // indirect
-	github.com/gookit/goutil v0.7.3 // indirect
+	github.com/gookit/goutil v0.7.4 // indirect
 	github.com/icholy/digest v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
