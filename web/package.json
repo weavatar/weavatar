@@ -45,7 +45,7 @@
     "npm-run-all2": "^8.0.0",
     "prettier": "^3.2.5",
     "sass-embedded": "^1.88.0",
-    "typescript": "^5.4.5",
+    "typescript": "^6.0.0",
     "unocss": "^66.1.1",
     "vite": "^7.0.0",
     "vitest": "^4.0.0",
