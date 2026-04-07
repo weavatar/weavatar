@@ -65,7 +65,7 @@ type avatarRepo struct {
 }
 
 func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue) (biz.AvatarRepo, error) {
-	font1, err := embed.FontFS.ReadFile("font/SourceHanSans-VF-700.ttf")
+	font1, err := embed.FontFS.ReadFile("font/SourceHanSansSC-Bold.otf")
 	if err != nil {
 		return nil, err
 	}
