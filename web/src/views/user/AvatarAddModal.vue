@@ -57,7 +57,7 @@
     </NCard>
   </NModal>
 
-  <CropAvatar v-model:show="cropShow" :image="cropImage" @crop="handleCrop" />
+  <CropAvatar ref="cropAvatarRef" @crop-avatar="handleCrop" />
   <GeetestCaptcha :config="{ product: 'bind' }" @initialized="onCaptchaInit" />
 </template>
 
@@ -100,9 +100,7 @@ const qq = ref('')
 const qqLoading = ref(false)
 const submitLoading = ref(false)
 
-// 裁剪
-const cropShow = ref(false)
-const cropImage = ref<Blob | null>(null)
+const cropAvatarRef = ref()
 
 const sanitizeAvatar = (data: { file: any }) => {
   const type = data.file.file?.type
@@ -115,8 +113,8 @@ const sanitizeAvatar = (data: { file: any }) => {
 }
 
 const handleUpload = (options: { file: any }) => {
-  cropImage.value = options.file.file as Blob
-  cropShow.value = true
+  cropAvatarRef.value.setImage(options.file.file as Blob)
+  cropAvatarRef.value.setShow(true)
 }
 
 const handleCrop = (blob: Blob) => {
@@ -135,8 +133,9 @@ const handleGetQQ = () => {
       const binary = atob(data)
       const bytes = new Uint8Array(binary.length)
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      cropImage.value = new Blob([bytes], { type: 'image/png' })
-      cropShow.value = true
+      const blob = new Blob([bytes], { type: 'image/png' })
+      cropAvatarRef.value.setImage(blob)
+      cropAvatarRef.value.setShow(true)
     })
     .onComplete(() => {
       qqLoading.value = false
