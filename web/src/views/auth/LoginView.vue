@@ -1,15 +1,9 @@
 <template>
-  <div class="login-card">
+  <div class="w-100 max-w-md mx-auto mt-24">
     <NCard title="登录">
       <NTabs default-value="haozi-login" size="large" justify-content="space-evenly">
         <NTabPane name="haozi-login" tab="耗子通行证">
-          <NButton
-            type="primary"
-            block
-            :loading="loading"
-            :disabled="disabled"
-            @click="handleLogin"
-          >
+          <NButton type="primary" block :loading="loading" @click="handleLogin">
             耗子通行证 登录
           </NButton>
         </NTabPane>
@@ -19,51 +13,21 @@
 </template>
 
 <script setup lang="ts">
-import { NButton, NCard, NTabPane, NTabs } from 'naive-ui'
-
-import { useUserStore } from '@/stores'
-import { useRouter } from 'vue-router'
-
-import { login } from '@/api/auth'
 import { ref } from 'vue'
+import { NButton, NCard, NTabPane, NTabs } from 'naive-ui'
+import auth from '@/api/auth'
+import { useRequest } from 'alova/client'
 
 const loading = ref(false)
-const disabled = ref(false)
 
-const userStore = useUserStore()
-const router = useRouter()
-
-if (userStore.auth.login) {
-  router.push({ name: 'user-avatar' })
-}
-
-const handleLogin = async () => {
-  // 防止重复点击
-  if (disabled.value) {
-    return
-  }
+const handleLogin = () => {
   loading.value = true
-  disabled.value = true
-  await login()
-    .then((res) => {
-      window.location.href = res.data.url
+  useRequest(auth.login())
+    .onSuccess(({ data }: any) => {
+      window.location.href = data.url
     })
-    .catch(() => {
+    .onComplete(() => {
       loading.value = false
-      disabled.value = false
     })
 }
 </script>
-
-<style scoped>
-.login-card {
-  width: 400px;
-  margin: 100px auto;
-}
-
-@media (max-width: 768px) {
-  .login-card {
-    width: 100%;
-  }
-}
-</style>

@@ -44,7 +44,7 @@ func initApp() (*app.App, error) {
 	verifyCodeService := service.NewVerifyCodeService(koanf, cache)
 	userRepo := data.NewUserRepo(koanf, db)
 	userService := service.NewUserService(cache, koanf, userRepo)
-	systemService := service.NewSystemService(koanf, cache)
+	systemService := service.NewSystemService(koanf, cache, db)
 	http := route.NewHttp(koanf, avatarService, verifyCodeService, userService, systemService)
 	fiberApp := bootstrap.NewRouter(koanf, middlewares, http)
 	gormigrate := bootstrap.NewMigrate(db)

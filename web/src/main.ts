@@ -1,30 +1,27 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 import { MotionPlugin } from '@vueuse/motion'
-import VueGtag from 'vue-gtag'
+import { createGtag } from 'vue-gtag'
 import { Geetest } from 'vue3-geetest'
 
 import App from './App.vue'
 import router from './router'
+import { setupStore } from './stores'
 
 import '@/styles/main.scss'
 import 'virtual:uno.css'
 
 const app = createApp(App)
 
-app.use(createPinia())
+setupStore(app)
 app.use(router)
 app.use(MotionPlugin)
 app.use(
-  VueGtag,
-  {
-    appName: 'WeAvatar',
-    pageTrackerScreenviewEnabled: true,
-    config: {
-      id: 'G-BL3JX2SWLP'
+  createGtag({
+    tagId: 'G-BL3JX2SWLP',
+    pageTracker: {
+      router
     }
-  },
-  router
+  })
 )
 app.use(Geetest, {
   captchaId: 'dda5bf0b265affca8bddca9b647ce16b'

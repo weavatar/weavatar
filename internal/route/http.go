@@ -64,4 +64,5 @@ func (r *Http) Register(router fiber.Router) {
 
 	system := api.Group("/system")
 	system.Get("count", r.system.Count)
+	system.Get("random_avatars", r.system.RandomAvatars)
 }

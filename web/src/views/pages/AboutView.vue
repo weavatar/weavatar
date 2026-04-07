@@ -5,15 +5,17 @@
       <NText>
         WeAvatar 的立项可以追溯至 2022 年 3 月，彼时我们依然在为 LitePress 项目工作。
         <br />
-        之后由于意见不合无法继续便开始着手筹备新项目，在随后的几个月里完成了 WeAvatar 域名及商标注册，2022 年 6 月下旬启动开发。于
-        2022 年 7 月 25 日 Cravatar 成立 1 周年之际灰度上线。
+        之后由于意见不合无法继续便开始着手筹备新项目，在随后的几个月里完成了 WeAvatar
+        域名及商标注册，2022 年 6 月下旬启动开发。于 2022 年 7 月 25 日 Cravatar 成立 1
+        周年之际灰度上线。
         <br />
         由于琐事繁多加上仍对 LitePress 抱有期望，在之后的几个月内 WeAvatar 没有继续完善开发。
       </NText>
       <NDivider />
       <NH4>WeAvatar 的今世</NH4>
       <NText>
-        2022 年 11 月，尝试接手 LitePress 项目未果后正式退出项目，随后不久完成 WeAvatar 初版控制台的开发。
+        2022 年 11 月，尝试接手 LitePress 项目未果后正式退出项目，随后不久完成 WeAvatar
+        初版控制台的开发。
         <br />
         2023 年 1 月，决定以 Golang 和 Vue 为主要开发语言进行 2.0 版本开发。
         <br />
@@ -28,6 +30,8 @@
         2024 年 12 月，WeAvatar 日请求数达 700 万次。
         <br />
         2025 年 3 月，WeAvatar 3.0 上线。
+        <br />
+        2026 年 1 月，WeAvatar 日请求数达 1000 万次。
       </NText>
       <NDivider />
       <NH4>WeAvatar 的未来</NH4>
@@ -39,7 +43,8 @@
       <NDivider />
       <NH4>赞助 WeAvatar</NH4>
       <NText>
-        可以前往我们的 <a target="_blank" href="https://afdian.com/a/tnblabs">爱发电主页</a> 赞助我们。
+        可以前往我们的
+        <a target="_blank" href="https://afdian.com/a/tnborg">爱发电主页</a> 赞助我们。
         <br />
         同时感谢以下支持者们：
       </NText>
@@ -59,7 +64,7 @@
 import { NCard, NDivider, NH4, NText, NImage } from 'naive-ui'
 
 const toSponsor = () => {
-  window.open('https://afdian.com/a/tnblabs')
+  window.open('https://afdian.com/a/tnborg')
 }
 </script>
 

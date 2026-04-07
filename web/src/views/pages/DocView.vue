@@ -99,14 +99,10 @@
           </p>
         </div>
         <div class="cont" v-if="value == 'twikoo'">
-          <n-alert type="success">
-            Twikoo 已默认接入 WeAvatar，无需额外设置。
-          </n-alert>
+          <n-alert type="success"> Twikoo 已默认接入 WeAvatar，无需额外设置。 </n-alert>
         </div>
         <div class="cont" v-if="value == 'artalk'">
-          <n-alert type="success">
-            Artalk 已默认接入 WeAvatar，无需额外设置。
-          </n-alert>
+          <n-alert type="success"> Artalk 已默认接入 WeAvatar，无需额外设置。 </n-alert>
         </div>
         <div class="cont" v-if="value == 'hash'">
           <p>1. 去除首位两边的空格</p>
@@ -170,38 +166,27 @@
               <p><NText code>d=404</NText>: 返回 404 错误</p>
             </li>
             <li>
-              <p>
-                <NText code>d=mp</NText>: 简单的、卡通风格的人物剪影轮廓（不随哈希改变）
-              </p>
+              <p><NText code>d=mp</NText>: 简单的、卡通风格的人物剪影轮廓（不随哈希改变）</p>
+            </li>
+            <li>
+              <p><NText code>d=identicon</NText>: 基于哈希生成的几何图案</p>
+            </li>
+            <li>
+              <p><NText code>d=monsterid</NText>: 基于哈希生成的怪物，有不同的颜色、面孔等</p>
+            </li>
+            <li>
+              <p><NText code>d=wavatar</NText>: 基于哈希生成的具有不同特征和背景的人脸</p>
+            </li>
+            <li>
+              <p><NText code>d=retro</NText>: 基于哈希生成的 8 位街机风格的像素化人脸</p>
+            </li>
+            <li>
+              <p><NText code>d=robohash</NText>: 基于哈希生成的机器人，有不同的颜色、面孔等</p>
             </li>
             <li>
               <p>
-                <NText code>d=identicon</NText>: 基于哈希生成的几何图案
-              </p>
-            </li>
-            <li>
-              <p>
-                <NText code>d=monsterid</NText>: 基于哈希生成的怪物，有不同的颜色、面孔等
-              </p>
-            </li>
-            <li>
-              <p>
-                <NText code>d=wavatar</NText>: 基于哈希生成的具有不同特征和背景的人脸
-              </p>
-            </li>
-            <li>
-              <p>
-                <NText code>d=retro</NText>: 基于哈希生成的 8 位街机风格的像素化人脸
-              </p>
-            </li>
-            <li>
-              <p>
-                <NText code>d=robohash</NText>: 基于哈希生成的机器人，有不同的颜色、面孔等
-              </p>
-            </li>
-            <li>
-              <p>
-                <NText code>d=initials&initials=X</NText>: 生成由 initials 指定的字母头像（最多保留 2 位）
+                <NText code>d=initials&initials=X</NText>: 生成由 initials 指定的字母头像（最多保留
+                2 位）
               </p>
             </li>
             <li>
@@ -210,14 +195,10 @@
               </p>
             </li>
             <li>
-              <p>
-                <NText code>d=color</NText>: 基于哈希生成的纯色头像，颜色随哈希改变
-              </p>
+              <p><NText code>d=color</NText>: 基于哈希生成的纯色头像，颜色随哈希改变</p>
             </li>
             <li>
-              <p>
-                <NText code>d=blank</NText>: 生成一个透明的 PNG 图片
-              </p>
+              <p><NText code>d=blank</NText>: 生成一个透明的 PNG 图片</p>
             </li>
           </ul>
           <NSpace>
@@ -449,7 +430,7 @@ const menuOptions: MenuOption[] = [
         label: 'Artalk',
         key: 'artalk',
         icon: renderIcon(ChatboxOutline)
-      },
+      }
     ]
   },
   {
@@ -533,7 +514,7 @@ a {
 }
 
 .cont {
-  padding: 0 20px 20px;
+  padding: 20px 40px 40px;
   width: 100%;
 }
 
@@ -543,5 +524,14 @@ a {
 
 .n-layout-sider {
   z-index: 0;
+}
+
+.cont :deep(.n-tag) {
+  margin: 2px 2px;
+  vertical-align: middle;
+}
+
+.cont p {
+  line-height: 2.2;
 }
 </style>

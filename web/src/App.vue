@@ -1,10 +1,16 @@
 <template>
-  <NConfigProvider :locale="zhCN" :date-locale="dateZhCN" :theme="theme" :hljs="hljs" :theme-overrides="themeOverrides">
+  <NConfigProvider
+    :locale="zhCN"
+    :date-locale="dateZhCN"
+    :theme="theme"
+    :hljs="hljs"
+    :theme-overrides="themeOverrides"
+  >
     <NLoadingBarProvider>
       <NMessageProvider>
         <NNotificationProvider>
           <NDialogProvider>
-            <SiteLayout />
+            <RouterView />
           </NDialogProvider>
         </NNotificationProvider>
       </NMessageProvider>
@@ -13,7 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import SiteLayout from '@/views/SiteLayout.vue'
 import {
   darkTheme,
   dateZhCN,
@@ -32,12 +37,13 @@ import { useDark } from '@vueuse/core'
 hljs.registerLanguage('php', php)
 
 const isDark = useDark()
-
 const theme = computed(() => (isDark.value ? darkTheme : null))
-
 const themeOverrides = {
   common: {
-    primaryColor: '#3A84F7'
+    primaryColor: '#3A84F7',
+    primaryColorHover: '#5B9CF8',
+    primaryColorPressed: '#2B6AD6',
+    primaryColorSuppl: '#5B9CF8'
   }
 }
 </script>

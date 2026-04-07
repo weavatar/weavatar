@@ -1,5 +1,5 @@
 <template>
-  <div class="login-card">
+  <div class="w-100 max-w-md mx-auto mt-48">
     <NCard title="登录中">
       <NSpin :size="20" />
       <NText>请稍后...</NText>
@@ -9,41 +9,21 @@
 
 <script setup lang="ts">
 import { NCard, NSpin, NText } from 'naive-ui'
-
-import { useUserStore } from '@/stores'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores'
+import auth from '@/api/auth'
+import { useRequest } from 'alova/client'
 
-import { oauthCallback } from '@/api/auth'
-
-const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
-const code = String(route.query.code)
-const state = String(route.query.state)
+const code = String(route.query.code || '')
+const state = String(route.query.state || '')
 
-oauthCallback(code, state)
-  .then((res) => {
-    window.$message.success('登录成功')
-    userStore.updateToken(res.data.token)
-    setTimeout(() => {
-      router.push({ name: 'home' })
-    }, 1000)
-  })
-  .catch((err) => {
-    console.log(err)
-  })
+useRequest(auth.callback(code, state)).onSuccess(({ data }: any) => {
+  window.$message.success('登录成功')
+  userStore.updateToken(data.token)
+  setTimeout(() => router.push({ name: 'home' }), 1000)
+})
 </script>
-
-<style scoped>
-.login-card {
-  width: 400px;
-  margin: 200px auto;
-}
-
-@media (max-width: 768px) {
-  .login-card {
-    width: 100%;
-  }
-}
-</style>
