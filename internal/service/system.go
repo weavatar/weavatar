@@ -62,7 +62,7 @@ func (r *SystemService) Count(c fiber.Ctx) error {
 func (r *SystemService) RandomAvatars(c fiber.Ctx) error {
 	// 随机查询 30 条有头像的记录
 	var avatars []biz.Avatar
-	if err := r.db.Order("RAND()").Limit(30).Find(&avatars).Error; err != nil {
+	if err := r.db.Order("RAND()").Limit(50).Find(&avatars).Error; err != nil {
 		return Success(c, fiber.Map{
 			"avatars": []string{},
 		})
