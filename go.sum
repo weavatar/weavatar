@@ -249,11 +249,11 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.57/go.mod h1:r5r4xbfxSaeR04b166HGsBa/R4U3SueirEUpXGuw+Q0=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.79 h1:aaoqy0ytb/Bz64eMgEC9x5BfXshdbeLBPMUNDNUIB2U=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.79/go.mod h1:r5r4xbfxSaeR04b166HGsBa/R4U3SueirEUpXGuw+Q0=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.57 h1:ZnJK+aTZYyzGN/4dmQXYWzuHsuZFrlj034uLoGaNVvQ=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.57/go.mod h1:jwLLFaeXXAnkWj37iTh0jfeXDYWf9eggaKJ1dRnc/1A=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.80 h1:zGY70Cyp4EPfeX7GxS8uo+x9mT95PvlSSIgQm/6gPXY=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.80/go.mod h1:r5r4xbfxSaeR04b166HGsBa/R4U3SueirEUpXGuw+Q0=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.80 h1:4mNiA2sDlvctnGNf78sNAveCtcO+S8LnXH9kBoqSGLE=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.80/go.mod h1:z2hbqHG55lSo85QKqn3xDUAhXG1iIVPJnkMhwJzk4i0=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.79 h1:rQl9qmdIdVxl0Fyj64E9uPYvag2sHL2nel3S1tE9lv8=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.79/go.mod h1:ihh08JIca+jw0EuKvNC4Oj2IfIuyEOKA9ZY75tphsUw=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
