@@ -62,8 +62,8 @@ github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA
 github.com/clbanning/mxj/v2 v2.7.0 h1:WA/La7UGCanFe5NpHF0Q3DNtnCsVoxbPKuyBNHWRyME=
 github.com/clbanning/mxj/v2 v2.7.0/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn/Qo+ve2s=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/cloudflare/cloudflare-go/v6 v6.9.0 h1:RpImnN6YgC2Wcvhep/EtxIl1c0R1+ST1yOheGTjDjis=
-github.com/cloudflare/cloudflare-go/v6 v6.9.0/go.mod h1:Lj3MUqjvKctXRpdRhLQxZYRrNZHuRs0XYuH8JtQGyoI=
+github.com/cloudflare/cloudflare-go/v6 v6.10.0 h1:tm+YwMDAdxxy2eIAlLH9Wu8JWSMg6fE3j3ydZbMG6co=
+github.com/cloudflare/cloudflare-go/v6 v6.10.0/go.mod h1:Lj3MUqjvKctXRpdRhLQxZYRrNZHuRs0XYuH8JtQGyoI=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cristalhq/jwt/v5 v5.4.0 h1:Wxi1TocFHaijyV608j7v7B9mPc4ZNjvWT3LKBO0d4QI=
 github.com/cristalhq/jwt/v5 v5.4.0/go.mod h1:+b/BzaCWEpFDmXxspJ5h4SdJ1N/45KMjKOetWzmHvDA=
@@ -249,10 +249,11 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.83 h1:C8ro7XQVV17O+A7zUTe28VK02NuyazuaY0CB2CH5Scw=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.83/go.mod h1:r5r4xbfxSaeR04b166HGsBa/R4U3SueirEUpXGuw+Q0=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.83 h1:1Cv/45PfJ17ODYKMrOnz0XFaFQlLi+Lbk+Iq6dbF/sI=
-github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.83/go.mod h1:W4T9ePgSGd3dPLQGJFy7aN4yZOzMKsN4VbX0JLrcJGA=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.86 h1:86rDQ0y/8CIlylSXdJO3DvglrKxXwtC7/e+YjldrHFs=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.86/go.mod h1:r5r4xbfxSaeR04b166HGsBa/R4U3SueirEUpXGuw+Q0=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.86 h1:1AbHtq09r6Q5S0Hi8FCpz5oZ3gQkwGK6GE2ML8JFmXU=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.86/go.mod h1:HRQML9Ts4tftXMtZrz0UD+45tTaQnUmS/4S5o09LkIc=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.83 h1:7X2c0rQznJPdRFkgfSJFYMgZKEUDGt6cKCf7sMW4zx4=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.83/go.mod h1:BoQ46MhTtXmwaz4ponIWOhlFEhK8GS+jKyy7jlN4i4E=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
