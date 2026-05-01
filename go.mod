@@ -18,7 +18,7 @@ require (
 	github.com/gofiber/contrib/monitor v0.1.2
 	github.com/gofiber/fiber/v3 v3.2.0
 	github.com/google/wire v0.7.0
-	github.com/gookit/color v1.6.0
+	github.com/gookit/color v1.6.1
 	github.com/gookit/validate v1.5.7
 	github.com/imroc/req/v3 v3.57.0
 	github.com/jaevor/go-nanoid v1.4.0
