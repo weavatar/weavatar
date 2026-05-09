@@ -33,9 +33,9 @@ require (
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.92
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.86
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.92
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.93
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.93
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.93
 	github.com/urfave/cli/v3 v3.8.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
@@ -44,7 +44,7 @@ require (
 	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.7.2
-	golang.org/x/image v0.39.0
+	golang.org/x/image v0.40.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
@@ -111,7 +111,7 @@ require (
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
