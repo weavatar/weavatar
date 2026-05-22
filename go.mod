@@ -44,7 +44,7 @@ require (
 	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.7.3
-	golang.org/x/image v0.40.0
+	golang.org/x/image v0.41.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
