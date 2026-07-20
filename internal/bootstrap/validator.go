@@ -1,8 +1,8 @@
 package bootstrap
 
 import (
-	"github.com/gookit/validate"
-	"github.com/gookit/validate/locales/zhcn"
+	"github.com/gookit/validate/v2"
+	"github.com/gookit/validate/v2/locales/zhcn"
 	"github.com/knadh/koanf/v2"
 	"github.com/libtnb/cache"
 	"gorm.io/gorm"

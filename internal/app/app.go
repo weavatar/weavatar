@@ -9,7 +9,7 @@ import (
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gookit/validate"
+	"github.com/gookit/validate/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/robfig/cron/v3"
 

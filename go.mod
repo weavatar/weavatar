@@ -19,7 +19,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.4.0
 	github.com/google/wire v0.7.0
 	github.com/gookit/color v1.6.1
-	github.com/gookit/validate v1.6.0
+	github.com/gookit/validate/v2 v2.0.1
 	github.com/imroc/req/v3 v3.59.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/jdcloud-api/jdcloud-sdk-go v1.67.0
