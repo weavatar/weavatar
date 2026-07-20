@@ -1,7 +1,7 @@
 package rule
 
 import (
-	"github.com/gookit/validate"
+	"github.com/gookit/validate/v2"
 	"github.com/knadh/koanf/v2"
 	"github.com/libtnb/cache"
 	"gorm.io/gorm"
