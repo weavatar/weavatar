@@ -19,7 +19,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.5.0
 	github.com/google/wire v0.7.0
 	github.com/gookit/color v1.6.1
-	github.com/gookit/validate v1.6.0
+	github.com/gookit/validate/v2 v2.0.2
 	github.com/imroc/req/v3 v3.61.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/jdcloud-api/jdcloud-sdk-go v1.67.0
@@ -72,7 +72,7 @@ require (
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/filter v1.2.3 // indirect
-	github.com/gookit/goutil v0.7.6 // indirect
+	github.com/gookit/goutil v0.8.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/icholy/digest v1.2.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
