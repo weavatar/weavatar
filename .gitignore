@@ -36,6 +36,9 @@ _cgo_export.*
 *.db
 config/config.yml
 
+# QQ 哈希表产物，由 cli hash build 生成
+storage/hash/
+
 # 临时文件
 tmp/
 .tmp/

@@ -17,6 +17,8 @@ database:
   user: "root"
   password: ""
   name: "weavatar"
+hash:
+  dir: "storage/hash"
 mail:
   host: "smtp.example.com"
   port: 587

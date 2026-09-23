@@ -1,16 +1,21 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	_ "time/tzdata"
 )
 
 func main() {
 	cli, err := initCli()
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
 	if err = cli.Run(); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }

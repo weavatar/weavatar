@@ -36,7 +36,11 @@ func initApp() (*app.App, error) {
 		return nil, err
 	}
 	queue := bootstrap.NewQueue()
-	avatarRepo, err := data.NewAvatarRepo(cache, koanf, db, logger, queue)
+	tables, err := bootstrap.NewQqHash(koanf, logger)
+	if err != nil {
+		return nil, err
+	}
+	avatarRepo, err := data.NewAvatarRepo(cache, koanf, db, logger, queue, tables)
 	if err != nil {
 		return nil, err
 	}

@@ -1,266 +1,161 @@
 package service
 
 import (
-	"bufio"
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"runtime"
-	"strconv"
+	"slices"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/gookit/color"
-	"github.com/libtnb/utils/str"
+	"github.com/knadh/koanf/v2"
 	"github.com/urfave/cli/v3"
-	"gorm.io/gorm"
+
+	"github.com/weavatar/weavatar/pkg/qqhash"
 )
 
 type CliService struct {
-	db *gorm.DB
+	conf *koanf.Koanf
 }
 
-func NewCliService(db *gorm.DB) *CliService {
+func NewCliService(conf *koanf.Koanf) *CliService {
 	return &CliService{
-		db: db,
+		conf: conf,
 	}
 }
 
-func (r *CliService) HashMake(ctx context.Context, cmd *cli.Command) error {
-	start := uint(10000)
-	end := cmd.Uint("sum")
-	dir := cmd.String("dir")
-	hashType := cmd.String("type")
+// hashDir 返回哈希表目录，命令行参数优先于配置。
+func (r *CliService) hashDir(cmd *cli.Command) string {
+	if dir := cmd.String("dir"); dir != "" {
+		return dir
+	}
+	if dir := r.conf.String("hash.dir"); dir != "" {
+		return dir
+	}
+	return "storage/hash"
+}
 
-	color.Warnf("号最大值: %d\n", end)
-	color.Warnf("存放目录: %s\n", dir)
-	color.Warnf("哈希类型: %s\n\n", hashType)
-
-	if err := os.MkdirAll(dir, 0644); err != nil {
+func (r *CliService) HashBuild(ctx context.Context, cmd *cli.Command) error {
+	start := time.Now()
+	err := qqhash.Build(ctx, qqhash.BuildOptions{
+		Dir:      r.hashDir(cmd),
+		Types:    cmd.StringSlice("type"),
+		Start:    cmd.Uint64("start"),
+		End:      cmd.Uint64("end"),
+		PartBits: uint32(cmd.Uint("partition-bits")),
+		Gamma:    cmd.Float64("gamma"),
+		Workers:  cmd.Int("workers"),
+		Logf:     logf,
+	})
+	if err != nil {
 		return err
 	}
 
-	type fileInfo struct {
-		file   *os.File
-		writer *bufio.Writer
-		mu     sync.Mutex
-		count  int
-	}
-
-	files := make([]*fileInfo, 256)
-	for j := uint64(0); j < 256; j++ {
-		fileName := fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, j)
-		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-		if err != nil {
-			return err
-		}
-
-		// 预分配文件空间以减少文件系统碎片
-		estimatedSize := (end - start + 1) / 256 * 50 // 每行50字节
-		if err = file.Truncate(int64(estimatedSize)); err != nil {
-			return err
-		}
-
-		writer := bufio.NewWriterSize(file, 8*1024*1024) // 8MB缓冲区
-		files[j] = &fileInfo{
-			file:   file,
-			writer: writer,
-			count:  0,
-		}
-	}
-
-	// 工作池
-	numWorkers := runtime.NumCPU()
-	batchSize := uint(10000)
-	workChan := make(chan struct {
-		start, end uint64
-	}, numWorkers)
-	// 结果通道
-	resultChan := make(chan struct {
-		table uint64
-		hash  string
-		num   uint64
-	}, 100000)
-	// 错误通道
-	errChan := make(chan error, numWorkers)
-	// 完成信号
-	done := make(chan struct{})
-
-	var wg sync.WaitGroup
-	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			emailBuilder := strings.Builder{}
-			emailBuilder.Grow(20) // 预分配空间
-
-			for batch := range workChan {
-				for num := batch.start; num <= batch.end; num++ {
-					// 重用字符串构建器
-					emailBuilder.Reset()
-					emailBuilder.WriteString(strconv.FormatUint(num, 10))
-					emailBuilder.WriteString("@qq.com")
-					email := emailBuilder.String()
-
-					var sum string
-					if hashType == "sha256" {
-						sum = str.SHA256(email)[:16]
-					} else {
-						sum = str.MD5(email)[:16]
-					}
-
-					table, err := strconv.ParseUint(sum[:2], 16, 64)
-					if err != nil {
-						errChan <- err
-						return
-					}
-
-					resultChan <- struct {
-						table uint64
-						hash  string
-						num   uint64
-					}{table, sum, num}
-				}
-			}
-		}()
-	}
-
-	// 启动写入器
-	flushThreshold := 100000 // 每10万条记录刷新一次
-	writeWg := sync.WaitGroup{}
-	writeWg.Add(1)
-	go func() {
-		defer writeWg.Done()
-		count := uint(0)
-		total := end - start + 1
-		progressStep := total / 100 // 1%的进度
-		lastProgress := uint(0)
-
-		for {
-			select {
-			case result := <-resultChan:
-				file := files[result.table]
-				file.mu.Lock()
-				line := result.hash + "," + strconv.FormatUint(result.num, 10) + "\n"
-				if _, err := file.writer.WriteString(line); err != nil {
-					file.mu.Unlock()
-					errChan <- err
-					return
-				}
-				file.count++
-				if file.count >= flushThreshold {
-					if err := file.writer.Flush(); err != nil {
-						file.mu.Unlock()
-						errChan <- err
-						return
-					}
-					file.count = 0
-				}
-				file.mu.Unlock()
-
-				count++
-				if count-lastProgress >= progressStep {
-					color.Greenf("进度: %.2f%%\n", float64(count)/float64(total)*100)
-					lastProgress = count
-				}
-
-				if count == total {
-					close(done)
-					return
-				}
-
-			case err := <-errChan:
-				close(done)
-				color.Redln("处理错误:", err)
-				return
-			}
-		}
-	}()
-
-	// 分配工作
-	go func() {
-		for batch := start; batch <= end; batch += batchSize {
-			endBatch := batch + batchSize - 1
-			if endBatch > end {
-				endBatch = end
-			}
-			workChan <- struct {
-				start, end uint64
-			}{uint64(batch), uint64(endBatch)}
-		}
-		close(workChan)
-	}()
-
-	// 等待所有工作完成
-	<-done
-	wg.Wait()
-	close(resultChan)
-	writeWg.Wait()
-
-	// 确保所有数据都刷新到磁盘
-	for j := uint64(0); j < 256; j++ {
-		if err := files[j].writer.Flush(); err != nil {
-			return err
-		}
-		if err := files[j].file.Sync(); err != nil {
-			return err
-		}
-		if err := files[j].file.Close(); err != nil {
-			return err
-		}
-	}
-
-	color.Greenln("生成完成")
+	color.Greenf("全部构建完成，总耗时 %s\n", time.Since(start).Round(time.Second))
 	return nil
 }
 
-func (r *CliService) HashInsert(ctx context.Context, cmd *cli.Command) error {
-	dir := cmd.String("dir")
-	hashType := cmd.String("type")
-	engine := "InnoDB"
-	if cmd.Bool("rocksdb") {
-		engine = "ROCKSDB"
+func (r *CliService) HashVerify(ctx context.Context, cmd *cli.Command) error {
+	tables, err := r.openTables(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tables.Close()
+	}()
+
+	types := cmd.StringSlice("type")
+	sample := cmd.Int("sample")
+	for _, t := range tables.All() {
+		if len(types) > 0 && !slices.Contains(types, t.Type()) {
+			continue
+		}
+		printStats(t.Stats())
+
+		if sample > 0 {
+			if err = t.Sample(ctx, sample, uint64(time.Now().UnixNano())); err != nil {
+				return err
+			}
+			color.Greenf("[%s] 随机抽样 %d 次查询通过\n", t.Type(), sample)
+		}
+		if cmd.Bool("full") {
+			if err = t.Verify(ctx, qqhash.VerifyOptions{
+				Workers:  cmd.Int("workers"),
+				Coverage: !cmd.Bool("no-coverage"),
+				Logf:     logf,
+			}); err != nil {
+				return err
+			}
+			color.Greenf("[%s] 全量校验通过\n", t.Type())
+		}
 	}
 
-	// 确保不受 gorm 连接池影响
-	return r.db.Connection(func(tx *gorm.DB) error {
-		tx.Exec("SET SESSION sql_log_bin = 0")
-		tx.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 1")
-		tx.Exec("SET SESSION rocksdb_bulk_load = 1")
-		tx.Exec("SET SESSION unique_checks = 0")
-		tx.Exec("SET GLOBAL local_infile = 1")
+	return nil
+}
 
-		for i := 0; i < 256; i++ {
-			if err := tx.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS qq_%s_%d;`, hashType, i)).Error; err != nil {
-				return err
-			}
+func (r *CliService) HashLookup(_ context.Context, cmd *cli.Command) error {
+	hash := strings.ToLower(cmd.Args().First())
+	if hash == "" {
+		return errors.New("请提供要查询的哈希")
+	}
 
-			color.Greenf("正在创建表: %d\n", i)
-			if err := tx.Exec(fmt.Sprintf("CREATE TABLE qq_%s_%d (h BINARY(8) NOT NULL, q BIGINT NOT NULL, PRIMARY KEY ( `h` )) ENGINE = %s;", hashType, i, engine)).Error; err != nil {
-				return err
-			}
-		}
+	tables, err := r.openTables(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tables.Close()
+	}()
 
-		color.Greenln("建表完成")
-		color.Warnln("正在导入数据")
+	start := time.Now()
+	qq, ok := tables.Lookup(hash)
+	elapsed := time.Since(start)
+	if !ok {
+		return fmt.Errorf("未命中（%s）", elapsed)
+	}
 
-		for i := 0; i < 256; i++ {
-			if err := tx.Exec(fmt.Sprintf(`LOAD DATA LOCAL INFILE '%s/qq_%s_%d.csv' INTO TABLE qq_%s_%d FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' (@h, q) SET h = UNHEX(@h);`, dir, hashType, i, hashType, i)).Error; err != nil {
-				return err
-			}
-			color.Greenf("导入完成: qq_%s_%d\n", hashType, i)
-			// 删除文件
-			_ = os.Remove(fmt.Sprintf("%s/qq_%s_%d.csv", dir, hashType, i))
-		}
+	color.Greenf("QQ: %d（%s）\n", qq, elapsed)
+	return nil
+}
 
-		color.Warnln("导入完成")
+func (r *CliService) HashStat(_ context.Context, cmd *cli.Command) error {
+	tables, err := r.openTables(cmd)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tables.Close()
+	}()
 
-		tx.Exec("SET SESSION rocksdb_bulk_load = 0")
-		tx.Exec("SET SESSION rocksdb_bulk_load_allow_unsorted = 0")
-		tx.Exec("SET SESSION sql_log_bin = 1")
-		tx.Exec("SET SESSION unique_checks = 1")
-		tx.Exec("SET GLOBAL local_infile = 0")
+	for _, t := range tables.All() {
+		printStats(t.Stats())
+	}
 
-		return nil
-	})
+	return nil
+}
+
+func (r *CliService) openTables(cmd *cli.Command) (*qqhash.Tables, error) {
+	dir := r.hashDir(cmd)
+	tables, err := qqhash.Open(dir)
+	if err != nil {
+		return nil, err
+	}
+	if len(tables.All()) == 0 {
+		_ = tables.Close()
+		return nil, fmt.Errorf("目录 %s 中没有哈希表文件", dir)
+	}
+	return tables, nil
+}
+
+func printStats(s qqhash.Stats) {
+	color.Warnf("[%s]\n", s.Type)
+	fmt.Printf("  QQ 号范围: %d ~ %d（%d 个）\n", s.Start, s.End, s.KeyCount)
+	fmt.Printf("  分区数: %d，最大层数: %d，MPHF %.2f bit/键\n", s.Partitions, s.MaxLevels, s.BitsPerKey)
+	fmt.Printf("  idx: %s，val: %s\n", qqhash.FormatSize(s.IdxSize), qqhash.FormatSize(s.ValSize))
+	fmt.Printf("  构建时间: %s\n", s.BuildTime.Format(time.DateTime))
+}
+
+func logf(format string, args ...any) {
+	color.Greenf(format+"\n", args...)
 }

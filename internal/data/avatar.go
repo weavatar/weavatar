@@ -45,6 +45,7 @@ import (
 	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/cdn"
 	"github.com/weavatar/weavatar/pkg/embed"
+	"github.com/weavatar/weavatar/pkg/qqhash"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
 
@@ -62,9 +63,10 @@ type avatarRepo struct {
 	emoji  *opentype.Font
 	client *req.Client
 	cdn    *cdn.Cdn
+	qq     *qqhash.Tables
 }
 
-func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue) (biz.AvatarRepo, error) {
+func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue, qq *qqhash.Tables) (biz.AvatarRepo, error) {
 	font1, err := embed.FontFS.ReadFile("font/SourceHanSansSC-Bold.otf")
 	if err != nil {
 		return nil, err
@@ -97,6 +99,7 @@ func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.
 		emoji:  emoji,
 		client: client,
 		cdn:    cdn.NewCdn(conf),
+		qq:     qq,
 	}, nil
 }
 
@@ -282,34 +285,27 @@ func (r *avatarRepo) GetWeAvatar(hash, appID string) (string, []byte, time.Time,
 }
 
 // GetQqByHash 通过哈希获取 Q 头像
-// 系统有前 16 位的 MD5 和 SHA256 哈希表
-// 哈希表通过前两位十六进制数分表存储
+// 哈希到 QQ 号的映射由 MPHF 表提供，命中结果已用完整摘要校验过
 func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error) {
-	hashType := "sha256"
-	if len(hash) == 32 {
-		hashType = "md5"
+	qq, ok := r.qq.Lookup(hash)
+	if !ok {
+		return "", nil, time.Now(), qqhash.ErrNotFound
 	}
-	index, err := strconv.ParseUint(hash[:2], 16, 64)
-	if err != nil {
-		return "", nil, time.Now(), err
-	}
-
-	table := fmt.Sprintf("hash.qq_%s_%d", hashType, index)
-	qqHash := new(biz.QqHash)
-	if err = r.db.Table(table).Where("h = UNHEX(?)", hash[:16]).First(qqHash).Error; err != nil {
-		return "", nil, time.Now(), err
+	q := strconv.FormatUint(uint64(qq), 10)
+	if len(q) < 2 {
+		return "", nil, time.Now(), qqhash.ErrNotFound
 	}
 
-	fn := filepath.Join("storage", "cache", "qq", qqHash.Q[:2], qqHash.Q)
+	fn := filepath.Join("storage", "cache", "qq", q[:2], q)
 	if file.Exists(fn) {
 		img, err := os.ReadFile(fn)
 		lmt, err2 := file.LastModified(fn, "UTC")
 		if err == nil && err2 == nil && lmt.Add(CacheThreshold).After(time.Now()) {
-			return qqHash.Q, img, lmt, nil
+			return q, img, lmt, nil
 		}
 	}
 
-	img, err := avatars.Qq(qqHash.Q)
+	img, err := avatars.Qq(q)
 	if err != nil {
 		return "", nil, time.Now(), err
 	}
@@ -317,7 +313,7 @@ func (r *avatarRepo) GetQqByHash(hash string) (string, []byte, time.Time, error)
 		return "", nil, time.Now(), err
 	}
 
-	return qqHash.Q, img, time.Now(), nil
+	return q, img, time.Now(), nil
 }
 
 // GetGravatarByHash 通过哈希获取 Gravatar 头像

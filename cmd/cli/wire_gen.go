@@ -25,12 +25,7 @@ func initCli() (*app.Cli, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger := bootstrap.NewLog(koanf)
-	db, err := bootstrap.NewDB(koanf, logger)
-	if err != nil {
-		return nil, err
-	}
-	cliService := service.NewCliService(db)
+	cliService := service.NewCliService(koanf)
 	cli := route.NewCli(cliService)
 	command := bootstrap.NewCli(cli)
 	appCli := app.NewCli(command)

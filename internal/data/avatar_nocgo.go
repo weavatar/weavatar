@@ -12,6 +12,7 @@ import (
 
 	"github.com/weavatar/weavatar/internal/biz"
 	"github.com/weavatar/weavatar/internal/http/request"
+	"github.com/weavatar/weavatar/pkg/qqhash"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
 
@@ -21,7 +22,7 @@ const (
 
 type avatarRepo struct{}
 
-func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue) (biz.AvatarRepo, error) {
+func NewAvatarRepo(cache cache.Cache, conf *koanf.Koanf, db *gorm.DB, log *slog.Logger, queue *queue.Queue, qq *qqhash.Tables) (biz.AvatarRepo, error) {
 	return &avatarRepo{}, nil
 }
 

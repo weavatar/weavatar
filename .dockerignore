@@ -1,0 +1,5 @@
+.git
+.idea
+web/node_modules
+storage/hash
+tmp

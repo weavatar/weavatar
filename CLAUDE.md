@@ -52,6 +52,16 @@ wire ./cmd/cli
 
 首次运行需复制配置文件：`cp config/config.example.yml config/config.yml`
 
+### QQ 哈希表
+
+QQ 头像回退依赖 `hash.dir`（默认 `storage/hash/`）下的 MPHF 映射表，文件缺失时仅关闭该回退。详见 `docs/qq-hash.md`。
+
+```bash
+./cli hash build            # 构建，默认 10000 ~ 4000000000，md5 + sha256
+./cli hash verify --full    # 全量校验
+./cli hash lookup <hash>    # 调试查询
+```
+
 ## 架构
 
 项目采用分层架构，通过 Google Wire 进行编译期依赖注入。
@@ -63,7 +73,7 @@ route (路由注册) → service (业务逻辑) → biz (实体/接口定义) �
 ```
 
 - **`cmd/app`** — HTTP 服务入口，Wire 注入配置
-- **`cmd/cli`** — CLI 工具入口（如批量生成 QQ 头像哈希映射）
+- **`cmd/cli`** — CLI 工具入口（`hash build/verify/lookup/stat`，构建与校验 QQ 哈希映射表，不依赖数据库）
 - **`internal/bootstrap`** — 基础设施初始化（配置、数据库、HTTP 服务器、缓存、队列、定时任务、加密、校验器），统一通过 `ProviderSet` 暴露给 Wire
 - **`internal/biz`** — 实体定义和 Repo 接口（`UserRepo`、`AvatarRepo`），不含具体实现
 - **`internal/service`** — 业务逻辑层（`AvatarService`、`UserService`、`VerifyCodeService`、`SystemService`、`CliService`）
@@ -77,6 +87,8 @@ route (路由注册) → service (业务逻辑) → biz (实体/接口定义) �
 ### 外部集成包（`pkg/`）
 
 - **`pkg/avatars`** — Gravatar 和 QQ 头像获取
+- **`pkg/mphf`** — BBHash 风格最小完美哈希函数（构建、序列化、mmap 零拷贝加载）
+- **`pkg/qqhash`** — QQ 邮箱哈希 → QQ 号映射表（MPHF + uint32 值数组，键为完整摘要不截断）
 - **`pkg/cdn`** — 多 CDN 缓存刷新（11+ 驱动：Cloudflare、华为云、又拍云、EdgeOne 等）
 - **`pkg/audit`** — 内容审核（阿里云、腾讯 COS）
 - **`pkg/sms`** — 短信发送（阿里云、腾讯云）
