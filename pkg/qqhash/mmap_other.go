@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// mapFile 在不支持 mmap 的平台上把整个文件读入内存。
 func mapFile(path string) ([]byte, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {

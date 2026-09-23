@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// randomKeys 生成 n 个互不相同的随机键，每个 keySize 字节。
 func randomKeys(t testing.TB, n, keySize int, seed uint64) []byte {
 	t.Helper()
 	r := rand.New(rand.NewPCG(seed, seed^0xABCDEF))
@@ -29,7 +28,7 @@ func randomKeys(t testing.TB, n, keySize int, seed uint64) []byte {
 	return keys
 }
 
-// digestKeys 生成 n 个类似生产环境的键：连续整数的 MD5 摘要。
+// 用连续整数的 MD5 摘要模拟生产环境的键
 func digestKeys(n int) []byte {
 	keys := make([]byte, n*md5.Size)
 	var buf [8]byte
@@ -41,7 +40,6 @@ func digestKeys(n int) []byte {
 	return keys
 }
 
-// assertBijection 断言所有键映射到 [0, n) 内互不相同的槽位。
 func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int) {
 	t.Helper()
 	n := len(keys) / keySize
@@ -225,13 +223,13 @@ func TestNonMember(t *testing.T) {
 			assert.Less(t, slot, uint64(n))
 		}
 	}
-	// 非成员键大概率会落到某个已置位的槽，所以这里只验证不会越界或 panic
+	// 非成员键大概率会命中某个槽，只验证不越界
 	t.Logf("non-member keys reported found: %d/10000", found)
 }
 
 func TestSeedRetry(t *testing.T) {
 	keys := randomKeys(t, 10_000, 16, 13)
-	// 只允许一层几乎必然放不完，构建过程需要换种子重试直到失败
+	// 只允许一层必然放不完，重试耗尽后应失败
 	_, err := Build(keys, 16, Options{MaxLevels: 1})
 	require.ErrorIs(t, err, ErrBuildFailed)
 

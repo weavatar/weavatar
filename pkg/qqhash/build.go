@@ -21,29 +21,24 @@ import (
 )
 
 const (
-	// DefaultStart 是默认的起始 QQ 号。
-	DefaultStart = MinQq
-	// DefaultEnd 是默认的结束 QQ 号。
-	DefaultEnd = 4_000_000_000
-	// DefaultPartBits 是默认的分区位数，256 个分区正好对应哈希的前两位十六进制。
-	DefaultPartBits = 8
+	DefaultStart    = MinQq
+	DefaultEnd      = MaxQq
+	DefaultPartBits = 8 // 256 个分区对应哈希的前两位十六进制
 
 	enumerateChunk   = 1 << 20
 	bucketBuffer     = 32 << 10 // 每个 worker 对每个桶的写缓冲
 	progressInterval = 10 * time.Second
 )
 
-// BuildOptions 是构建参数。
 type BuildOptions struct {
-	Dir      string   // 输出目录
-	Types    []string // 要构建的哈希类型，默认 md5 和 sha256
-	Start    uint64   // 起始 QQ 号（含），默认 10000
-	End      uint64   // 结束 QQ 号（含），默认 4000000000
-	PartBits uint32   // 分区位数，分区数 = 2^PartBits，默认 8
-	Gamma    float64  // MPHF 的 γ 参数，默认 2.0
-	Workers  int      // 并行数，默认 CPU 数
-	// Logf 输出进度，可为 nil。
-	Logf func(format string, args ...any)
+	Dir      string
+	Types    []string                         // 默认全部
+	Start    uint64                           // 含，默认 10000
+	End      uint64                           // 含，默认 uint32 上限
+	PartBits uint32                           // 默认 8
+	Gamma    float64                          // 默认 2.0
+	Workers  int                              // 默认 CPU 数
+	Logf     func(format string, args ...any) // 可为 nil
 }
 
 func (o BuildOptions) normalize() (BuildOptions, error) {
@@ -94,10 +89,6 @@ func (o BuildOptions) normalize() (BuildOptions, error) {
 	return o, nil
 }
 
-// Build 构建全部哈希类型的映射表并写入 o.Dir。
-//
-// 先把所有 QQ 号按分区写入桶文件，再逐分区重算摘要、构建 MPHF 并写入值数组，
-// 最后原子替换目标文件。构建期间的中间文件位于 o.Dir/tmp。
 func Build(ctx context.Context, o BuildOptions) error {
 	o, err := o.normalize()
 	if err != nil {
@@ -146,7 +137,6 @@ func bucketPath(tmp, typ string, p int) string {
 	return filepath.Join(tmp, fmt.Sprintf("%s_%d.bin", typ, p))
 }
 
-// enumerate 枚举全部 QQ 号，按分区把 QQ 号写入桶文件，返回每种类型每个分区的键数。
 func enumerate(ctx context.Context, o BuildOptions, tmp string) (map[string][]uint64, error) {
 	parts := 1 << o.PartBits
 	buckets := make(map[string][]*bucket, len(o.Types))
@@ -277,7 +267,6 @@ func enumerate(ctx context.Context, o BuildOptions, tmp string) (map[string][]ui
 	return counts, nil
 }
 
-// buildType 构建一种哈希类型的 idx 与 val 文件。
 func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []uint64) error {
 	keyBytes, err := keyBytesOf(typ)
 	if err != nil {
@@ -400,7 +389,6 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 	return nil
 }
 
-// buildPartition 读取桶文件，重算摘要并构建该分区的 MPHF，返回 MPHF 与按槽位排列的值数组。
 func buildPartition(tmp, typ string, p, keyBytes int, count uint64, gamma float64, seed uint64) (*mphf.MPHF, []byte, error) {
 	raw, err := os.ReadFile(bucketPath(tmp, typ, p))
 	if err != nil {
@@ -442,7 +430,7 @@ func buildPartition(tmp, typ string, p, keyBytes int, count uint64, gamma float6
 	return m, vals, nil
 }
 
-// buildSeed 由类型和范围派生种子，使同样的输入得到同样的输出。
+// 让构建可复现
 func buildSeed(typ string, start, end uint64) uint64 {
 	var out [sha256.Size]byte
 	d := digestOf(TypeSHA256, fmt.Appendf(nil, "%s:%d:%d", typ, start, end), &out)

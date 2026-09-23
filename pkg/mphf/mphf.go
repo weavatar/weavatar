@@ -1,20 +1,13 @@
-// Package mphf 实现 BBHash 风格的最小完美哈希函数（Minimal Perfect Hash Function）。
+// Package mphf 实现 BBHash 风格的最小完美哈希函数
 //
-// 给定 n 个互不相同的键，构建出的函数把每个键映射到 [0, n) 内互不相同的整数，
-// 且不存储键本身，空间开销约 3.7 bit/键（γ=2）。
-// 对不在原始键集合中的键，Find 可能返回任意槽位，调用方必须自行校验。
-//
-// 序列化数据全部由小端 uint64 字组成，可以直接在 mmap 的内存上零拷贝加载：
+// 序列化布局（小端 uint64 字）：
 //
 //	[0]        magic
 //	[1]        键数量 n
 //	[2]        种子
 //	[3]        层数 L
 //	[4, 4+2L)  每层 { 块数, 该层之前已放置的键数 }
-//	[4+2L, …)  每层的块数据
-//
-// 每块 8 个字（恰好一个 cache line）：首字是块前累计 rank，其余 7 个字是位向量，
-// 因此查询时每层只触发一次 cache miss。
+//	[4+2L, …)  每层的块数据，每块 8 个字：首字是块前累计 rank，其余 7 个字是位向量
 package mphf
 
 import (
@@ -35,9 +28,7 @@ const (
 	headerWords      = 4
 	levelHeaderWords = 2
 
-	// DefaultGamma 是默认的 γ 参数。
-	DefaultGamma = 2.0
-	// DefaultMaxLevels 是默认的最大层数。
+	DefaultGamma     = 2.0
 	DefaultMaxLevels = 32
 
 	maxAttempts = 16
@@ -51,35 +42,28 @@ var (
 	ErrTooManyKeys  = errors.New("mphf: too many keys")
 	ErrBuildFailed  = errors.New("mphf: build failed after retries")
 	ErrCorrupt      = errors.New("mphf: corrupt data")
-	ErrBigEndian    = errors.New("mphf: big-endian hosts are not supported")
 )
 
-// Options 是构建参数。
 type Options struct {
-	// Gamma 是每个键分配的位数，默认 2.0；越大层数越少、查询越快、体积越大。
-	Gamma float64
-	// MaxLevels 是最大层数，默认 32。超过后仍有键未放置则换种子重试。
-	MaxLevels int
-	// Seed 是初始种子，重试时自动派生新种子。
-	Seed uint64
+	Gamma     float64 // 每键位数，默认 2.0，越大查询越快、体积越大
+	MaxLevels int     // 默认 32，超过后换种子重试
+	Seed      uint64
 }
 
-// MPHF 是一个已构建或已加载的最小完美哈希函数。
 type MPHF struct {
-	words    []uint64 // 完整序列化数据（含头），levels 中的切片都指向这里
+	words    []uint64 // levels 的切片都指向这里
 	keyCount uint64
 	seed     uint64
 	levels   []level
 }
 
 type level struct {
-	data       []uint64 // blocks*8 个字
-	bits       uint64   // 数据位数 = blocks*448
+	data       []uint64
+	bits       uint64
 	keysBefore uint64
 	seed       uint64
 }
 
-// Build 用 keys 中的键构建 MPHF。keys 是连续存放的定长键，每个键 keySize 字节。
 func Build(keys []byte, keySize int, opts Options) (*MPHF, error) {
 	if keySize <= 0 || len(keys)%keySize != 0 {
 		return nil, fmt.Errorf("mphf: invalid key size %d for %d bytes", keySize, len(keys))
@@ -107,7 +91,7 @@ func Build(keys []byte, keySize int, opts Options) (*MPHF, error) {
 		if len(leftover) == 0 {
 			return assemble(uint64(n), seed, levels), nil
 		}
-		// 相同的键在每一层都会撞在一起，永远无法放置，先排除这种情况再换种子
+		// 相同的键永远分不开，先排除再换种子重试
 		if hasDuplicate(keys, keySize, leftover) {
 			return nil, ErrDuplicateKey
 		}
@@ -138,7 +122,7 @@ func buildLevels(keys []byte, keySize, n int, gamma float64, maxLevels int, seed
 		nbits := blocks * blockBits
 		lseed := levelSeed(seed, lvl)
 
-		// seen 记录被命中过的位，coll 记录被命中两次以上的位
+		// seen：被命中的位；coll：被命中两次以上的位
 		flat := blocks * (blockWords - 1)
 		seen := make([]uint64, flat)
 		coll := make([]uint64, flat)
@@ -152,7 +136,7 @@ func buildLevels(keys []byte, keySize, n int, gamma float64, maxLevels int, seed
 			}
 		}
 
-		// 撞车的键进入下一层；写入位置不会超过读取位置，可以原地复用 cur
+		// 撞车的键进入下一层，原地复用 cur
 		next := cur[:0]
 		for _, idx := range cur {
 			pos := position(hash64(keyAt(keys, keySize, idx), lseed), nbits)
@@ -161,7 +145,7 @@ func buildLevels(keys []byte, keySize, n int, gamma float64, maxLevels int, seed
 			}
 		}
 
-		// 只被命中一次的位就是本层放置的键，按块交错写入并计算累计 rank
+		// 只命中一次的位即本层放置的键，按块交错写入并累计 rank
 		data := make([]uint64, blocks*blockWords)
 		var rank uint64
 		for b := range blocks {
@@ -225,7 +209,7 @@ func assemble(n, seed uint64, built []builtLevel) *MPHF {
 	return m
 }
 
-// Load 从序列化数据加载 MPHF。data 8 字节对齐时零拷贝，返回的 MPHF 与 data 共享内存。
+// Load 返回值引用 data，data 需保持有效且不可修改；不对齐时会拷贝
 func Load(data []byte) (*MPHF, error) {
 	if len(data) < headerWords*8 || len(data)%8 != 0 {
 		return nil, ErrCorrupt
@@ -265,8 +249,7 @@ func Load(data []byte) (*MPHF, error) {
 	return m, nil
 }
 
-// Find 返回 key 对应的槽位。key 在原始键集合中时结果一定正确且唯一；
-// 否则可能返回 false，也可能返回一个错误的槽位，调用方必须自行校验。
+// Find key 不在原始键集合中时结果不可信，调用方需自行校验
 func (m *MPHF) Find(key []byte) (uint64, bool) {
 	for i := range m.levels {
 		l := &m.levels[i]
@@ -292,22 +275,18 @@ func (m *MPHF) Find(key []byte) (uint64, bool) {
 	return 0, false
 }
 
-// KeyCount 返回构建时的键数量。
 func (m *MPHF) KeyCount() uint64 {
 	return m.keyCount
 }
 
-// Levels 返回层数。
 func (m *MPHF) Levels() int {
 	return len(m.levels)
 }
 
-// Size 返回序列化后的字节数。
 func (m *MPHF) Size() int {
 	return len(m.words) * 8
 }
 
-// BitsPerKey 返回平均每个键占用的位数。
 func (m *MPHF) BitsPerKey() float64 {
 	if m.keyCount == 0 {
 		return 0
@@ -315,7 +294,7 @@ func (m *MPHF) BitsPerKey() float64 {
 	return float64(m.Size()*8) / float64(m.keyCount)
 }
 
-// Bytes 返回序列化数据。返回的切片与内部存储共享内存，调用方不得修改。
+// Bytes 与内部存储共享内存，不得修改
 func (m *MPHF) Bytes() []byte {
 	if nativeLittleEndian {
 		return unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(m.words))), len(m.words)*8)
@@ -336,14 +315,13 @@ func levelSeed(seed uint64, lvl int) uint64 {
 	return mix64(seed ^ (uint64(lvl)+1)*golden)
 }
 
-// position 把 64 位哈希均匀映射到 [0, n)，比取模快得多。
+// 乘法取高位代替取模
 func position(h, n uint64) uint64 {
 	hi, _ := bits.Mul64(h, n)
 	return hi
 }
 
-// hash64 计算 key 在指定种子下的 64 位哈希。
-// key 本身应当已经是均匀分布的（例如密码学摘要），这里只需逐字与种子混合。
+// key 应当已经均匀分布（如摘要），逐字与种子混合即可
 func hash64(key []byte, seed uint64) uint64 {
 	h := seed ^ uint64(len(key))*golden
 	for len(key) >= 8 {
@@ -358,7 +336,7 @@ func hash64(key []byte, seed uint64) uint64 {
 	return h
 }
 
-// mix64 是 MurmurHash3 的 64 位终结函数。
+// MurmurHash3 的 64 位终结函数
 func mix64(x uint64) uint64 {
 	x ^= x >> 33
 	x *= 0xff51afd7ed558ccd
@@ -373,7 +351,6 @@ var nativeLittleEndian = func() bool {
 	return *(*byte)(unsafe.Pointer(&x)) == 1
 }()
 
-// asWords 把字节切片解释为 uint64 切片，对齐且为小端主机时零拷贝。
 func asWords(b []byte) []uint64 {
 	if nativeLittleEndian && uintptr(unsafe.Pointer(unsafe.SliceData(b)))%8 == 0 {
 		return unsafe.Slice((*uint64)(unsafe.Pointer(unsafe.SliceData(b))), len(b)/8)

@@ -25,7 +25,7 @@ func NewCliService(conf *koanf.Koanf) *CliService {
 	}
 }
 
-// hashDir 返回哈希表目录，命令行参数优先于配置。
+// hashDir 命令行参数优先于配置
 func (r *CliService) hashDir(cmd *cli.Command) string {
 	if dir := cmd.String("dir"); dir != "" {
 		return dir

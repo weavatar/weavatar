@@ -57,7 +57,7 @@ wire ./cmd/cli
 QQ 头像回退依赖 `hash.dir`（默认 `storage/hash/`）下的 MPHF 映射表，文件缺失时仅关闭该回退。详见 `docs/qq-hash.md`。
 
 ```bash
-./cli hash build            # 构建，默认 10000 ~ 4000000000，md5 + sha256
+./cli hash build            # 构建，默认 10000 ~ 4294967295，md5 + sha256
 ./cli hash verify --full    # 全量校验
 ./cli hash lookup <hash>    # 调试查询
 ```

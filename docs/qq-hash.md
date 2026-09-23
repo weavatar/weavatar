@@ -7,10 +7,10 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 
 每种哈希类型两个文件，位于 `hash.dir`（默认 `storage/hash/`）：
 
-| 文件 | 内容 | 40 亿键时体积 |
+| 文件 | 内容 | 43 亿键时体积 |
 |---|---|---|
-| `qq_md5.idx` / `qq_sha256.idx` | 文件头 + 分区表 + 256 个分区各自的 MPHF | ~1.9 GB |
-| `qq_md5.val` / `qq_sha256.val` | `uint32[n]`，全局槽位 → QQ 号 | 16 GB |
+| `qq_md5.idx` / `qq_sha256.idx` | 文件头 + 分区表 + 256 个分区各自的 MPHF | ~1.9 GiB |
+| `qq_md5.val` / `qq_sha256.val` | `uint32[n]`，全局槽位 → QQ 号 | 16 GiB |
 
 - 键是**完整摘要**（MD5 16 字节、SHA256 32 字节），不截断；MPHF 体积只与键数有关。
 - 分区号取摘要首字节，与哈希的前两位十六进制对应。
@@ -23,25 +23,25 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 ## 构建
 
 ```bash
-# 默认构建 md5 + sha256，QQ 号 10000 ~ 4000000000，输出到配置的 hash.dir
+# 默认构建 md5 + sha256，QQ 号 10000 ~ 4294967295（uint32 上限），输出到配置的 hash.dir
 ./cli hash build
 
 # 常用参数
-./cli hash build --dir /data/hash --type md5 --end 4000000000 --workers 16
+./cli hash build --dir /data/hash --type md5 --workers 16
 ```
 
-流程：枚举全部 QQ 号并按分区写入桶文件（每种类型 16 GB 中间文件，位于 `hash.dir/tmp`）
+流程：枚举全部 QQ 号并按分区写入桶文件（每种类型约 17 GB 中间文件，位于 `hash.dir/tmp`）
 → 逐分区重算摘要、构建 MPHF、写入值数组 → 原子替换目标文件。
 16 核机器上两种类型合计约十几分钟；`--workers` 越大内存占用越高（SHA256 每个 worker 约 700 MB）。
 
-构建机需要的磁盘：中间文件 32 GB + 产物 36 GB。**不要直接在线上目录构建**，
+构建机需要的磁盘：中间文件约 34 GB + 产物约 38 GB。**不要直接在线上目录构建**，
 构建完成后把四个文件放到 `hash.dir` 再重启应用。
 
 ## 校验
 
 ```bash
 ./cli hash verify              # 随机抽样 10 万次查询
-./cli hash verify --full       # 按槽位全量扫描 + 分区校验和 + 覆盖检查（需要约 500 MB 内存）
+./cli hash verify --full       # 按槽位全量扫描 + 分区校验和 + 覆盖检查（需要约 540 MB 内存）
 ./cli hash lookup <hash>       # 查询单个哈希
 ./cli hash stat                # 查看文件信息
 ```
@@ -51,7 +51,7 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 ## 部署
 
 - `hash.dir` 建议挂载独立的 volume，`.dockerignore` 已排除 `storage/hash`，产物不会被打进镜像。
-- 页缓存越大命中越快：idx 全部常驻需要约 4 GB，val 全部常驻再加 32 GB；
+- 页缓存越大命中越快：idx 全部常驻需要约 4 GB，val 全部常驻再加约 34 GB；
   内存不足时每次查询最多一次 SSD 随机读。
 - QQ 号范围扩大时需要全量重建，MPHF 不支持增量。
 

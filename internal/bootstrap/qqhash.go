@@ -8,7 +8,6 @@ import (
 	"github.com/weavatar/weavatar/pkg/qqhash"
 )
 
-// NewQqHash 加载 QQ 哈希映射表，文件缺失时只记录警告，此时 QQ 头像回退不可用。
 func NewQqHash(conf *koanf.Koanf, log *slog.Logger) (*qqhash.Tables, error) {
 	dir := conf.String("hash.dir")
 	if dir == "" {

@@ -64,7 +64,7 @@ func TestBuildOpenLookup(t *testing.T) {
 		assert.Equal(t, 256, s.Partitions)
 		assert.Equal(t, s.KeyCount*4, s.ValSize)
 		assert.False(t, s.BuildTime.IsZero())
-		// 每区只有几百个键，MPHF 的固定开销摊不薄，bits/key 只做记录不做断言，见 TestBitsPerKey
+		// 每区只有几百个键，固定开销摊不薄，bits/key 见 TestBitsPerKey
 		t.Logf("%s: idx=%d val=%d bits/key=%.2f levels=%d", typ, s.IdxSize, s.ValSize, s.BitsPerKey, s.MaxLevels)
 	}
 
@@ -114,7 +114,7 @@ func TestBuildOpenLookup(t *testing.T) {
 }
 
 func TestBitsPerKey(t *testing.T) {
-	// 两个分区各 5 万键，接近生产环境单分区的摊销水平
+	// 两个分区各 5 万键，接近生产的摊销水平
 	dir := buildTestTables(t, MinQq, MinQq+99_999, 1)
 	ts, err := Open(dir)
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func TestOpenCorrupt(t *testing.T) {
 	corrupt("truncated", func(b []byte) []byte { return b[:len(b)-64] })
 	corrupt("blob magic", func(b []byte) []byte { b[blob.mphOffset] ^= 0xff; return b })
 
-	// 分区数据损坏为了启动速度不在 Open 时检查，由 Verify 的校验和发现
+	// 分区数据损坏由 Verify 的校验和发现，Open 为了启动速度不检查
 	t.Run("blob data", func(t *testing.T) {
 		b := append([]byte{}, idx...)
 		b[blob.mphOffset+blob.mphLen-1] ^= 0xff
@@ -252,6 +252,15 @@ func TestVerifyDetectsBadValue(t *testing.T) {
 	err = ts.Table(TypeMD5).Verify(t.Context(), VerifyOptions{Coverage: true})
 	require.ErrorIs(t, err, ErrCorrupt)
 	require.NoError(t, ts.Table(TypeSHA256).Verify(t.Context(), VerifyOptions{Coverage: true}))
+}
+
+func TestBuildOptionsDefaults(t *testing.T) {
+	o, err := BuildOptions{Dir: t.TempDir()}.normalize()
+	require.NoError(t, err)
+	assert.Equal(t, uint64(MinQq), o.Start)
+	assert.Equal(t, uint64(MaxQq), o.End)
+	assert.Equal(t, Types, o.Types)
+	assert.Equal(t, uint32(DefaultPartBits), o.PartBits)
 }
 
 func TestBuildOptions(t *testing.T) {

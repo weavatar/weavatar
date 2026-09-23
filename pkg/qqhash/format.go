@@ -1,13 +1,4 @@
-// Package qqhash 提供 QQ 邮箱哈希到 QQ 号的静态映射表。
-//
-// 表由 pkg/mphf 的最小完美哈希函数和一个 uint32 值数组组成，不存储哈希本身。
-// 每种哈希类型两个文件：
-//
-//	qq_{type}.idx  文件头 + 分区表 + 各分区的 MPHF（热数据，40 亿键约 1.9 GB）
-//	qq_{type}.val  uint32 值数组，全局槽位 → QQ 号（40 亿键约 16 GB）
-//
-// 查询时用完整摘要算出分区与槽位，再用槽位里的 QQ 号重新计算摘要做校验，
-// 因此不在表内的哈希不会误命中。
+// Package qqhash 提供 QQ 邮箱哈希到 QQ 号的映射表
 package qqhash
 
 import (
@@ -27,13 +18,10 @@ const (
 	TypeMD5    = "md5"
 	TypeSHA256 = "sha256"
 
-	// Version 是当前文件格式版本。
 	Version = 1
 
-	// MinQq 是最小的 QQ 号。
 	MinQq = 10000
-	// MaxQq 是值数组能表示的最大 QQ 号。
-	MaxQq = math.MaxUint32
+	MaxQq = math.MaxUint32 // 值数组是 uint32
 
 	headerSize         = 4096
 	partitionEntrySize = 40
@@ -42,7 +30,6 @@ const (
 	emailSuffix        = "@qq.com"
 )
 
-// Types 是支持的哈希类型。
 var Types = []string{TypeMD5, TypeSHA256}
 
 var idxMagic = [8]byte{'W', 'A', 'Q', 'Q', 'M', 'P', 'H', '1'}
@@ -99,12 +86,10 @@ func (h *header) tableSize() int64 {
 	return int64(h.partitions()) * partitionEntrySize
 }
 
-// blobBase 是第一个 MPHF 数据块的偏移，按页对齐。
 func (h *header) blobBase() int64 {
 	return alignUp(headerSize+h.tableSize(), headerSize)
 }
 
-// encodeIndexHead 把文件头和分区表编码成 idx 文件开头的字节。
 func encodeIndexHead(h *header, parts []partition) []byte {
 	b := make([]byte, h.blobBase())
 	copy(b[offMagic:], idxMagic[:])
@@ -139,7 +124,6 @@ func headCRC(b []byte, h *header) uint32 {
 	return crc32.Update(c, crc32.IEEETable, b[headerSize:headerSize+h.tableSize()])
 }
 
-// decodeIndexHead 解析并校验 idx 文件开头的字节。
 func decodeIndexHead(b []byte) (*header, []partition, error) {
 	if len(b) < headerSize || [8]byte(b[:8]) != idxMagic {
 		return nil, nil, fmt.Errorf("%w: bad magic", ErrCorrupt)
@@ -214,7 +198,6 @@ func keyBytesOf(typ string) (int, error) {
 	return 0, fmt.Errorf("qqhash: unsupported hash type %q", typ)
 }
 
-// typeOfHashLen 根据十六进制哈希的长度判断类型。
 func typeOfHashLen(n int) (string, bool) {
 	switch n {
 	case md5.Size * 2:
@@ -233,13 +216,11 @@ func alignUp(v, a int64) int64 {
 	return (v + a - 1) &^ (a - 1)
 }
 
-// appendEmail 把 "{qq}@qq.com" 追加到 buf。
 func appendEmail(buf []byte, qq uint64) []byte {
 	buf = strconv.AppendUint(buf, qq, 10)
 	return append(buf, emailSuffix...)
 }
 
-// digestOf 计算 email 在指定类型下的摘要，写入 out 并返回有效部分。
 func digestOf(typ string, email []byte, out *[sha256.Size]byte) []byte {
 	switch typ {
 	case TypeMD5:
@@ -253,18 +234,16 @@ func digestOf(typ string, email []byte, out *[sha256.Size]byte) []byte {
 	return nil
 }
 
-// digestQq 计算 "{qq}@qq.com" 的摘要。
 func digestQq(typ string, qq uint64, out *[sha256.Size]byte) []byte {
 	var buf [32]byte
 	return digestOf(typ, appendEmail(buf[:0], qq), out)
 }
 
-// partitionOf 取摘要最高的 partBits 位作为分区号。
 func partitionOf(d []byte, partBits uint32) uint32 {
 	return uint32(binary.BigEndian.Uint16(d[:2]) >> (16 - partBits))
 }
 
-// decodeHex 把十六进制字符串解码到 dst，长度不匹配或含非法字符时返回 false。不分配内存。
+// 不用 encoding/hex 是为了避免分配
 func decodeHex(dst []byte, src string) bool {
 	if len(src) != len(dst)*2 {
 		return false

@@ -22,14 +22,14 @@ import (
 	"github.com/weavatar/weavatar/pkg/mphf"
 )
 
-// Table 是一种哈希类型的映射表，通过 mmap 加载，可并发查询。
+// Table 只读，可并发查询
 type Table struct {
 	typ      string
 	keyBytes int
 	hdr      header
 	raw      []partition
 	parts    []part
-	values   []uint32 // val 文件的零拷贝视图
+	values   []uint32
 	idxData  []byte
 	valData  []byte
 }
@@ -40,7 +40,6 @@ type part struct {
 	slotOffset uint64
 }
 
-// Stats 是表的统计信息。
 type Stats struct {
 	Type       string
 	KeyBytes   int
@@ -55,7 +54,6 @@ type Stats struct {
 	BuildTime  time.Time
 }
 
-// OpenTable 打开 dir 下指定哈希类型的表。
 func OpenTable(dir, typ string) (*Table, error) {
 	keyBytes, err := keyBytesOf(typ)
 	if err != nil {
@@ -115,7 +113,6 @@ func OpenTable(dir, typ string) (*Table, error) {
 	return t, nil
 }
 
-// Close 释放映射的内存，之后不得再查询。
 func (t *Table) Close() error {
 	var errs []error
 	if t.idxData != nil {
@@ -130,12 +127,10 @@ func (t *Table) Close() error {
 	return errors.Join(errs...)
 }
 
-// Type 返回哈希类型。
 func (t *Table) Type() string {
 	return t.typ
 }
 
-// Lookup 通过十六进制哈希查找 QQ 号。
 func (t *Table) Lookup(hash string) (uint32, bool) {
 	var d [sha256.Size]byte
 	if !decodeHex(d[:t.keyBytes], hash) {
@@ -144,7 +139,6 @@ func (t *Table) Lookup(hash string) (uint32, bool) {
 	return t.LookupDigest(d[:t.keyBytes])
 }
 
-// LookupDigest 通过摘要字节查找 QQ 号。
 func (t *Table) LookupDigest(d []byte) (uint32, bool) {
 	if len(d) != t.keyBytes {
 		return 0, false
@@ -155,7 +149,7 @@ func (t *Table) LookupDigest(d []byte) (uint32, bool) {
 		return 0, false
 	}
 
-	// MPHF 对表外的键也会给出槽位，必须用槽位里的 QQ 号重新计算摘要校验
+	// MPHF 对表外的键也会给出槽位，必须回算摘要校验
 	qq := t.values[p.slotOffset+slot]
 	var out [sha256.Size]byte
 	if !bytes.Equal(digestQq(t.typ, uint64(qq), &out), d) {
@@ -164,7 +158,6 @@ func (t *Table) LookupDigest(d []byte) (uint32, bool) {
 	return qq, true
 }
 
-// Stats 返回统计信息。
 func (t *Table) Stats() Stats {
 	s := Stats{
 		Type:       t.typ,
@@ -188,7 +181,6 @@ func (t *Table) Stats() Stats {
 	return s
 }
 
-// FormatSize 把字节数格式化为人类可读的大小。
 func FormatSize(n uint64) string {
 	const unit = 1024
 	if n < unit {
@@ -202,13 +194,10 @@ func FormatSize(n uint64) string {
 	return fmt.Sprintf("%.2f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
-// VerifyOptions 是校验参数。
 type VerifyOptions struct {
-	Workers int
-	// Coverage 额外检查每个 QQ 号恰好出现一次，需要 (End-Start+1)/8 字节内存。
-	Coverage bool
-	// Logf 输出进度，可为 nil。
-	Logf func(format string, args ...any)
+	Workers  int
+	Coverage bool                             // 检查每个 QQ 号恰好出现一次，需要 n/8 字节内存
+	Logf     func(format string, args ...any) // 可为 nil
 }
 
 const (
@@ -216,8 +205,6 @@ const (
 	verifyMaxErrors = 20
 )
 
-// Verify 全量校验：先核对各分区 MPHF 的校验和，再按槽位顺序扫描值数组，
-// 每个槽位的 QQ 号重新计算摘要后必须映射回同一槽位。
 func (t *Table) Verify(ctx context.Context, o VerifyOptions) error {
 	if o.Workers <= 0 {
 		o.Workers = runtime.NumCPU()
@@ -301,14 +288,13 @@ func (t *Table) Verify(ctx context.Context, o VerifyOptions) error {
 		return err
 	}
 
-	// 槽位数等于键数、每个值都在范围内且互不重复，就说明每个 QQ 号恰好出现一次
+	// 槽位数等于键数、值都在范围内且不重复，即每个 QQ 号恰好出现一次
 	if f := failed.Load(); f > 0 {
 		return fmt.Errorf("%w: %d slots failed verification, first %d: %v", ErrCorrupt, f, len(msgs), msgs)
 	}
 	return nil
 }
 
-// Sample 随机抽取 count 个 QQ 号，走完整的十六进制查询路径校验。
 func (t *Table) Sample(ctx context.Context, count int, seed uint64) error {
 	r := rand.New(rand.NewPCG(seed, seed^0x5DEECE66D))
 	var out [sha256.Size]byte
@@ -326,12 +312,11 @@ func (t *Table) Sample(ctx context.Context, count int, seed uint64) error {
 	return nil
 }
 
-// Tables 汇总各哈希类型的表，按哈希长度分发查询。
 type Tables struct {
 	tables map[string]*Table
 }
 
-// Open 打开 dir 下存在的表，缺失的类型跳过。
+// Open 缺失的类型跳过
 func Open(dir string) (*Tables, error) {
 	ts := &Tables{tables: make(map[string]*Table, len(Types))}
 	for _, typ := range Types {
@@ -353,7 +338,6 @@ func Open(dir string) (*Tables, error) {
 	return ts, nil
 }
 
-// Lookup 通过十六进制哈希查找 QQ 号，按长度自动识别 MD5 或 SHA256。
 func (ts *Tables) Lookup(hash string) (uint32, bool) {
 	if ts == nil {
 		return 0, false
@@ -369,7 +353,6 @@ func (ts *Tables) Lookup(hash string) (uint32, bool) {
 	return t.Lookup(hash)
 }
 
-// Table 返回指定类型的表，未加载时返回 nil。
 func (ts *Tables) Table(typ string) *Table {
 	if ts == nil {
 		return nil
@@ -377,7 +360,6 @@ func (ts *Tables) Table(typ string) *Table {
 	return ts.tables[typ]
 }
 
-// All 按 Types 的顺序返回已加载的表。
 func (ts *Tables) All() []*Table {
 	if ts == nil {
 		return nil
@@ -391,7 +373,6 @@ func (ts *Tables) All() []*Table {
 	return all
 }
 
-// Close 关闭全部表。
 func (ts *Tables) Close() error {
 	if ts == nil {
 		return nil
