@@ -27,6 +27,12 @@
         "minor"
       ],
       "automerge": true
+    },
+    {
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "allowedVersions": "<7"
     }
   ],
   "ignoreDeps": [
