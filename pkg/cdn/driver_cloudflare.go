@@ -3,7 +3,6 @@ package cdn
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cloudflare/cloudflare-go/v7"
@@ -49,11 +48,7 @@ func (s *CloudFlare) RefreshUrl(urls []string) error {
 		option.WithAPIEmail(s.apiEmail),
 	)
 
-	for i, url := range urls {
-		urls[i] = strings.TrimPrefix(url, "https://")
-		urls[i] = strings.TrimPrefix(url, "http://")
-	}
-
+	// CloudFlare 要求传入带协议的完整 URL
 	var newUrls cache.CachePurgeParamsBodyCachePurgeSingleFile
 	newUrls.Files = cloudflare.F(urls)
 

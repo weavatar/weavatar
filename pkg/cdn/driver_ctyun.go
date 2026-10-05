@@ -101,12 +101,14 @@ func (c *CTYun) RefreshPath(paths []string) error {
 	})
 
 	// 天翼云文档要求统一使用 http 协议
+	// 不能原地修改，paths 会被依次传给其他 CDN 驱动
+	values := make([]string, len(paths))
 	for i, path := range paths {
-		paths[i] = strings.ReplaceAll(path, "https://", "http://")
+		values[i] = strings.ReplaceAll(path, "https://", "http://")
 	}
 
 	data := map[string]any{
-		"values":    paths,
+		"values":    values,
 		"task_type": 2,
 	}
 
