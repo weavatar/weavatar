@@ -1,24 +1,24 @@
 <template>
-  <div>
-    <NButton
-      block
-      :type="isActive ? 'tertiary' : 'primary'"
-      :loading="loading"
-      :disabled="isActive"
+  <div class="shrink-0">
+    <button
+      type="button"
+      class="btn-secondary h-11 px-4 text-sm tabular"
+      :disabled="isActive || loading"
       @click="handleSend"
     >
-      {{ isActive ? `${remaining} s` : '发送' }}
-    </NButton>
-    <GeetestCaptcha :config="{ product: 'bind' }" @initialized="onCaptchaInit" />
+      <span v-if="loading" class="i-lucide-loader-circle animate-spin text-sm" />
+      {{ isActive ? `${remaining} s 后重发` : '发送验证码' }}
+    </button>
+    <geetest-captcha :config="{ product: 'bind' }" @initialized="onCaptchaInit" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import { NButton } from 'naive-ui'
 import { GeetestCaptcha } from 'vue3-geetest'
-import captchaApi from '@/api/captcha'
 import { useRequest } from 'alova/client'
+import captchaApi from '@/api/captcha'
+import { isEmail, isPhone } from '@/utils/validate'
 
 const props = defineProps<{
   to: string
@@ -46,8 +46,8 @@ const startCountdown = () => {
   remaining.value = 60
   timer = setInterval(() => {
     remaining.value--
-    if (remaining.value <= 0) {
-      clearInterval(timer!)
+    if (remaining.value <= 0 && timer) {
+      clearInterval(timer)
       timer = null
     }
   }, 1000)
@@ -60,9 +60,6 @@ onUnmounted(() => {
 // 发送
 const loading = ref(false)
 
-const isPhone = (val: string) => /^1[3-9]\d{9}$/.test(val)
-const isEmail = (val: string) => /^[\w.-]+@[\w.-]+\.\w+$/.test(val)
-
 const handleSend = () => {
   if (!isPhone(props.to) && !isEmail(props.to)) {
     window.$message.error('请输入正确的手机号或邮箱')
@@ -71,7 +68,7 @@ const handleSend = () => {
   captchaInstance?.showCaptcha()
 }
 
-const doSend = async (validation: any) => {
+const doSend = (validation: any) => {
   loading.value = true
   const api = isPhone(props.to)
     ? captchaApi.sms(props.to, props.useFor, validation)
@@ -79,7 +76,7 @@ const doSend = async (validation: any) => {
 
   useRequest(api)
     .onSuccess(() => {
-      window.$message.success('发送成功')
+      window.$message.success('验证码已发送')
       startCountdown()
     })
     .onComplete(() => {

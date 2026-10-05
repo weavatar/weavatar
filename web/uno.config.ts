@@ -1,56 +1,122 @@
-import type { UserConfig } from 'unocss'
-import { defineConfig, presetAttributify, presetWind3 } from 'unocss'
+import { defineConfig, presetIcons, presetWind4, transformerDirectives } from 'unocss'
 
-const config: UserConfig = {
+export default defineConfig({
   content: {
     pipeline: {
+      include: [/\.(vue|ts)($|\?)/],
       exclude: ['node_modules', '.git', '.github', '.vscode', 'build', 'dist', 'public', 'types']
     }
   },
-  presets: [presetWind3({ dark: 'class' }), presetAttributify()],
-  shortcuts: [
-    ['wh-full', 'w-full h-full'],
-    ['f-c-c', 'flex justify-center items-center'],
-    ['flex-col', 'flex flex-col'],
-    ['absolute-lt', 'absolute left-0 top-0'],
-    ['absolute-lb', 'absolute left-0 bottom-0'],
-    ['absolute-rt', 'absolute right-0 top-0'],
-    ['absolute-rb', 'absolute right-0 bottom-0'],
-    ['absolute-center', 'absolute-lt f-c-c wh-full'],
-    ['text-ellipsis', 'truncate']
+  presets: [
+    presetWind4({
+      dark: 'class',
+      preflights: { reset: true, theme: 'on-demand' }
+    }),
+    presetIcons({
+      scale: 1.1,
+      extraProperties: {
+        display: 'inline-block',
+        'vertical-align': 'middle',
+        'flex-shrink': '0'
+      },
+      collections: {
+        lucide: () => import('@iconify-json/lucide/icons.json').then((i) => i.default)
+      }
+    })
   ],
-  rules: [
-    [/^bc-(.+)$/, ([, color]) => ({ 'border-color': `#${color}` })],
-    [
-      'card-shadow',
-      { 'box-shadow': '0 1px 2px -2px #00000029, 0 3px 6px #0000001f, 0 5px 12px 4px #00000017' }
-    ]
-  ],
+  transformers: [transformerDirectives()],
+  shortcuts: {
+    // 布局：全宽区块内的居中容器
+    wrap: 'mx-auto w-full max-w-7xl px-6 sm:px-10',
+    'wrap-sm': 'mx-auto w-full max-w-3xl px-6 sm:px-10',
+    section: 'py-20 sm:py-28',
+    // 表面
+    surface: 'bg-elev border border-line rounded-2xl',
+    'surface-muted': 'bg-muted border border-line rounded-2xl',
+    // 文字
+    eyebrow: 'inline-flex items-center gap-2.5 text-xs font-600 tracking-[0.06em] text-brand',
+    'display-text': 'font-700 tracking-normal leading-[1.18]',
+    // 按钮
+    btn: 'inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full text-sm font-600 transition-all duration-200 select-none cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
+    'btn-primary':
+      'btn bg-brand text-white hover:bg-brand-hover active:bg-brand-pressed shadow-brand hover:-translate-y-0.5',
+    'btn-secondary':
+      'btn bg-elev text-fg border border-line-strong hover:bg-muted hover:border-fg/25 hover:-translate-y-0.5',
+    'btn-ghost': 'btn bg-transparent text-fg2 hover:text-fg hover:bg-fg/6',
+    'btn-danger': 'btn bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/16',
+    'btn-sm': 'h-9 px-4 text-[13px]',
+    'btn-lg': 'h-12 px-7 text-[15px]',
+    'btn-icon': 'px-0 w-10 h-10',
+    // 链接
+    link: 'text-brand hover:underline underline-offset-4 decoration-brand/40',
+    'nav-link':
+      'px-3 py-2 rounded-lg text-sm font-500 text-fg2 hover:text-fg hover:bg-fg/6 transition-colors',
+    // 小标签
+    chip: 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-500 bg-muted border border-line text-fg2',
+    'chip-brand': 'chip bg-brand/10 border-brand/20 text-brand',
+    kbd: 'inline-block px-1.5 py-0.5 rounded-md bg-muted border border-line text-[0.85em] font-mono text-fg'
+  },
   theme: {
     colors: {
-      primary: 'var(--primary-color)',
-      primary_hover: 'var(--primary-color-hover)',
-      primary_pressed: 'var(--primary-color-pressed)',
-      primary_active: 'var(--primary-color-active)',
-      info: 'var(--info-color)',
-      info_hover: 'var(--info-color-hover)',
-      info_pressed: 'var(--info-color-pressed)',
-      info_active: 'var(--info-color-active)',
-      success: 'var(--success-color)',
-      success_hover: 'var(--success-color-hover)',
-      success_pressed: 'var(--success-color-pressed)',
-      success_active: 'var(--success-color-active)',
-      warning: 'var(--warning-color)',
-      warning_hover: 'var(--warning-color-hover)',
-      warning_pressed: 'var(--warning-color-pressed)',
-      warning_active: 'var(--warning-color-active)',
-      error: 'var(--error-color)',
-      error_hover: 'var(--error-color-hover)',
-      error_pressed: 'var(--error-color-pressed)',
-      error_active: 'var(--error-color-active)',
-      dark: '#18181c'
+      brand: {
+        DEFAULT: '#0a7aff',
+        hover: '#2b8dff',
+        pressed: '#0062d6'
+      },
+      bg: 'var(--wa-bg)',
+      elev: 'var(--wa-elev)',
+      muted: 'var(--wa-muted)',
+      fg: 'var(--wa-fg)',
+      fg2: 'var(--wa-fg2)',
+      fg3: 'var(--wa-fg3)',
+      line: {
+        DEFAULT: 'var(--wa-line)',
+        strong: 'var(--wa-line-strong)'
+      }
+    },
+    font: {
+      sans: 'var(--wa-font-sans)',
+      mono: 'var(--wa-font-mono)'
+    },
+    shadow: {
+      card: '0 1px 2px rgba(0,0,0,.04), 0 8px 24px -12px rgba(0,0,0,.12)',
+      'card-hover': '0 1px 2px rgba(0,0,0,.04), 0 16px 40px -16px rgba(0,0,0,.18)',
+      brand: '0 1px 2px rgba(10,122,255,.3), 0 8px 24px -8px rgba(10,122,255,.5)',
+      glow: '0 0 0 1px rgba(10,122,255,.25), 0 12px 40px -12px rgba(10,122,255,.45)'
+    },
+    animation: {
+      keyframes: {
+        'scroll-up': '{from{transform:translateY(0)}to{transform:translateY(-50%)}}',
+        'scroll-down': '{from{transform:translateY(-50%)}to{transform:translateY(0)}}',
+        marquee: '{from{transform:translateX(0)}to{transform:translateX(-50%)}}',
+        float: '{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}',
+        dash: '{to{stroke-dashoffset:-24}}',
+        'pulse-ring': '{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.2);opacity:0}}'
+      },
+      durations: {
+        'scroll-up': '40s',
+        'scroll-down': '36s',
+        marquee: '45s',
+        float: '6s',
+        dash: '1.2s',
+        'pulse-ring': '1.8s'
+      },
+      timingFns: {
+        'scroll-up': 'linear',
+        'scroll-down': 'linear',
+        marquee: 'linear',
+        float: 'ease-in-out',
+        dash: 'linear',
+        'pulse-ring': 'ease-out'
+      },
+      counts: {
+        'scroll-up': 'infinite',
+        'scroll-down': 'infinite',
+        marquee: 'infinite',
+        float: 'infinite',
+        dash: 'infinite',
+        'pulse-ring': 'infinite'
+      }
     }
   }
-}
-
-export default defineConfig(config)
+})

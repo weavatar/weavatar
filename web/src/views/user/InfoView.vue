@@ -1,56 +1,117 @@
 <template>
-  <div class="w-100 max-w-md mx-auto mt-20">
-    <NCard title="我的资料">
-      <div class="flex items-end my-8">
-        <div class="w-12.5 h-12.5 border border-gray-200">
-          <NImage width="50" :src="userStore.info.avatar" preview-disabled lazy />
+  <div>
+    <page-header title="我的资料" desc="以下资料仅在 WeAvatar 站内显示。" />
+
+    <div
+      class="mx-auto w-full max-w-5xl px-6 sm:px-10 py-10 sm:py-12 grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]"
+    >
+      <!-- 概览 -->
+      <div class="surface p-6 flex flex-col items-center text-center">
+        <div class="relative">
+          <avatar-image
+            :src="preview || userStore.info.avatar"
+            :size="96"
+            rounded="2xl"
+            alt="头像"
+            class="ring-1 ring-line shadow-card"
+          />
+          <span
+            v-if="userStore.info.real_name"
+            class="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-elev border border-line flex items-center justify-center text-green-500"
+            title="已实名"
+          >
+            <span class="i-lucide-badge-check text-base" />
+          </span>
         </div>
-        <div>
-          <h1 class="m-0 pl-5 text-xl">
-            {{ userStore.info.nickname }}
-            <NTag type="success">{{ userStore.info.real_name ? '已实名' : '未实名' }}</NTag>
-          </h1>
-          <h4 class="m-0 ml-5">
-            <small>ID: {{ userStore.info.id }}</small>
-          </h4>
+        <div class="mt-4 text-lg font-700 text-fg">{{ userStore.info.nickname }}</div>
+        <div class="mt-1 flex items-center gap-2">
+          <span
+            class="chip"
+            :class="userStore.info.real_name ? 'text-green-600 dark:text-green-400' : ''"
+          >
+            {{ userStore.info.real_name ? '已实名' : '未实名' }}
+          </span>
         </div>
+        <dl class="mt-6 w-full text-sm divide-y divide-line">
+          <div class="flex items-center justify-between py-2.5">
+            <dt class="text-fg3">用户 ID</dt>
+            <dd class="font-mono text-fg flex items-center gap-1">
+              {{ userStore.info.id || '—' }}
+              <copy-button v-if="userStore.info.id" :text="userStore.info.id" class="!w-6 !h-6" />
+            </dd>
+          </div>
+          <div class="flex items-center justify-between py-2.5">
+            <dt class="text-fg3">注册时间</dt>
+            <dd class="text-fg tabular">{{ formatDate(userStore.info.created_at) || '—' }}</dd>
+          </div>
+        </dl>
       </div>
-      <h4>下面的设置目前仅在 WeAvatar 平台显示使用</h4>
-      <NSpin :show="pageLoading">
-        <NForm :model="model">
-          <NFormItem path="nickname" label="昵称">
-            <NInput
-              v-model:value="model.nickname"
-              placeholder="输入一个昵称"
-              @keydown.enter.prevent
-            />
-          </NFormItem>
-          <NFormItem path="avatar" label="头像">
-            <NInput
-              v-model:value="model.avatar"
-              placeholder="输入一个图片地址"
-              @keydown.enter.prevent
-            />
-          </NFormItem>
-          <NButton type="primary" block :loading="saveLoading" @click="handleSave">保存</NButton>
-        </NForm>
-      </NSpin>
-    </NCard>
+
+      <!-- 表单 -->
+      <div class="surface p-6 sm:p-8">
+        <h2 class="text-base font-700 text-fg">基本资料</h2>
+        <n-spin :show="pageLoading">
+          <div class="mt-6 space-y-5">
+            <label class="block">
+              <span class="block text-sm font-600 text-fg mb-2">昵称</span>
+              <n-input
+                v-model:value="model.nickname"
+                size="large"
+                placeholder="输入一个昵称"
+                maxlength="30"
+                show-count
+                @keydown.enter.prevent
+              />
+            </label>
+            <label class="block">
+              <span class="block text-sm font-600 text-fg mb-2">头像地址</span>
+              <n-input
+                v-model:value="model.avatar"
+                size="large"
+                placeholder="输入一个图片地址（https://…）"
+                :input-props="{ spellcheck: false }"
+                @keydown.enter.prevent
+              >
+                <template #prefix>
+                  <span class="i-lucide-link text-fg3" />
+                </template>
+              </n-input>
+              <span class="mt-1.5 block text-xs text-fg3">仅用于控制台显示。</span>
+            </label>
+            <div class="pt-2 flex items-center gap-3">
+              <button type="button" class="btn-primary" :disabled="saveLoading" @click="handleSave">
+                <span v-if="saveLoading" class="i-lucide-loader-circle animate-spin text-base" />
+                保存修改
+              </button>
+              <router-link :to="{ name: 'user-avatar' }" class="btn-ghost"
+                >返回头像管理</router-link
+              >
+            </div>
+          </div>
+        </n-spin>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NButton, NCard, NForm, NFormItem, NImage, NInput, NSpin, NTag } from 'naive-ui'
+import { computed, ref } from 'vue'
+import { NInput, NSpin } from 'naive-ui'
+import { useRequest } from 'alova/client'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import AvatarImage from '@/components/ui/AvatarImage.vue'
+import CopyButton from '@/components/ui/CopyButton.vue'
 import { useUserStore } from '@/stores'
 import userApi from '@/api/user'
-import { useRequest } from 'alova/client'
+import { formatDate } from '@/utils/format'
 
 const userStore = useUserStore()
 
 const pageLoading = ref(true)
 const saveLoading = ref(false)
 const model = ref({ nickname: '', avatar: '' })
+
+const preview = computed(() => (/^https?:\/\//.test(model.value.avatar) ? model.value.avatar : ''))
 
 useRequest(userApi.info())
   .onSuccess(({ data }: any) => {

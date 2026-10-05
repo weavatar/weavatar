@@ -1,113 +1,111 @@
-<script setup lang="ts">
-import type { NumberAnimationInst } from 'naive-ui'
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { NButton, NNumberAnimation, NAvatar } from 'naive-ui'
-
-const props = defineProps<{
-  usage: number
-  avatars: string[]
-}>()
-
-const usageRef = defineModel<NumberAnimationInst | null>('usageRef')
-const router = useRouter()
-
-const column1 = computed(() => props.avatars.slice(0, 10))
-const column2 = computed(() => props.avatars.slice(10, 20))
-const column3 = computed(() => props.avatars.slice(20, 30))
-const column4 = computed(() => props.avatars.slice(30, 40))
-const column5 = computed(() => props.avatars.slice(40, 50))
-</script>
-
 <template>
-  <section class="relative overflow-hidden">
-    <div class="hero-glow" />
+  <section class="relative overflow-x-clip">
+    <!-- 背景：坐标纸网格 + 品牌光晕 -->
+    <div
+      class="absolute inset-0 -top-16 wa-grid wa-mask-radial pointer-events-none"
+      aria-hidden="true"
+    />
+    <div
+      class="absolute -top-48 left-1/2 -translate-x-1/2 w-[64rem] h-[32rem] rounded-full bg-brand/14 blur-[140px] pointer-events-none"
+      aria-hidden="true"
+    />
 
     <div
-      class="max-w-360 mx-auto grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-20 px-6 py-20 lg:py-0 lg:min-h-[calc(100vh-4rem)]"
+      class="relative wrap grid items-center gap-12 pt-16 pb-14 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:py-0 lg:min-h-[calc(100vh-4rem)] lg:max-h-[56rem]"
     >
-      <!-- 左侧文字 -->
-      <div class="text-center lg:text-left">
-        <div
-          class="inline-block text-sm font-500 text-blue-500 bg-blue-500/8 border border-blue-500/15 rounded-full px-3.5 py-1 mb-6"
-        >
-          新一代头像服务
-        </div>
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-800 leading-tight tracking-tight mb-5">
-          您的免费网络资料卡
-        </h1>
-        <p class="text-sm lg:text-base leading-relaxed opacity-80 mb-2">
-          将电子邮箱或手机号变成您的数字护照，<br class="hidden sm:block" />
-          您在互联网上发帖、评论或在线互动时均可使用。
-        </p>
-        <p class="text-base opacity-60 mb-8">一次设置，随处可见。</p>
-        <div class="flex gap-3 mb-8 justify-center lg:justify-start">
-          <NButton type="info" size="large" @click="router.push({ name: 'login' })">开始使用</NButton>
-          <NButton size="large" @click="router.push({ name: 'doc' })">浏览文档</NButton>
-        </div>
-        <div class="flex items-baseline gap-1.5 text-sm justify-center lg:justify-start">
-          <span>昨日共响应</span>
-          <span class="text-2xl font-700 text-blue-500 tabular-nums">
-            <NNumberAnimation
-              ref="usageRef"
-              :from="0"
-              :to="usage"
-              :active="false"
-              :duration="3000"
-              show-separator
-            />
+      <!-- 文案 -->
+      <div class="max-w-2xl">
+        <div v-reveal class="eyebrow mb-6">
+          <span class="relative flex w-2 h-2">
+            <span class="absolute inset-0 rounded-full bg-brand animate-pulse-ring" />
+            <span class="relative w-2 h-2 rounded-full bg-brand" />
           </span>
-          <span>次请求</span>
+          <span>新一代头像服务 · 完整兼容 Gravatar</span>
+        </div>
+
+        <h1
+          v-reveal="60"
+          class="display-text text-[2.75rem] sm:text-[3.75rem] lg:text-[4.5rem] text-fg"
+        >
+          你的头像，<br />
+          <span class="text-brand">随处可见</span>。
+        </h1>
+
+        <p v-reveal="120" class="mt-6 text-base sm:text-lg text-fg2 leading-relaxed max-w-xl">
+          用邮箱或手机号设置一次头像，所有接入 WeAvatar 的网站都会自动显示。
+        </p>
+
+        <div v-reveal="180" class="mt-8 flex flex-wrap items-center gap-3">
+          <router-link :to="{ name: 'login' }" class="btn-primary btn-lg">
+            开始使用
+            <span class="i-lucide-arrow-right text-base" />
+          </router-link>
+          <router-link :to="{ name: 'doc' }" class="btn-secondary btn-lg">查看文档</router-link>
+        </div>
+
+        <div
+          v-reveal="240"
+          class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-fg2"
+        >
+          <div v-if="usage > 0" class="flex items-baseline gap-1.5">
+            <span>昨日响应</span>
+            <span class="text-2xl font-800 text-fg tabular tracking-tight">{{ formatted }}</span>
+            <span>次请求</span>
+          </div>
         </div>
       </div>
 
-      <!-- 右侧头像滚动列 -->
-      <div class="avatar-area hidden lg:flex transition-opacity duration-700" :class="avatars.length > 0 ? 'opacity-100' : 'opacity-0'">
-        <div class="flex gap-3 h-full">
-          <div v-for="(col, ci) in [column1, column2, column3, column4, column5]" :key="ci" class="w-14 h-full overflow-hidden">
-            <div class="flex flex-col gap-3" :class="ci % 2 === 0 ? 'scroll-up' : 'scroll-down'">
-              <template v-for="c in 2" :key="c">
-                <NAvatar v-for="(url, i) in col" :key="`${c}-${i}`" :src="url" round :size="56" class="shrink-0 shadow-sm transition-transform duration-300 hover:scale-112" />
-              </template>
-            </div>
-          </div>
+      <!-- 头像墙（桌面端） -->
+      <div v-reveal="200" class="hidden lg:block">
+        <avatar-wall :avatars="avatars" />
+      </div>
+    </div>
+
+    <!-- 头像跑马灯（移动端） -->
+    <div class="relative lg:hidden pb-14 overflow-hidden wa-mask-x">
+      <div class="flex w-max animate-marquee">
+        <div v-for="copy in 2" :key="copy" class="flex gap-3 pr-3">
+          <avatar-image
+            v-for="(url, i) in mobileList"
+            :key="`${copy}-${i}`"
+            :src="url"
+            :size="56"
+            rounded="xl"
+            class="ring-1 ring-line"
+          />
         </div>
       </div>
     </div>
   </section>
 </template>
 
-<style scoped>
-.hero-glow {
-  position: absolute;
-  top: -12.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 56rem;
-  height: 37.5rem;
-  background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
-  pointer-events: none;
-}
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { TransitionPresets, useTransition } from '@vueuse/core'
+import AvatarWall from './AvatarWall.vue'
+import AvatarImage from '@/components/ui/AvatarImage.vue'
+import { formatNumber } from '@/utils/format'
+import { placeholderAvatars } from './placeholders'
 
-.avatar-area {
-  height: 32.5rem;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
-}
+const props = defineProps<{
+  usage: number
+  avatars: string[]
+}>()
 
-.scroll-up { animation: scrollUp 28s linear infinite; }
-.scroll-down { animation: scrollDown 24s linear infinite; }
+const source = ref(0)
+watch(
+  () => props.usage,
+  (v) => {
+    source.value = v
+  }
+)
+const animated = useTransition(source, {
+  duration: 2400,
+  transition: TransitionPresets.easeOutExpo
+})
+const formatted = computed(() => formatNumber(animated.value))
 
-@keyframes scrollUp {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(calc(-50% - 0.44rem)); }
-}
-@keyframes scrollDown {
-  0% { transform: translateY(calc(-50% - 0.44rem)); }
-  100% { transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scroll-up, .scroll-down, .scroll-up-slow { animation: none !important; }
-}
-</style>
+const mobileList = computed(() =>
+  props.avatars.length ? props.avatars.slice(0, 20) : placeholderAvatars(20)
+)
+</script>

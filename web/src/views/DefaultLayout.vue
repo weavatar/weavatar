@@ -1,28 +1,18 @@
 <template>
-  <NLayout class="min-h-screen flex flex-col">
-    <SiteHeader />
-    <div class="flex-grow mt-16">
-      <RouterView />
-    </div>
-    <SiteFooter />
-  </NLayout>
+  <div class="min-h-screen flex flex-col">
+    <app-header />
+    <main class="flex-1 flex flex-col">
+      <router-view v-slot="{ Component }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" class="flex-1" />
+        </transition>
+      </router-view>
+    </main>
+    <app-footer />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { NLayout, useDialog, useLoadingBar, useMessage, useNotification } from 'naive-ui'
-import SiteHeader from '@/components/layout/SiteHeader.vue'
-import SiteFooter from '@/components/layout/SiteFooter.vue'
-
-window.$message = useMessage()
-window.$dialog = useDialog()
-window.$notification = useNotification()
-window.$loadingBar = useLoadingBar()
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 </script>
-
-<style scoped>
-:deep(.n-layout-scroll-container) {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-</style>

@@ -1,107 +1,427 @@
-html {
-  box-sizing: border-box;
+/* ─────────────────────────────────────────────────────────
+   设计 Token（前缀 --wa- 以免与 UnoCSS 生成的主题变量冲突）
+   ───────────────────────────────────────────────────────── */
+:root {
+  --wa-font-sans:
+    'Manrope Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
+    'HarmonyOS Sans SC', 'MiSans', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei',
+    'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;
+  --wa-font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  --wa-brand: #0a7aff;
+
+  --wa-bg: #fafafb;
+  --wa-elev: #ffffff;
+  --wa-muted: #f3f4f7;
+  --wa-fg: #0b0c10;
+  --wa-fg2: #525866;
+  --wa-fg3: #9499a5;
+  --wa-line: rgba(15, 23, 42, 0.08);
+  --wa-line-strong: rgba(15, 23, 42, 0.14);
+  --wa-grid: rgba(15, 23, 42, 0.07);
+
+  color-scheme: light;
 }
 
-html,
+.dark {
+  --wa-bg: #0a0b0e;
+  --wa-elev: #131419;
+  --wa-muted: #1a1c22;
+  --wa-fg: #f3f4f6;
+  --wa-fg2: #a0a5b2;
+  --wa-fg3: #696e7a;
+  --wa-line: rgba(255, 255, 255, 0.08);
+  --wa-line-strong: rgba(255, 255, 255, 0.15);
+  --wa-grid: rgba(255, 255, 255, 0.07);
+
+  color-scheme: dark;
+}
+
+/* ─────────────────────────────────────────────────────────
+   基础（UnoCSS 已提供 reset，这里只补品牌层）
+   ───────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  width: 100%;
-  height: 100%;
-  background-color: #f2f2f2;
-  line-height: 1.5;
-  font-family:
-    -apple-system, 'Noto Sans', 'Helvetica Neue', Helvetica, 'Nimbus Sans L', Arial,
-    'Liberation Sans', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Noto Sans SC',
-    'Source Han Sans SC', 'Source Han Sans CN', 'Microsoft YaHei', 'Wenquanyi Micro Hei',
-    'WenQuanYi Zen Hei', 'ST Heiti', SimHei, 'WenQuanYi Zen Hei Sharp', sans-serif;
+  font-family: var(--wa-font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--wa-fg);
+  background-color: var(--wa-bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
-*,
-::before,
-::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: inherit;
+button:not(:disabled) {
+  cursor: pointer;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
+code,
+kbd,
+pre {
+  font-family: var(--wa-font-mono);
+  font-feature-settings: normal;
 }
 
-a:hover,
-a:link,
-a:visited,
-a:active {
-  text-decoration: none;
+::selection {
+  background: rgba(10, 122, 255, 0.22);
 }
 
-#app {
-  width: 100%;
-  height: 100%;
+:focus-visible {
+  outline: 2px solid rgba(10, 122, 255, 0.6);
+  outline-offset: 2px;
 }
 
-/* router view transition fade-slide */
-.fade-slide-leave-active,
-.fade-slide-enter-active {
-  transition: all 0.3s;
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-.fade-slide-enter-from {
+/* ─────────────────────────────────────────────────────────
+   线条系统：网格纹理、渐隐遮罩、流动虚线
+   ───────────────────────────────────────────────────────── */
+.wa-grid {
+  background-image:
+    linear-gradient(var(--wa-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wa-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.wa-dots {
+  background-image: radial-gradient(var(--wa-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.wa-mask-radial {
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 100%);
+}
+
+.wa-mask-y {
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+}
+
+.wa-mask-x {
+  mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+
+/* 流动虚线（SVG path 上使用） */
+.flow-line {
+  stroke-dasharray: 6 6;
+  animation: dash 1.2s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* 流动虚线（div 上使用，水平） */
+.dash-line {
+  height: 1px;
+  background-image: linear-gradient(90deg, var(--wa-fg3) 50%, transparent 50%);
+  background-size: 10px 1px;
+  animation: dash-move 0.9s linear infinite;
+}
+
+.dash-line-y {
+  width: 1px;
+  background-image: linear-gradient(180deg, var(--wa-fg3) 50%, transparent 50%);
+  background-size: 1px 10px;
+  animation: dash-move-y 0.9s linear infinite;
+}
+
+@keyframes dash-move {
+  to {
+    background-position: 10px 0;
+  }
+}
+
+@keyframes dash-move-y {
+  to {
+    background-position: 0 10px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   滚动入场 (v-reveal)
+   ───────────────────────────────────────────────────────── */
+.reveal {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.fade-slide-leave-to {
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ─────────────────────────────────────────────────────────
+   页面切换 & 主题切换
+   ───────────────────────────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.page-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateY(6px);
 }
 
-/* 自定义滚动条样式 */
-.cus-scroll {
-  overflow: auto;
+.page-leave-to {
+  opacity: 0;
+}
 
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2147483646;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-.cus-scroll-x {
-  overflow-x: auto;
+/* ─────────────────────────────────────────────────────────
+   长文排版 (.prose)
+   ───────────────────────────────────────────────────────── */
+.prose {
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: color-mix(in srgb, var(--wa-fg) 86%, transparent);
 
-  &::-webkit-scrollbar {
-    width: 0;
-    height: 8px;
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--wa-fg);
+    letter-spacing: -0.015em;
+    font-weight: 700;
+    scroll-margin-top: 6rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    margin: 2.75rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--wa-line);
+  }
+
+  h2:first-child {
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    margin: 2rem 0 0.6rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+    margin: 1.4rem 0 0.4rem;
+  }
+
+  p {
+    margin: 0.75rem 0;
+  }
+
+  ul,
+  ol {
+    margin: 0.75rem 0;
+    padding-left: 1.4rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin: 0.3rem 0;
+  }
+
+  li::marker {
+    color: var(--wa-fg3);
+  }
+
+  a {
+    color: var(--wa-brand);
+    text-decoration: underline;
+    text-decoration-color: rgba(10, 122, 255, 0.35);
+    text-underline-offset: 4px;
+  }
+
+  a:hover {
+    text-decoration-color: var(--wa-brand);
+  }
+
+  b,
+  strong {
+    font-weight: 650;
+    color: var(--wa-fg);
+  }
+
+  u {
+    text-decoration-color: var(--wa-fg3);
+    text-underline-offset: 3px;
+  }
+
+  code:not(pre code) {
+    font-size: 0.86em;
+    padding: 0.15em 0.45em;
+    border-radius: 6px;
+    background: var(--wa-muted);
+    border: 1px solid var(--wa-line);
+    color: var(--wa-fg);
+    word-break: break-all;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--wa-line);
+    margin: 2rem 0;
+  }
+
+  blockquote {
+    margin: 1rem 0;
+    padding: 0.6rem 1rem;
+    border-left: 3px solid var(--wa-brand);
+    background: var(--wa-muted);
+    border-radius: 0 10px 10px 0;
   }
 }
 
-.cus-scroll-y {
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 0;
-  }
+/* ─────────────────────────────────────────────────────────
+   代码高亮 (highlight.js)
+   ───────────────────────────────────────────────────────── */
+.hljs {
+  color: color-mix(in srgb, var(--wa-fg) 90%, transparent);
 }
 
-.cus-scroll,
-.cus-scroll-x,
-.cus-scroll-y {
-  &::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 4px;
+.hljs-comment,
+.hljs-quote {
+  color: var(--wa-fg3);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-meta {
+  color: #a626a4;
+}
+
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-meta {
+  color: #d2a8ff;
+}
+
+.hljs-string,
+.hljs-attr {
+  color: #0f8a4a;
+}
+
+.dark .hljs-string,
+.dark .hljs-attr {
+  color: #7ee787;
+}
+
+.hljs-number,
+.hljs-literal {
+  color: #d9480f;
+}
+
+.dark .hljs-number,
+.dark .hljs-literal {
+  color: #ffa657;
+}
+
+.hljs-title,
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: var(--wa-brand);
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: #c92a2a;
+}
+
+.dark .hljs-variable,
+.dark .hljs-template-variable {
+  color: #ff7b72;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Naive UI 微调
+   ───────────────────────────────────────────────────────── */
+.n-modal-mask {
+  backdrop-filter: blur(6px);
+}
+
+.n-card.n-modal {
+  box-shadow: 0 24px 80px -24px rgba(0, 0, 0, 0.35);
+}
+
+/* 滚动条 */
+@media (hover: hover) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
   }
 
-  &:hover {
-    &::-webkit-scrollbar-thumb {
-      background: #bfbfbf;
-    }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--wa-fg3) 40%, transparent);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
 
-    &::-webkit-scrollbar-thumb:hover {
-      background: var(--primary-color);
-    }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--wa-fg3) 65%, transparent);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 }

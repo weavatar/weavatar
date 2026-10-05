@@ -3,6 +3,11 @@ import { setupGuards } from './guards'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, top: 88, behavior: 'smooth' }
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
@@ -54,25 +59,25 @@ const router = createRouter({
           path: 'privacy',
           name: 'privacy',
           component: () => import('@/views/pages/PrivacyView.vue'),
-          meta: { title: '隐私' }
+          meta: { title: '隐私政策' }
         },
         {
           path: 'user/avatar',
           name: 'user-avatar',
           component: () => import('@/views/user/AvatarListView.vue'),
-          meta: { title: '头像', requiresAuth: true }
+          meta: { title: '头像管理', requiresAuth: true }
         },
         {
           path: 'user/info',
           name: 'user-info',
           component: () => import('@/views/user/InfoView.vue'),
-          meta: { title: '账号信息', requiresAuth: true }
+          meta: { title: '我的资料', requiresAuth: true }
         },
         {
           path: '404',
           name: '404',
           component: () => import('@/views/pages/NotFoundView.vue'),
-          meta: { title: '404' }
+          meta: { title: '页面不存在' }
         },
         { path: ':catchAll(.*)', redirect: { name: '404' } }
       ]

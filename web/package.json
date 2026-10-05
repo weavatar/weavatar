@@ -14,9 +14,9 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
     "@vue/devtools-api": "^8.2.1",
     "@vueuse/core": "^15.0.0",
-    "@vueuse/motion": "^3.0.3",
     "alova": "^3.5.1",
     "cropperjs": "^2.1.1",
     "highlight.js": "^11.11.1",
@@ -24,16 +24,15 @@
     "pinia-plugin-persistedstate": "^4.7.1",
     "vue": "^3.5.32",
     "vue-gtag": "^3.7.0",
-    "vue-recaptcha-v3": "^2.0.1",
     "vue-router": "^5.0.4",
     "vue3-geetest": "^1.0.21"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@iconify-json/lucide": "^1.2.139",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^24.12.2",
-    "@vicons/ionicons5": "^0.13.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.7.0",

@@ -1,32 +1,35 @@
+<template>
+  <div>
+    <hero-section :usage="usage" :avatars="avatars" />
+    <playground-section />
+    <features-section />
+    <flow-section />
+    <users-section />
+    <sponsors-section />
+    <cta-section />
+  </div>
+</template>
+
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import type { NumberAnimationInst } from 'naive-ui'
+import { ref } from 'vue'
+import { useRequest } from 'alova/client'
 import systemApi from '@/api/system'
 import HeroSection from './HeroSection.vue'
+import PlaygroundSection from './PlaygroundSection.vue'
 import FeaturesSection from './FeaturesSection.vue'
+import FlowSection from './FlowSection.vue'
 import UsersSection from './UsersSection.vue'
 import SponsorsSection from './SponsorsSection.vue'
-import { useRequest } from 'alova/client'
+import CtaSection from './CtaSection.vue'
 
 const usage = ref(0)
-const usageRef = ref<NumberAnimationInst | null>(null)
 const avatars = ref<string[]>([])
 
 useRequest(systemApi.count(), { meta: { noAlert: true } }).onSuccess(({ data }: any) => {
-  usage.value = data.usage
-  nextTick(() => usageRef.value?.play())
+  usage.value = Number(data?.usage) || 0
 })
 
 useRequest(systemApi.randomAvatars(), { meta: { noAlert: true } }).onSuccess(({ data }: any) => {
-  avatars.value = data.avatars || []
+  avatars.value = Array.isArray(data?.avatars) ? data.avatars : []
 })
 </script>
-
-<template>
-  <main>
-    <HeroSection v-model:usage-ref="usageRef" :usage="usage" :avatars="avatars" />
-    <FeaturesSection />
-    <UsersSection />
-    <SponsorsSection />
-  </main>
-</template>

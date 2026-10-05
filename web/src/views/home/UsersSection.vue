@@ -1,67 +1,53 @@
-<script setup lang="ts">
-import logo_zmingcx from '@/assets/logo-zmingcx.png'
-import logo_nicetheme from '@/assets/logo-nicetheme.png'
-import logo_artalk from '@/assets/logo-artalk.png'
-import logo_iro from '@/assets/logo-iro.png'
-import logo_lxtx from '@/assets/logo-lxtx.png'
-import logo_liyang from '@/assets/logo-liyang.png'
-import logo_twikoo from '@/assets/logo-twikoo.png'
-import logo_dami from '@/assets/logo-dami.png'
-
-const users = [
-  { url: 'https://zmingcx.com/', logo: logo_zmingcx },
-  { url: 'https://www.nicetheme.cn/', logo: logo_nicetheme },
-  { url: 'https://www.ilxtx.com/', logo: logo_lxtx },
-  { url: 'https://github.com/mirai-mamori/Sakurairo', logo: logo_iro },
-  { url: 'https://blog.qqsuu.cn/', logo: logo_dami },
-  { url: 'https://artalk.js.org/', logo: logo_artalk },
-  { url: 'https://twikoo.js.org/', logo: logo_twikoo },
-  { url: 'https://www.liblog.cn/', logo: logo_liyang }
-]
-</script>
-
 <template>
-  <section class="py-20 px-6">
-    <div class="max-w-360 mx-auto text-center">
-      <h2 class="text-2xl sm:text-3xl font-700 mb-2">他们都在用</h2>
-      <p class="opacity-50 mb-12">一些你可能认识的 TA 也在使用 WeAvatar，不妨来试试？</p>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <a
-          v-for="(u, i) in users"
-          :key="i"
-          :href="u.url"
-          target="_blank"
-          class="logo-card bg-white/5 dark:bg-white/5 border border-gray-200 dark:border-gray-700 backdrop-blur"
-        >
-          <img :src="u.logo" class="logo-img" />
-        </a>
+  <section class="relative section border-t border-line overflow-hidden">
+    <div class="wrap">
+      <section-title title="他们都在用" desc="这些项目和站点都已接入 WeAvatar。" />
+    </div>
+
+    <div v-reveal class="mt-12 overflow-hidden wa-mask-x">
+      <div class="flex w-max animate-marquee hover:[animation-play-state:paused]">
+        <div v-for="copy in 2" :key="copy" class="flex gap-4 pr-4">
+          <a
+            v-for="u in users"
+            :key="`${copy}-${u.url}`"
+            :href="u.url"
+            target="_blank"
+            rel="noreferrer"
+            :title="u.name"
+            class="group flex items-center justify-center w-48 h-24 px-7 rounded-2xl border border-line bg-elev dark:bg-white/92 transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
+          >
+            <img
+              :src="u.logo"
+              :alt="u.name"
+              loading="lazy"
+              class="h-10 w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+            />
+          </a>
+        </div>
       </div>
     </div>
   </section>
 </template>
 
-<style scoped>
-.logo-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 120px;
-  border-radius: 12px;
-  padding: 0 1.5rem;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s;
-}
-.logo-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
+<script setup lang="ts">
+import SectionTitle from '@/components/ui/SectionTitle.vue'
+import logoZmingcx from '@/assets/logo-zmingcx.png'
+import logoNicetheme from '@/assets/logo-nicetheme.png'
+import logoArtalk from '@/assets/logo-artalk.png'
+import logoIro from '@/assets/logo-iro.png'
+import logoLxtx from '@/assets/logo-lxtx.png'
+import logoLiyang from '@/assets/logo-liyang.png'
+import logoTwikoo from '@/assets/logo-twikoo.png'
+import logoForeverblog from '@/assets/logo-foreverblog-black.png'
 
-.logo-img {
-  display: block;
-  height: 52px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-}
-</style>
+const users = [
+  { name: '知更鸟', url: 'https://zmingcx.com/', logo: logoZmingcx },
+  { name: 'nicetheme', url: 'https://www.nicetheme.cn/', logo: logoNicetheme },
+  { name: '龙笑天下', url: 'https://www.ilxtx.com/', logo: logoLxtx },
+  { name: 'Sakurairo', url: 'https://github.com/mirai-mamori/Sakurairo', logo: logoIro },
+  { name: '十年之约', url: 'https://www.foreverblog.cn/', logo: logoForeverblog },
+  { name: 'Artalk', url: 'https://artalk.js.org/', logo: logoArtalk },
+  { name: 'Twikoo', url: 'https://twikoo.js.org/', logo: logoTwikoo },
+  { name: '李洋博客', url: 'https://www.liblog.cn/', logo: logoLiyang }
+]
+</script>

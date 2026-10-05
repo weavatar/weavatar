@@ -1,23 +1,33 @@
 <template>
-  <NModal :show="showModal" @after-enter="initCropper">
-    <NCard
-      closable
-      :mask-closable="false"
-      title="裁剪头像"
-      class="w-full max-w-125"
-      @close="showModal = false"
-    >
-      <div ref="containerRef" class="cropper-wrapper h-90" />
-      <div class="mt-4 flex justify-center">
-        <NButton type="primary" size="large" :loading="loading" @click="handleConfirm">确定</NButton>
+  <n-modal
+    :show="showModal"
+    preset="card"
+    title="裁剪头像"
+    :style="{ width: '560px', maxWidth: '94vw' }"
+    :bordered="false"
+    :mask-closable="false"
+    :auto-focus="false"
+    @update:show="setShow"
+    @after-enter="initCropper"
+  >
+    <div ref="containerRef" class="cropper-wrapper h-[22rem] rounded-xl overflow-hidden bg-muted" />
+    <div class="mt-4 flex items-center justify-between gap-3">
+      <span class="text-xs text-fg3">输出 800 × 800 正方形。</span>
+      <div class="flex gap-2 shrink-0">
+        <button type="button" class="btn-ghost btn-sm" @click="setShow(false)">取消</button>
+        <button type="button" class="btn-primary btn-sm" :disabled="loading" @click="handleConfirm">
+          <span v-if="loading" class="i-lucide-loader-circle animate-spin text-sm" />
+          <span v-else class="i-lucide-check text-sm" />
+          使用这张
+        </button>
       </div>
-    </NCard>
-  </NModal>
+    </div>
+  </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { NButton, NCard, NModal } from 'naive-ui'
+import { NModal } from 'naive-ui'
 import Cropper from 'cropperjs'
 
 const showModal = ref(false)
@@ -29,7 +39,7 @@ let cropper: Cropper | null = null
 // 记录图片在 canvas 中的实际区域，用于限制选区
 let imgBounds = { x: 0, y: 0, w: 0, h: 0 }
 
-const emit = defineEmits(['cropAvatar'])
+const emit = defineEmits<{ cropAvatar: [blob: Blob] }>()
 
 const destroyCropper = () => {
   if (cropper) {
@@ -78,7 +88,7 @@ const initCropper = () => {
   // 图片加载后：计算图片区域 + 初始选区
   const cropperImage = localCropper.getCropperImage()
   if (cropperImage) {
-    (cropperImage as any).$ready().then(() => {
+    ;(cropperImage as any).$ready().then(() => {
       if (!localCropper || localCropper !== cropper) return
 
       const canvasEl = localCropper.getCropperCanvas()
