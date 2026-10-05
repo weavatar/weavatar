@@ -478,7 +478,7 @@ const menuOptions: MenuOption[] = [
 ]
 
 const collapsed = ref(true)
-let value = ref('basic')
+const value = ref('basic')
 
 const onUpdate = (key: string) => {
   value.value = key

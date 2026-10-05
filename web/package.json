@@ -10,7 +10,7 @@
     "test:unit": "vitest",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "lint": "eslint . --fix",
     "format": "prettier --write src/"
   },
   "dependencies": {
@@ -29,7 +29,7 @@
     "vue3-geetest": "^1.0.21"
   },
   "devDependencies": {
-    "@rushstack/eslint-patch": "^1.16.1",
+    "@eslint/js": "^10.0.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^24.12.2",

@@ -87,7 +87,7 @@ import CropAvatar from '@/components/avatar/CropAvatar.vue'
 import VerifyCodeButton from '@/components/captcha/VerifyCodeButton.vue'
 import { useRequest } from 'alova/client'
 
-const props = defineProps<{ show: boolean }>()
+defineProps<{ show: boolean }>()
 const emit = defineEmits<{
   'update:show': [value: boolean]
   success: []
