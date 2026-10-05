@@ -1,12 +1,9 @@
-//go:build cgo
-
 package app
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gookit/validate/v2"
@@ -35,13 +32,6 @@ func NewApp(conf *koanf.Koanf, router *fiber.App, migrator *gormigrate.Gormigrat
 }
 
 func (r *App) Run() error {
-	// init vips
-	vips.LoggingSettings(nil, vips.LogLevelError)
-	if err := vips.Startup(nil); err != nil {
-		return err
-	}
-	defer vips.Shutdown()
-
 	// migrate database
 	if err := r.migrator.Migrate(); err != nil {
 		return err

@@ -19,8 +19,6 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libvips-dev
           go mod tidy
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
@@ -39,8 +37,6 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libvips-dev
           go mod tidy
       - name: Install Govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest

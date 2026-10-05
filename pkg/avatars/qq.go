@@ -1,11 +1,9 @@
-//go:build cgo
-
 package avatars
 
 import (
 	"fmt"
 
-	"github.com/davidbyttow/govips/v2/vips"
+	"github.com/weavatar/weavatar/pkg/imaging"
 )
 
 func Qq(qq string) ([]byte, error) {
@@ -31,11 +29,8 @@ func Qq(qq string) ([]byte, error) {
 	 *
 	 * 所以这里判断一下，如果通过 640 尺寸获取到的图的实际大小小于 100 则转而获取尺寸为 100 的图
 	 */
-	image, err := vips.NewImageFromBuffer(resp.Bytes())
-	if err == nil {
-		defer image.Close()
-	}
-	if err != nil || (image.Width() < 100 || image.Height() < 100) {
+	img, _, err := imaging.Decode(resp.Bytes())
+	if err != nil || img.Bounds().Dx() < 100 || img.Bounds().Dy() < 100 {
 		resp, err = client().R().SetQueryParams(map[string]string{
 			"b":  "qq",
 			"nk": qq,
@@ -52,9 +47,9 @@ func Qq(qq string) ([]byte, error) {
 		 *
 		 * 例如：https://q1.qlogo.cn/g?b=qq&nk=54445660&s=100
 		 *
-		 * 所以这里先尝试用vips解析一下，如果解析失败则直接返回
+		 * 所以这里先尝试解析一下，如果解析失败则直接返回
 		 */
-		_, err = vips.NewImageFromBuffer(resp.Bytes())
+		_, _, err = imaging.Decode(resp.Bytes())
 		if err != nil {
 			return nil, err
 		}

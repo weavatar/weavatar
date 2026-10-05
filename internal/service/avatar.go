@@ -1,5 +1,3 @@
-//go:build cgo
-
 package service
 
 import (
@@ -11,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/gofiber/fiber/v3"
 	"github.com/libtnb/utils/str"
 	"github.com/spf13/cast"
@@ -21,6 +18,7 @@ import (
 	"github.com/weavatar/weavatar/internal/http/request"
 	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/embed"
+	"github.com/weavatar/weavatar/pkg/imaging"
 )
 
 type AvatarService struct {
@@ -201,39 +199,12 @@ func (r *AvatarService) Qq(c fiber.Ctx) error {
 }
 
 func (r *AvatarService) convert(avatar []byte, ext string, size int) ([]byte, error) {
-	img, err := vips.NewImageFromBuffer(avatar)
+	img, _, err := imaging.Decode(avatar)
 	if err != nil {
 		return nil, err
 	}
-	defer img.Close()
 
-	if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLinear); err != nil {
-		return nil, err
-	}
-
-	var data []byte
-	switch ext {
-	case "jpg", "jpeg":
-		data, _, err = img.ExportJpeg(vips.NewJpegExportParams())
-	case "png":
-		data, _, err = img.ExportPng(vips.NewPngExportParams())
-	case "webp":
-		data, _, err = img.ExportWebp(vips.NewWebpExportParams())
-	case "heif", "heic":
-		data, _, err = img.ExportHeif(vips.NewHeifExportParams())
-	case "tiff":
-		data, _, err = img.ExportTiff(vips.NewTiffExportParams())
-	case "avif":
-		data, _, err = img.ExportAvif(vips.NewAvifExportParams())
-	case "gif":
-		data, _, err = img.ExportGIF(vips.NewGifExportParams())
-	case "jxl":
-		data, _, err = img.ExportJxl(vips.NewJxlExportParams())
-	default:
-		data, _, err = img.ExportWebp(vips.NewWebpExportParams())
-	}
-
-	return data, err
+	return imaging.Encode(imaging.Resize(img, size, size), ext)
 }
 
 func (r *AvatarService) getEmoji(s string) string {

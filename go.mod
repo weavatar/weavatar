@@ -1,6 +1,6 @@
 module github.com/weavatar/weavatar
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.2.4
@@ -9,10 +9,16 @@ require (
 	github.com/alibabacloud-go/tea v1.5.3
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/cloudflare/cloudflare-go/v7 v7.12.0
-	github.com/davidbyttow/govips/v2 v2.19.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
 	github.com/dromara/carbon/v2 v2.6.18
+	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/forPelevin/gomoji v1.4.1
+	github.com/gen2brain/gav1d v0.2.5
+	github.com/gen2brain/h265 v0.2.3
+	github.com/gen2brain/jpegn v0.6.1
+	github.com/gen2brain/jxl v0.2.0
+	github.com/gen2brain/pngn v0.1.3
+	github.com/gen2brain/vpx v0.2.1
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/gofiber/contrib/monitor v0.1.2

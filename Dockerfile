@@ -1,24 +1,11 @@
 # Build the go application into a binary
 FROM golang:alpine AS builder
 
-ENV GO111MODULE=on                                                                              \
-    GOARCH="amd64"                                                                              \
-    GOOS="linux"                                                                                \
-    GOAMD64="v3"                                                                                \
-    CGO_ENABLED=1                                                                               \
-    CGO_CFLAGS="-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free" \
-    CGO_LDFLAGS="-ljemalloc"
-
-RUN apk --update add \
-    ca-certificates  \
-    build-base       \
-    pkgconfig        \
-    jemalloc-dev     \
-    vips-dev         \
-    vips-heif        \
-    vips-jxl         \
-    vips-magick      \
-    vips-poppler
+ENV GO111MODULE=on \
+    GOARCH="amd64" \
+    GOOS="linux"   \
+    GOAMD64="v3"   \
+    CGO_ENABLED=0
 
 WORKDIR /app
 COPY . ./
@@ -29,14 +16,7 @@ RUN go build -ldflags "-s -w" -o app ./cmd/app
 # Run the binary on an empty container
 FROM alpine
 
-RUN apk --update add \
-    ca-certificates  \
-    jemalloc         \
-    vips             \
-    vips-heif        \
-    vips-jxl         \
-    vips-magick      \
-    vips-poppler
+RUN apk --update add ca-certificates
 
 COPY --from=builder /app/app .
 COPY --from=builder /app/config/ ./config/

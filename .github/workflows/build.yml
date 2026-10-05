@@ -24,14 +24,10 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libvips-dev libjemalloc-dev
           go mod tidy
       - name: Build ${{ matrix.goarch }}
         env:
-          CGO_ENABLED: 1
-          CGO_CFLAGS: "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free"
-          CGO_LDFLAGS: "-ljemalloc"
+          CGO_ENABLED: 0
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
         run: |

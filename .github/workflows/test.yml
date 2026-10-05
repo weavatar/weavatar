@@ -18,8 +18,6 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libvips-dev
           go mod tidy
       - name: Set up environment
         run: |

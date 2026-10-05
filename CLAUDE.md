@@ -30,8 +30,6 @@ air  # 使用 .air.toml 配置，监听 :3000
 go test -v -coverprofile="coverage.out" ./...
 ```
 
-构建和测试需要系统安装 libvips（macOS: `brew install vips`，Ubuntu: `apt-get install libvips-dev`），因为项目使用 CGO 进行图片处理。
-
 ### Lint
 
 ```bash
@@ -87,6 +85,7 @@ route (路由注册) → service (业务逻辑) → biz (实体/接口定义) �
 ### 外部集成包（`pkg/`）
 
 - **`pkg/avatars`** — Gravatar 和 QQ 头像获取
+- **`pkg/imaging`** — 纯 Go 图片解码、缩放、编码（jpeg/png/gif/webp/tiff/avif/heic/jxl）
 - **`pkg/mphf`** — BBHash 风格最小完美哈希函数（构建、序列化、mmap 零拷贝加载）
 - **`pkg/qqhash`** — QQ 邮箱哈希 → QQ 号映射表（MPHF + uint32 值数组，键为完整摘要不截断）
 - **`pkg/cdn`** — 多 CDN 缓存刷新（11+ 驱动：Cloudflare、华为云、又拍云、EdgeOne 等）
@@ -101,14 +100,10 @@ route (路由注册) → service (业务逻辑) → biz (实体/接口定义) �
 
 - **HTTP**: Fiber v3
 - **ORM**: GORM + MySQL
-- **图片处理**: govips (libvips)
+- **图片处理**: 纯 Go，无 CGO
 - **配置**: koanf (YAML)
 - **DI**: Google Wire
 - **日志**: log/slog
-
-### CGO 注意事项
-
-项目依赖 CGO（govips），部分文件有 `_nocgo.go` 变体（`internal/app/app_nocgo.go`、`internal/service/avatar_nocgo.go`、`internal/data/avatar_nocgo.go`），在无 CGO 环境下提供降级实现。
 
 ### API 路由结构
 

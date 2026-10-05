@@ -1,5 +1,3 @@
-//go:build cgo
-
 package data
 
 import (
@@ -21,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/forPelevin/gomoji"
 	"github.com/imroc/req/v3"
 	"github.com/knadh/koanf/v2"
@@ -45,6 +42,7 @@ import (
 	"github.com/weavatar/weavatar/pkg/avatars"
 	"github.com/weavatar/weavatar/pkg/cdn"
 	"github.com/weavatar/weavatar/pkg/embed"
+	"github.com/weavatar/weavatar/pkg/imaging"
 	"github.com/weavatar/weavatar/pkg/qqhash"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
@@ -484,24 +482,22 @@ func (r *avatarRepo) randomColor(hash string) (color.Color, error) {
 }*/
 
 func (r *avatarRepo) formatAvatar(avatar []byte, size int) ([]byte, error) {
-	img, err := vips.NewImageFromBuffer(avatar)
+	img, format, err := imaging.Decode(avatar)
 	if err != nil {
 		return nil, err
 	}
-	defer img.Close()
 
-	if img.Width() != img.Height() {
+	b := img.Bounds()
+	if b.Dx() != b.Dy() {
 		return nil, fmt.Errorf("头像必须是正方形图片")
 	}
-	if img.Width() < 40 {
+	if b.Dx() < 40 {
 		return nil, fmt.Errorf("头像必须大于 40px")
 	}
-	if img.Width() > size {
-		if err = img.ResizeWithVScale(float64(size)/float64(img.Width()), float64(size)/float64(img.Height()), vips.KernelLinear); err != nil {
-			return nil, err
-		}
+	// 无需缩放时保留原文件
+	if b.Dx() <= size {
+		return avatar, nil
 	}
 
-	data, _, err := img.ExportNative()
-	return data, err
+	return imaging.Encode(imaging.Resize(img, size, size), format)
 }
