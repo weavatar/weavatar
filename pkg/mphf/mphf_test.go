@@ -192,14 +192,11 @@ func TestLoadCorrupt(t *testing.T) {
 		"truncated": data[:len(data)-8],
 		"extra":     append(append([]byte{}, data...), make([]byte, 8)...),
 	}
-	badMagic := append([]byte{}, data...)
-	badMagic[0] ^= 0xff
-	cases["magic"] = badMagic
 	badLevels := append([]byte{}, data...)
-	binary.LittleEndian.PutUint64(badLevels[24:], 1<<40)
+	binary.LittleEndian.PutUint64(badLevels[16:], 1<<40)
 	cases["levels"] = badLevels
 	badBlocks := append([]byte{}, data...)
-	binary.LittleEndian.PutUint64(badBlocks[32:], 0)
+	binary.LittleEndian.PutUint64(badBlocks[24:], 0)
 	cases["blocks"] = badBlocks
 
 	for name, c := range cases {

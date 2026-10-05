@@ -18,8 +18,6 @@ const (
 	TypeMD5    = "md5"
 	TypeSHA256 = "sha256"
 
-	Version = 1
-
 	MinQq = 10000
 	MaxQq = math.MaxUint32 // 值数组是 uint32
 
@@ -32,8 +30,6 @@ const (
 
 var Types = []string{TypeMD5, TypeSHA256}
 
-var idxMagic = [8]byte{'W', 'A', 'Q', 'Q', 'M', 'P', 'H', '1'}
-
 var (
 	ErrNotFound  = errors.New("qqhash: not found")
 	ErrCorrupt   = errors.New("qqhash: corrupt file")
@@ -42,19 +38,17 @@ var (
 
 // 文件头字段偏移
 const (
-	offMagic     = 0  // [8]byte
-	offVersion   = 8  // uint32
-	offKeyBytes  = 12 // uint32
-	offStart     = 16 // uint64
-	offEnd       = 24 // uint64
-	offKeyCount  = 32 // uint64
-	offPartBits  = 40 // uint32
-	offGamma     = 48 // float64
-	offSeed      = 56 // uint64
-	offBuildTime = 64 // int64
-	offIdxSize   = 72 // uint64
-	offValSize   = 80 // uint64
-	offCRC       = 88 // uint32，覆盖文件头前 88 字节与整张分区表
+	offKeyBytes  = 0  // uint32
+	offPartBits  = 4  // uint32
+	offStart     = 8  // uint64
+	offEnd       = 16 // uint64
+	offKeyCount  = 24 // uint64
+	offGamma     = 32 // float64
+	offSeed      = 40 // uint64
+	offBuildTime = 48 // int64
+	offIdxSize   = 56 // uint64
+	offValSize   = 64 // uint64
+	offCRC       = 72 // uint32，覆盖文件头前 72 字节与整张分区表
 )
 
 type header struct {
@@ -92,8 +86,6 @@ func (h *header) blobBase() int64 {
 
 func encodeIndexHead(h *header, parts []partition) []byte {
 	b := make([]byte, h.blobBase())
-	copy(b[offMagic:], idxMagic[:])
-	binary.LittleEndian.PutUint32(b[offVersion:], Version)
 	binary.LittleEndian.PutUint32(b[offKeyBytes:], h.keyBytes)
 	binary.LittleEndian.PutUint64(b[offStart:], h.start)
 	binary.LittleEndian.PutUint64(b[offEnd:], h.end)
@@ -125,11 +117,8 @@ func headCRC(b []byte, h *header) uint32 {
 }
 
 func decodeIndexHead(b []byte) (*header, []partition, error) {
-	if len(b) < headerSize || [8]byte(b[:8]) != idxMagic {
-		return nil, nil, fmt.Errorf("%w: bad magic", ErrCorrupt)
-	}
-	if v := binary.LittleEndian.Uint32(b[offVersion:]); v != Version {
-		return nil, nil, fmt.Errorf("%w: unsupported version %d", ErrCorrupt, v)
+	if len(b) < headerSize {
+		return nil, nil, fmt.Errorf("%w: header too short", ErrCorrupt)
 	}
 
 	h := &header{

@@ -208,11 +208,11 @@ func TestOpenCorrupt(t *testing.T) {
 			require.ErrorIs(t, err, ErrCorrupt)
 		})
 	}
-	corrupt("magic", func(b []byte) []byte { b[0] ^= 0xff; return b })
+	corrupt("key size", func(b []byte) []byte { b[offKeyBytes] ^= 0xff; return b })
 	corrupt("header", func(b []byte) []byte { b[offKeyCount] ^= 0x01; return b })
 	corrupt("table", func(b []byte) []byte { b[headerSize+8] ^= 0x01; return b })
 	corrupt("truncated", func(b []byte) []byte { return b[:len(b)-64] })
-	corrupt("blob magic", func(b []byte) []byte { b[blob.mphOffset] ^= 0xff; return b })
+	corrupt("blob key count", func(b []byte) []byte { b[blob.mphOffset] ^= 0xff; return b })
 
 	// 分区数据损坏由 Verify 的校验和发现，Open 为了启动速度不检查
 	t.Run("blob data", func(t *testing.T) {

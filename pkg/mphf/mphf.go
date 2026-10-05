@@ -2,12 +2,11 @@
 //
 // 序列化布局（小端 uint64 字）：
 //
-//	[0]        magic
-//	[1]        键数量 n
-//	[2]        种子
-//	[3]        层数 L
-//	[4, 4+2L)  每层 { 块数, 该层之前已放置的键数 }
-//	[4+2L, …)  每层的块数据，每块 8 个字：首字是块前累计 rank，其余 7 个字是位向量
+//	[0]        键数量 n
+//	[1]        种子
+//	[2]        层数 L
+//	[3, 3+2L)  每层 { 块数, 该层之前已放置的键数 }
+//	[3+2L, …)  每层的块数据，每块 8 个字：首字是块前累计 rank，其余 7 个字是位向量
 package mphf
 
 import (
@@ -25,7 +24,7 @@ const (
 	blockWords = 8
 	blockBits  = (blockWords - 1) * 64 // 448
 
-	headerWords      = 4
+	headerWords      = 3
 	levelHeaderWords = 2
 
 	DefaultGamma     = 2.0
@@ -34,8 +33,6 @@ const (
 	maxAttempts = 16
 	golden      = 0x9E3779B97F4A7C15
 )
-
-var magic = binary.LittleEndian.Uint64([]byte("WAMPHF01"))
 
 var (
 	ErrDuplicateKey = errors.New("mphf: duplicate key")
@@ -185,10 +182,9 @@ func assemble(n, seed uint64, built []builtLevel) *MPHF {
 	}
 
 	words := make([]uint64, total)
-	words[0] = magic
-	words[1] = n
-	words[2] = seed
-	words[3] = uint64(len(built))
+	words[0] = n
+	words[1] = seed
+	words[2] = uint64(len(built))
 
 	m := &MPHF{words: words, keyCount: n, seed: seed, levels: make([]level, len(built))}
 	off := headerWords + levelHeaderWords*len(built)
@@ -215,11 +211,7 @@ func Load(data []byte) (*MPHF, error) {
 		return nil, ErrCorrupt
 	}
 	words := asWords(data)
-	if words[0] != magic {
-		return nil, ErrCorrupt
-	}
-
-	n, seed, nl := words[1], words[2], words[3]
+	n, seed, nl := words[0], words[1], words[2]
 	if nl > math.MaxInt32 || uint64(len(words)) < headerWords+levelHeaderWords*nl {
 		return nil, ErrCorrupt
 	}
