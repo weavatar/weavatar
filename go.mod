@@ -1,19 +1,19 @@
 module github.com/weavatar/weavatar
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.2.4
 	github.com/alibabacloud-go/dysmsapi-20170525/v5 v5.6.0
-	github.com/alibabacloud-go/green-20220302/v3 v3.5.4
+	github.com/alibabacloud-go/green-20220302/v3 v3.5.5
 	github.com/alibabacloud-go/tea v1.5.3
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/cloudflare/cloudflare-go/v7 v7.12.0
-	github.com/davidbyttow/govips/v2 v2.18.0
+	github.com/davidbyttow/govips/v2 v2.19.0
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
-	github.com/dromara/carbon/v2 v2.6.17
+	github.com/dromara/carbon/v2 v2.6.18
 	github.com/forPelevin/gomoji v1.4.1
-	github.com/go-gormigrate/gormigrate/v2 v2.1.6
+	github.com/go-gormigrate/gormigrate/v2 v2.1.7
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/gofiber/contrib/monitor v0.1.2
 	github.com/gofiber/fiber/v3 v3.5.0
@@ -25,7 +25,7 @@ require (
 	github.com/jdcloud-api/jdcloud-sdk-go v1.67.0
 	github.com/knadh/koanf/parsers/yaml v1.1.1
 	github.com/knadh/koanf/providers/file v1.2.1
-	github.com/knadh/koanf/v2 v2.3.6
+	github.com/knadh/koanf/v2 v2.3.7
 	github.com/libtnb/cache v1.3.0
 	github.com/libtnb/utils v1.2.2
 	github.com/orandin/slog-gorm v1.4.0
@@ -33,10 +33,10 @@ require (
 	github.com/sethvargo/go-limiter v1.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.12.1
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.172
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.186
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.3.172
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.171
-	github.com/urfave/cli/v3 v3.11.0
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/teo v1.3.186
+	github.com/urfave/cli/v3 v3.14.0
 	github.com/weavatar/identicon v1.1.0
 	github.com/weavatar/initials v1.1.1
 	github.com/weavatar/monsterid v1.0.1
@@ -44,9 +44,9 @@ require (
 	github.com/weavatar/robohash v1.1.1
 	github.com/weavatar/wavatar v1.0.0
 	github.com/wneessen/go-mail v0.8.1
-	golang.org/x/image v0.45.0
-	golang.org/x/sync v0.22.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/image v0.46.0
+	golang.org/x/sync v0.23.0
+	golang.org/x/sys v0.48.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.2
@@ -111,6 +111,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 )
