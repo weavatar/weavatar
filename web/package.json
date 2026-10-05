@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@vue/devtools-api": "^8.2.1",
-    "@vueuse/core": "^14.2.1",
+    "@vueuse/core": "^15.0.0",
     "@vueuse/motion": "^3.0.3",
     "alova": "^3.5.1",
     "cropperjs": "^2.1.1",
