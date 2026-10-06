@@ -26,15 +26,14 @@ func (r *Tencent) Send(ctx context.Context, phone string, message Message) error
 
 	request := tencentsms.NewSendSmsRequest()
 	request.PhoneNumberSet = common.StringPtrs([]string{phone})
-	request.SignName = common.StringPtr(r.signName)
-	request.TemplateId = common.StringPtr(r.templateId)
+	request.SignName = new(r.signName)
+	request.TemplateId = new(r.templateId)
 	request.TemplateParamSet = common.StringPtrs([]string{message.Data["code"], r.expireTime})
-	request.SmsSdkAppId = common.StringPtr(r.sdkAppId)
+	request.SmsSdkAppId = new(r.sdkAppId)
 
 	response, err := client.SendSmsWithContext(ctx, request)
 
-	var sdkError *sdkerror.TencentCloudSDKError
-	if errors.As(err, &sdkError) {
+	if sdkError, ok := errors.AsType[*sdkerror.TencentCloudSDKError](err); ok {
 		return fmt.Errorf("sms: failed to send sms, code: %s, message: %s, requestId: %s", sdkError.Code, sdkError.Message, sdkError.RequestId)
 	}
 	if err != nil {

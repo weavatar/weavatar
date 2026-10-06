@@ -26,10 +26,10 @@ type YunDunRefreshResponse struct {
 		DispatchBeforeTimeConsuming string `json:"dispatch_before_time_consuming"`
 	} `json:"status"`
 	Data struct {
-		Wholesite  []interface{} `json:"wholesite"`
-		Specialurl []string      `json:"specialurl"`
-		Specialdir []interface{} `json:"specialdir"`
-		RequestId  string        `json:"request_id"`
+		Wholesite  []any    `json:"wholesite"`
+		Specialurl []string `json:"specialurl"`
+		Specialdir []any    `json:"specialdir"`
+		RequestId  string   `json:"request_id"`
 	} `json:"data"`
 }
 

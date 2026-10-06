@@ -39,15 +39,14 @@ func (r *EdgeOne) GetUsage(ctx context.Context, domain string, startTime, endTim
 	}
 
 	request := teo.NewDescribeTimingL7AnalysisDataRequest()
-	request.StartTime = common.StringPtr(startTime.Format(iso8601Layout))
-	request.EndTime = common.StringPtr(endTime.Format(iso8601Layout))
+	request.StartTime = new(startTime.Format(iso8601Layout))
+	request.EndTime = new(endTime.Format(iso8601Layout))
 	request.MetricNames = common.StringPtrs([]string{"l7Flow_request"})
 	request.ZoneIds = common.StringPtrs([]string{"*"})
-	request.Interval = common.StringPtr("day")
+	request.Interval = new("day")
 
 	response, err := client.DescribeTimingL7AnalysisDataWithContext(ctx, request)
-	var sdkError *sdkerror.TencentCloudSDKError
-	if errors.As(err, &sdkError) {
+	if sdkError, ok := errors.AsType[*sdkerror.TencentCloudSDKError](err); ok {
 		return 0, fmt.Errorf("cdn: failed to get edgeone usage, code: %s, message: %s, requestId: %s", sdkError.Code, sdkError.Message, sdkError.RequestId)
 	}
 	if err != nil {
@@ -71,13 +70,12 @@ func (r *EdgeOne) purge(ctx context.Context, purgeType, kind string, targets []s
 	}
 
 	request := teo.NewCreatePurgeTaskRequest()
-	request.ZoneId = common.StringPtr("*")
-	request.Type = common.StringPtr(purgeType)
+	request.ZoneId = new("*")
+	request.Type = new(purgeType)
 	request.Targets = common.StringPtrs(targets)
 
 	_, err = client.CreatePurgeTaskWithContext(ctx, request)
-	var sdkError *sdkerror.TencentCloudSDKError
-	if errors.As(err, &sdkError) {
+	if sdkError, ok := errors.AsType[*sdkerror.TencentCloudSDKError](err); ok {
 		return fmt.Errorf("cdn: failed to refresh edgeone %s, code: %s, message: %s, requestId: %s", kind, sdkError.Code, sdkError.Message, sdkError.RequestId)
 	}
 	if err != nil {

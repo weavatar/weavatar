@@ -30,13 +30,13 @@ func (r *Aliyun) Send(ctx context.Context, phone string, message Message) error 
 	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
 		SignName:      &r.signName,
 		TemplateCode:  &r.templateCode,
-		PhoneNumbers:  tea.String(phone),
-		TemplateParam: tea.String(string(param)),
+		PhoneNumbers:  new(phone),
+		TemplateParam: new(string(param)),
 	}
 
 	result, err := client.SendSmsWithContext(ctx, sendSmsRequest, &util.RuntimeOptions{
-		Autoretry:   tea.Bool(true),
-		MaxAttempts: tea.Int(3),
+		Autoretry:   new(true),
+		MaxAttempts: new(3),
 	})
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (r *Aliyun) createClient() (*dysmsapi20170525.Client, error) {
 	config := &openapi.Config{
 		AccessKeyId:     &r.accessKeyId,
 		AccessKeySecret: &r.accessKeySecret,
-		Endpoint:        tea.String("dysmsapi.aliyuncs.com"),
+		Endpoint:        new("dysmsapi.aliyuncs.com"),
 	}
 
 	return dysmsapi20170525.NewClient(config)

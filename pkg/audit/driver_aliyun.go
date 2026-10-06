@@ -34,8 +34,8 @@ func (r *Aliyun) Check(ctx context.Context, url string) (bool, string, error) {
 	}
 
 	request := &green20220302.ImageModerationRequest{
-		Service:           tea.String("baselineCheck"),
-		ServiceParameters: tea.String(string(parameters)),
+		Service:           new("baselineCheck"),
+		ServiceParameters: new(string(parameters)),
 	}
 
 	// Shanghai backs up Beijing when it errors
