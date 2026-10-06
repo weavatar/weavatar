@@ -7,9 +7,9 @@ func init() {
 {{- if .Create}}
 		s.Create("{{.Table}}", func(t *migrate.Table) {
 			t.ID()
-			t.String("name")
 			t.Timestamps()
 			t.SoftDeletes()
+			t.String("name")
 		})
 {{- else}}
 		s.Table("{{.Table}}", func(t *migrate.Table) {
