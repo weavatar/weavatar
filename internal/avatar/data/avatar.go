@@ -8,6 +8,7 @@ import (
 	"github.com/samber/oops"
 
 	"github.com/weavatar/weavatar/internal/avatar/biz"
+	"github.com/weavatar/weavatar/internal/shared/database"
 )
 
 var (
@@ -31,7 +32,7 @@ func (r *avatarRepo) List(ctx context.Context, userID string, page, limit int) (
 	if page < 1 { // guard the callers that skip HTTP validation
 		page = 1
 	}
-	q := queryer(ctx, r.db)
+	q := database.Q(ctx, r.db)
 	total, err := avatarsByUser.Count(ctx, q, userID)
 	if err != nil {
 		return nil, 0, wrap(err, "count avatars of %s", userID)
@@ -49,8 +50,21 @@ func (r *avatarRepo) List(ctx context.Context, userID string, page, limit int) (
 	return avatars, total, nil
 }
 
+func (r *avatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.Avatar, error) {
+	list, err := avatarsByUser.All(ctx, database.Q(ctx, r.db), userID)
+	if err != nil {
+		return nil, wrap(err, "list all avatars of %s", userID)
+	}
+
+	avatars := make([]*biz.Avatar, len(list))
+	for i := range list {
+		avatars[i] = &list[i]
+	}
+	return avatars, nil
+}
+
 func (r *avatarRepo) Find(ctx context.Context, userID, hash string) (*biz.Avatar, error) {
-	avatar, err := userAvatarByHash.First(ctx, queryer(ctx, r.db), hash, hash, userID)
+	avatar, err := userAvatarByHash.First(ctx, database.Q(ctx, r.db), hash, hash, userID)
 	if err != nil {
 		return nil, wrap(err, "find avatar %s of %s", hash, userID)
 	}
@@ -58,7 +72,7 @@ func (r *avatarRepo) Find(ctx context.Context, userID, hash string) (*biz.Avatar
 }
 
 func (r *avatarRepo) ExistsByRaw(ctx context.Context, raw string) (bool, error) {
-	exists, err := avatarByRaw.Exists(ctx, queryer(ctx, r.db), raw)
+	exists, err := avatarByRaw.Exists(ctx, database.Q(ctx, r.db), raw)
 	if err != nil {
 		return false, wrap(err, "check avatar by raw")
 	}
@@ -73,7 +87,7 @@ func (r *avatarRepo) FindForServe(ctx context.Context, hash, appID string) (*biz
 			With("AppMD5", rio.RelWhere("app_id = ?", appID))
 	}
 
-	avatar, err := query.First(ctx, queryer(ctx, r.db), hash, hash)
+	avatar, err := query.First(ctx, database.Q(ctx, r.db), hash, hash)
 	if err != nil {
 		return nil, wrap(err, "find avatar %s", hash)
 	}
@@ -85,7 +99,7 @@ func (r *avatarRepo) FindForServe(ctx context.Context, hash, appID string) (*biz
 }
 
 func (r *avatarRepo) Create(ctx context.Context, avatar *biz.Avatar) error {
-	if err := rio.Insert(ctx, queryer(ctx, r.db), avatar); err != nil {
+	if err := rio.Insert(ctx, database.Q(ctx, r.db), avatar); err != nil {
 		if errors.Is(err, rio.ErrDuplicateKey) {
 			return biz.ErrAvatarExists
 		}
@@ -95,21 +109,21 @@ func (r *avatarRepo) Create(ctx context.Context, avatar *biz.Avatar) error {
 }
 
 func (r *avatarRepo) Touch(ctx context.Context, avatar *biz.Avatar) error {
-	if err := rio.Update(ctx, queryer(ctx, r.db), avatar); err != nil {
+	if err := rio.Update(ctx, database.Q(ctx, r.db), avatar); err != nil {
 		return wrap(err, "touch avatar %s", avatar.SHA256)
 	}
 	return nil
 }
 
 func (r *avatarRepo) Delete(ctx context.Context, avatar *biz.Avatar) error {
-	if err := rio.Delete(ctx, queryer(ctx, r.db), avatar); err != nil {
+	if err := rio.Delete(ctx, database.Q(ctx, r.db), avatar); err != nil {
 		return wrap(err, "delete avatar %s", avatar.SHA256)
 	}
 	return nil
 }
 
 func (r *avatarRepo) RandomHashes(ctx context.Context, n int) ([]string, error) {
-	hashes, err := randomAvatars.Limit(n).Pluck[string](ctx, queryer(ctx, r.db), "sha256")
+	hashes, err := randomAvatars.Limit(n).Pluck[string](ctx, database.Q(ctx, r.db), "sha256")
 	if err != nil {
 		return nil, wrap(err, "pick random avatars")
 	}

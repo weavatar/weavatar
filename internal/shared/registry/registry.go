@@ -27,3 +27,13 @@ type HealthCheck struct {
 
 // HealthChecks contains the readiness dependencies contributed by application modules.
 type HealthChecks []HealthCheck
+
+// UserCleanup removes what one module keeps about a user. It runs inside the
+// account deletion transaction and must use the ctx it is given.
+type UserCleanup struct {
+	Name string
+	Run  func(ctx context.Context, userID string) error
+}
+
+// UserCleanups contains the per-module cleanups run when a user deletes the account.
+type UserCleanups []UserCleanup

@@ -20,18 +20,20 @@ import (
 
 	mocksbiz "github.com/weavatar/weavatar/internal/mocks/user/biz"
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
+	"github.com/weavatar/weavatar/internal/shared/registry"
 	"github.com/weavatar/weavatar/internal/shared/transport"
 	"github.com/weavatar/weavatar/internal/user/biz"
 	"github.com/weavatar/weavatar/internal/user/service"
 )
 
 type testApp struct {
-	app    *fiber.App
-	repo   *mocksbiz.UserRepo
-	oauth  *mocksbiz.OAuthProvider
-	tokens *mocksbiz.Tokens
-	cache  cache.Cache
-	parser *jwt.JWT
+	app     *fiber.App
+	repo    *mocksbiz.UserRepo
+	oauth   *mocksbiz.OAuthProvider
+	tokens  *mocksbiz.Tokens
+	cache   cache.Cache
+	parser  *jwt.JWT
+	cleaned []string // userIDs the registered cleanup received
 }
 
 func TestLogin(t *testing.T) {
@@ -92,6 +94,8 @@ func TestLoginRequired(t *testing.T) {
 		httptest.NewRequest(fiber.MethodGet, "/api/user/info", nil),
 		jsonRequest(fiber.MethodPut, "/api/user/info", `{"nickname":"a","avatar":"https://a/b.png"}`),
 		httptest.NewRequest(fiber.MethodPost, "/api/user/logout", nil),
+		httptest.NewRequest(fiber.MethodGet, "/api/user/deletion/login", nil),
+		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`),
 	} {
 		status, env := do[any](t, a, req, "")
 		check.Equal(t, status, fiber.StatusUnauthorized, req.Method+" "+req.URL.Path)
@@ -166,6 +170,82 @@ func TestLogout(t *testing.T) {
 	check.Equal(t, env.Msg, "success")
 }
 
+func TestDeletionLogin(t *testing.T) {
+	a := newTestApp(t)
+
+	status, env := do[service.LoginURL](t, a, httptest.NewRequest(fiber.MethodGet, "/api/user/deletion/login", nil), "u1")
+
+	must.Equal(t, status, fiber.StatusOK)
+	u, err := url.Parse(env.Data.URL)
+	must.NoError(t, err)
+	check.Equal(t, u.Host, "account.haozi.net")
+	state := u.Query().Get("state")
+	check.True(t, strings.HasPrefix(state, "delete-"))
+	check.Equal(t, a.cache.Get(state), any("u1"))
+}
+
+func TestDeletionConfirm(t *testing.T) {
+	a := newTestApp(t)
+	must.NoError(t, a.cache.Put("delete-abc", "u1", time.Minute))
+	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+		return &biz.User{ID: id, UnionID: "union-1"}, nil
+	}
+	a.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
+		return biz.Identity{UnionID: "union-1"}, nil
+	}
+	a.repo.DeleteFunc = func(context.Context, *biz.User) error { return nil }
+
+	status, env := do[any](t, a,
+		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`), "u1")
+
+	must.Equal(t, status, fiber.StatusOK)
+	check.Equal(t, env.Msg, "success")
+	check.Nil(t, env.Data)
+	check.Equal(t, a.oauth.ExchangeCalls()[0].Code, "c")
+	check.DeepEqual(t, a.cleaned, []string{"u1"})
+	deleted := a.repo.DeleteCalls()
+	must.Len(t, deleted, 1)
+	check.Equal(t, deleted[0].User.ID, "u1")
+}
+
+func TestDeletionConfirm_OtherAccountIs403(t *testing.T) {
+	a := newTestApp(t)
+	must.NoError(t, a.cache.Put("delete-abc", "u1", time.Minute))
+	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+		return &biz.User{ID: id, UnionID: "union-1"}, nil
+	}
+	a.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
+		return biz.Identity{UnionID: "union-2"}, nil
+	}
+
+	status, env := do[any](t, a,
+		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`), "u1")
+
+	check.Equal(t, status, fiber.StatusForbidden)
+	check.Equal(t, env.Code, "user.deletion_identity_mismatch")
+	check.Equal(t, env.Msg, "授权的账号与当前账号不一致")
+	check.Len(t, a.cleaned, 0)
+}
+
+func TestDeletionConfirm_StateExpiredIs400(t *testing.T) {
+	a := newTestApp(t) // no mock funcs: the usecase must stop at the state
+
+	status, env := do[any](t, a,
+		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-gone"}`), "u1")
+
+	check.Equal(t, status, fiber.StatusBadRequest)
+	check.Equal(t, env.Code, "user.state_expired")
+}
+
+func TestDeletionConfirm_MissingStateIs422(t *testing.T) {
+	a := newTestApp(t)
+
+	status, _ := do[any](t, a,
+		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c"}`), "u1")
+
+	check.Equal(t, status, fiber.StatusUnprocessableEntity)
+}
+
 // newTestApp mounts the real route table, MustLogin included, over mocked ports.
 func newTestApp(t *testing.T) *testApp {
 	t.Helper()
@@ -181,7 +261,16 @@ func newTestApp(t *testing.T) *testApp {
 		appinfo.Domain("weavatar.com"),
 		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
 	)
-	user := service.NewUserService(uc, newValidator(t))
+	tx := &mocksbiz.TxRunner{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }}
+	cleanups := registry.UserCleanups{{Name: "test", Run: func(_ context.Context, userID string) error {
+		a.cleaned = append(a.cleaned, userID)
+		return nil
+	}}}
+	deletion := biz.NewDeletionUsecase(a.repo, a.oauth, a.cache, tx, cleanups,
+		appinfo.Domain("weavatar.com"),
+		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
+	)
+	user := service.NewUserService(uc, deletion, newValidator(t))
 
 	a.app = fiber.New()
 	for _, e := range service.UserRoutes(user, a.parser) {

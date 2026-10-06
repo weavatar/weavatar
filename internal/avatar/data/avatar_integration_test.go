@@ -46,6 +46,13 @@ func TestIntegrationAvatarRepo_CRUD(t *testing.T) {
 	must.Len(t, list, 2)
 	check.Equal(t, list[0].Raw, "b") // newest first
 
+	all, err := repo.ListAllByUser(ctx, "u1")
+	must.NoError(t, err)
+	check.Len(t, all, 2)
+	none, err := repo.ListAllByUser(ctx, "u3")
+	must.NoError(t, err)
+	check.Len(t, none, 0)
+
 	found, err := repo.Find(ctx, "u1", "a-md5")
 	must.NoError(t, err)
 	check.Equal(t, found.SHA256, "a-sha256")

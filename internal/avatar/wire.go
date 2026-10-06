@@ -31,7 +31,10 @@ var Module = wire.New().
 	Contribute[registry.Commands](service.HashCommand).
 	Multibind[registry.Jobs]().
 	Contribute[registry.Jobs](service.PurgeExpiredCacheJob).
+	Multibind[registry.UserCleanups]().
+	Contribute[registry.UserCleanups](data.NewUserCleanup).
 	Export[*biz.AvatarUsecase]().
 	Export[registry.Routes]().
 	Export[registry.Commands]().
-	Export[registry.Jobs]()
+	Export[registry.Jobs]().
+	Export[registry.UserCleanups]()

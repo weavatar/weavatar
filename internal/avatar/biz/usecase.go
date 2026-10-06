@@ -165,6 +165,41 @@ func (uc *AvatarUsecase) Delete(ctx context.Context, userID, hash string) error 
 	return nil
 }
 
+// DeleteByUser removes every avatar of userID together with its image, in
+// the caller's transaction when there is one, and purges the CDN once for
+// all of them.
+func (uc *AvatarUsecase) DeleteByUser(ctx context.Context, userID string) error {
+	avatars, err := uc.repo.ListAllByUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if len(avatars) == 0 {
+		return nil
+	}
+
+	err = uc.tx.Run(ctx, func(ctx context.Context) error {
+		for _, avatar := range avatars {
+			if err := uc.repo.Delete(ctx, avatar); err != nil {
+				return err
+			}
+			if err := uc.store.RemoveAvatar(avatar.SHA256); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	urls := make([]string, 0, 2*len(avatars))
+	for _, avatar := range avatars {
+		urls = append(urls, uc.avatarURL(avatar.SHA256), uc.avatarURL(avatar.MD5))
+	}
+	uc.enqueueRefresh(ctx, urls...)
+	return nil
+}
+
 // Bound reports whether raw already has an avatar.
 func (uc *AvatarUsecase) Bound(ctx context.Context, raw string) (bool, error) {
 	return uc.repo.ExistsByRaw(ctx, raw)

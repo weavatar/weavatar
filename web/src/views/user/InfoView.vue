@@ -90,13 +90,62 @@
           </div>
         </n-spin>
       </div>
+
+      <!-- 注销 -->
+      <div class="surface p-6 sm:p-8 lg:col-span-2">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h2 class="text-base font-700 text-fg">注销账号</h2>
+            <p class="mt-1.5 text-sm text-fg2 leading-relaxed">
+              注销后将删除你上传的全部头像，且不可恢复。
+            </p>
+          </div>
+          <button type="button" class="btn-danger shrink-0" @click="showDeletion = true">
+            <span class="i-lucide-user-x text-base" />
+            注销账号
+          </button>
+        </div>
+      </div>
     </div>
+
+    <n-modal
+      v-model:show="showDeletion"
+      preset="card"
+      title="注销账号"
+      :style="{ width: '460px', maxWidth: '94vw' }"
+      :bordered="false"
+      :mask-closable="!deletionLoading"
+      :auto-focus="false"
+    >
+      <p class="text-sm text-fg2 leading-relaxed">
+        注销后将删除你上传的全部头像，且不可恢复。为确认身份，需要重新通过树新峰通行证授权，授权完成后账号即被注销。
+      </p>
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          class="btn-ghost"
+          :disabled="deletionLoading"
+          @click="showDeletion = false"
+        >
+          取消
+        </button>
+        <button
+          type="button"
+          class="btn-danger"
+          :disabled="deletionLoading"
+          @click="handleDeletion"
+        >
+          <span v-if="deletionLoading" class="i-lucide-loader-circle animate-spin text-base" />
+          {{ deletionLoading ? '正在跳转…' : '前往确认身份' }}
+        </button>
+      </div>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { NInput, NSpin } from 'naive-ui'
+import { NInput, NModal, NSpin } from 'naive-ui'
 import { useRequest } from 'alova/client'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
@@ -110,6 +159,8 @@ const userStore = useUserStore()
 const pageLoading = ref(true)
 const saveLoading = ref(false)
 const model = ref({ nickname: '', avatar: '' })
+const showDeletion = ref(false)
+const deletionLoading = ref(false)
 
 const preview = computed(() => (/^https?:\/\//.test(model.value.avatar) ? model.value.avatar : ''))
 
@@ -130,6 +181,19 @@ const handleSave = () => {
     })
     .onComplete(() => {
       saveLoading.value = false
+    })
+}
+
+// the callback page reads the intent to finish the deletion instead of a login
+const handleDeletion = () => {
+  deletionLoading.value = true
+  useRequest(userApi.deletionLogin())
+    .onSuccess(({ data }: any) => {
+      sessionStorage.setItem('oauth_intent', 'delete')
+      window.location.href = data.url
+    })
+    .onError(() => {
+      deletionLoading.value = false
     })
 }
 </script>

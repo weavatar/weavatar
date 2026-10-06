@@ -21,6 +21,7 @@ var ApplicationModule = wire.New().
 	Multibind[registry.Commands]().
 	Multibind[registry.Jobs]().
 	Multibind[registry.HealthChecks]().
+	Multibind[registry.UserCleanups]().
 	Include(
 		bootstrap.Module,
 		server.Module,

@@ -7,6 +7,7 @@ import (
 	"github.com/go-rio/rio"
 	"github.com/samber/oops"
 
+	"github.com/weavatar/weavatar/internal/shared/database"
 	"github.com/weavatar/weavatar/internal/user/biz"
 )
 
@@ -21,7 +22,7 @@ func NewUserRepo(db *rio.DB) biz.UserRepo {
 }
 
 func (r *userRepo) FindByUnionID(ctx context.Context, unionID string) (*biz.User, error) {
-	user, err := userByUnionIDQuery.First(ctx, r.db, unionID)
+	user, err := userByUnionIDQuery.First(ctx, database.Q(ctx, r.db), unionID)
 	if err != nil {
 		return nil, oops.In("user").Wrapf(err, "find user by union id")
 	}
@@ -30,7 +31,7 @@ func (r *userRepo) FindByUnionID(ctx context.Context, unionID string) (*biz.User
 }
 
 func (r *userRepo) Find(ctx context.Context, id string) (*biz.User, error) {
-	user, err := rio.Find[biz.User](ctx, r.db, id)
+	user, err := rio.Find[biz.User](ctx, database.Q(ctx, r.db), id)
 	if err != nil {
 		return nil, oops.In("user").Wrapf(err, "find user %s", id)
 	}
@@ -39,7 +40,7 @@ func (r *userRepo) Find(ctx context.Context, id string) (*biz.User, error) {
 }
 
 func (r *userRepo) Create(ctx context.Context, user *biz.User) error {
-	if err := rio.Insert(ctx, r.db, user); err != nil {
+	if err := rio.Insert(ctx, database.Q(ctx, r.db), user); err != nil {
 		return oops.In("user").Wrapf(err, "create user")
 	}
 
@@ -47,8 +48,17 @@ func (r *userRepo) Create(ctx context.Context, user *biz.User) error {
 }
 
 func (r *userRepo) Update(ctx context.Context, user *biz.User) error {
-	if err := rio.Update(ctx, r.db, user); err != nil {
+	if err := rio.Update(ctx, database.Q(ctx, r.db), user); err != nil {
 		return oops.In("user").Wrapf(err, "update user %s", user.ID)
+	}
+
+	return nil
+}
+
+// Delete relies on the softdelete column: rio only stamps deleted_at.
+func (r *userRepo) Delete(ctx context.Context, user *biz.User) error {
+	if err := rio.Delete(ctx, database.Q(ctx, r.db), user); err != nil {
+		return oops.In("user").Wrapf(err, "delete user %s", user.ID)
 	}
 
 	return nil

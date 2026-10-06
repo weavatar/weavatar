@@ -55,6 +55,7 @@ type Image struct {
 // rio.ErrNotFound. Calls join the transaction a TxRunner put in ctx.
 type AvatarRepo interface {
 	List(ctx context.Context, userID string, page, limit int) ([]*Avatar, int64, error)
+	ListAllByUser(ctx context.Context, userID string) ([]*Avatar, error)
 	// Find matches hash against sha256 or md5 among userID's avatars.
 	Find(ctx context.Context, userID, hash string) (*Avatar, error)
 	ExistsByRaw(ctx context.Context, raw string) (bool, error)

@@ -30,5 +30,11 @@ func UserRoutes(user *UserService, parser *jwt.JWT) transport.Endpoints {
 		{Method: fiber.MethodPost, Path: "/api/user/logout", Handler: user.Logout, Middlewares: mustLogin,
 			Summary: "退出登录", Tags: []string{"user"},
 			Document: transport.Describe[openapi.NoBody, transport.Envelope[any]](http.StatusOK)},
+		{Method: fiber.MethodGet, Path: "/api/user/deletion/login", Handler: user.DeletionLogin, Middlewares: mustLogin,
+			Summary: "获取注销账号的确认地址", Tags: []string{"user"},
+			Document: transport.Describe[openapi.NoBody, transport.Envelope[LoginURL]](http.StatusOK)},
+		{Method: fiber.MethodPost, Path: "/api/user/deletion/confirm", Handler: user.DeletionConfirm, Middlewares: mustLogin,
+			Summary: "确认注销账号", Tags: []string{"user"},
+			Document: transport.Describe[UserCallback, transport.Envelope[any]](http.StatusOK)},
 	}
 }

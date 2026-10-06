@@ -39,6 +39,9 @@ var _ biz.AvatarRepo = &AvatarRepo{}
 //			ListFunc: func(ctx context.Context, userID string, page int, limit int) ([]*biz.Avatar, int64, error) {
 //				panic("mock out the List method")
 //			},
+//			ListAllByUserFunc: func(ctx context.Context, userID string) ([]*biz.Avatar, error) {
+//				panic("mock out the ListAllByUser method")
+//			},
 //			RandomHashesFunc: func(ctx context.Context, n int) ([]string, error) {
 //				panic("mock out the RandomHashes method")
 //			},
@@ -69,6 +72,9 @@ type AvatarRepo struct {
 
 	// ListFunc mocks the List method.
 	ListFunc func(ctx context.Context, userID string, page int, limit int) ([]*biz.Avatar, int64, error)
+
+	// ListAllByUserFunc mocks the ListAllByUser method.
+	ListAllByUserFunc func(ctx context.Context, userID string) ([]*biz.Avatar, error)
 
 	// RandomHashesFunc mocks the RandomHashes method.
 	RandomHashesFunc func(ctx context.Context, n int) ([]string, error)
@@ -128,6 +134,13 @@ type AvatarRepo struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// ListAllByUser holds details about calls to the ListAllByUser method.
+		ListAllByUser []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
 		// RandomHashes holds details about calls to the RandomHashes method.
 		RandomHashes []struct {
 			// Ctx is the ctx argument value.
@@ -143,14 +156,15 @@ type AvatarRepo struct {
 			Avatar *biz.Avatar
 		}
 	}
-	lockCreate       sync.RWMutex
-	lockDelete       sync.RWMutex
-	lockExistsByRaw  sync.RWMutex
-	lockFind         sync.RWMutex
-	lockFindForServe sync.RWMutex
-	lockList         sync.RWMutex
-	lockRandomHashes sync.RWMutex
-	lockTouch        sync.RWMutex
+	lockCreate        sync.RWMutex
+	lockDelete        sync.RWMutex
+	lockExistsByRaw   sync.RWMutex
+	lockFind          sync.RWMutex
+	lockFindForServe  sync.RWMutex
+	lockList          sync.RWMutex
+	lockListAllByUser sync.RWMutex
+	lockRandomHashes  sync.RWMutex
+	lockTouch         sync.RWMutex
 }
 
 // Create calls CreateFunc.
@@ -382,6 +396,42 @@ func (mock *AvatarRepo) ListCalls() []struct {
 	mock.lockList.RLock()
 	calls = mock.calls.List
 	mock.lockList.RUnlock()
+	return calls
+}
+
+// ListAllByUser calls ListAllByUserFunc.
+func (mock *AvatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.Avatar, error) {
+	if mock.ListAllByUserFunc == nil {
+		panic("AvatarRepo.ListAllByUserFunc: method is nil but AvatarRepo.ListAllByUser was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockListAllByUser.Lock()
+	mock.calls.ListAllByUser = append(mock.calls.ListAllByUser, callInfo)
+	mock.lockListAllByUser.Unlock()
+	return mock.ListAllByUserFunc(ctx, userID)
+}
+
+// ListAllByUserCalls gets all the calls that were made to ListAllByUser.
+// Check the length with:
+//
+//	len(mockedAvatarRepo.ListAllByUserCalls())
+func (mock *AvatarRepo) ListAllByUserCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockListAllByUser.RLock()
+	calls = mock.calls.ListAllByUser
+	mock.lockListAllByUser.RUnlock()
 	return calls
 }
 

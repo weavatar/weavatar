@@ -16,7 +16,9 @@ var Module = wire.New().
 	Provide(data.NewUserRepo).
 	Provide(data.NewOAuthProvider).
 	Provide(data.NewTokens).
+	Provide(data.NewTxRunner).
 	Provide(biz.NewUserUsecase).
+	Provide(biz.NewDeletionUsecase).
 	Provide(service.NewUserService).
 	Multibind[registry.Routes]().
 	Contribute[registry.Routes](service.UserRoutes).

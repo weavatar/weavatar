@@ -11,12 +11,14 @@ import (
 
 type UserService struct {
 	user     *biz.UserUsecase
+	deletion *biz.DeletionUsecase
 	validate *validator.Validator
 }
 
-func NewUserService(user *biz.UserUsecase, validate *validator.Validator) *UserService {
+func NewUserService(user *biz.UserUsecase, deletion *biz.DeletionUsecase, validate *validator.Validator) *UserService {
 	return &UserService{
 		user:     user,
+		deletion: deletion,
 		validate: validate,
 	}
 }
@@ -69,5 +71,29 @@ func (r *UserService) UpdateInfo(c fiber.Ctx) error {
 
 // Logout is a no-op: tokens are stateless and the client discards its own.
 func (r *UserService) Logout(c fiber.Ctx) error {
+	return transport.Success[any](c, nil)
+}
+
+// DeletionLogin starts the re-authorization that confirms an account deletion.
+func (r *UserService) DeletionLogin(c fiber.Ctx) error {
+	url, err := r.deletion.DeletionURL(c.Context(), transport.UserID(c))
+	if err != nil {
+		return transport.ErrorFrom(c, err)
+	}
+
+	return transport.Success(c, LoginURL{URL: url})
+}
+
+// DeletionConfirm takes the OAuth callback of DeletionLogin and deletes the account.
+func (r *UserService) DeletionConfirm(c fiber.Ctx) error {
+	req, err := transport.Bind[UserCallback](c, r.validate)
+	if err != nil {
+		return transport.Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+	}
+
+	if err = r.deletion.ConfirmDeletion(c.Context(), transport.UserID(c), req.Code, req.State); err != nil {
+		return transport.ErrorFrom(c, err)
+	}
+
 	return transport.Success[any](c, nil)
 }

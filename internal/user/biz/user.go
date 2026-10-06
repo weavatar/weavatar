@@ -39,12 +39,21 @@ type User struct {
 }
 
 // UserRepo is the persistence boundary; a missing row is rio.ErrNotFound and
-// a taken union_id on Create is rio.ErrDuplicateKey.
+// a taken union_id on Create is rio.ErrDuplicateKey. Calls join the
+// transaction a TxRunner put in ctx.
 type UserRepo interface {
 	FindByUnionID(ctx context.Context, unionID string) (*User, error)
 	Find(ctx context.Context, id string) (*User, error)
 	Create(ctx context.Context, user *User) error
 	Update(ctx context.Context, user *User) error
+	// Delete soft-deletes: the row keeps every column and gains deleted_at.
+	Delete(ctx context.Context, user *User) error
+}
+
+// TxRunner runs fn in one database transaction, carried by the ctx it passes;
+// an error from fn rolls the transaction back.
+type TxRunner interface {
+	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 // Identity is the account the OAuth server vouches for.
@@ -101,9 +110,7 @@ func (uc *UserUsecase) LoginURL(_ context.Context) (string, error) {
 		return "", oops.In("user").Wrapf(err, "store login state")
 	}
 
-	return uc.client.BaseURL + "/oauth/authorize?client_id=" + uc.client.ClientID +
-		"&redirect_uri=" + url.QueryEscape(uc.redirectURI()) +
-		"&response_type=code&scope=basic&state=" + state, nil
+	return authorizeURL(uc.client, redirectURI(uc.domain), state), nil
 }
 
 // Callback finishes an OAuth login and returns a login token. The first
@@ -114,7 +121,7 @@ func (uc *UserUsecase) Callback(ctx context.Context, code, state string) (string
 		return "", ErrStateExpired()
 	}
 
-	identity, err := uc.oauth.Exchange(ctx, code, uc.redirectURI())
+	identity, err := uc.oauth.Exchange(ctx, code, redirectURI(uc.domain))
 	if err != nil {
 		return "", err
 	}
@@ -187,6 +194,15 @@ func (uc *UserUsecase) login(ctx context.Context, identity Identity) (*User, err
 	return user, nil
 }
 
-func (uc *UserUsecase) redirectURI() string {
-	return "https://" + uc.domain + "/oauth/callback"
+// authorizeURL is the OAuth server's authorization page for one state.
+func authorizeURL(client appinfo.OAuthClient, redirectURI, state string) string {
+	return client.BaseURL + "/oauth/authorize?client_id=" + client.ClientID +
+		"&redirect_uri=" + url.QueryEscape(redirectURI) +
+		"&response_type=code&scope=basic&state=" + state
+}
+
+// redirectURI is the one callback registered with the OAuth server; logins
+// and deletion confirmations share it.
+func redirectURI(domain string) string {
+	return "https://" + domain + "/oauth/callback"
 }

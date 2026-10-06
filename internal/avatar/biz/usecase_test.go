@@ -3,6 +3,7 @@ package biz_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"image/png"
 	"testing"
@@ -137,6 +138,70 @@ func TestDelete_RemovesRowAndFile(t *testing.T) {
 	check.Equal(t, d.repo.DeleteCalls()[0].Avatar.SHA256, sha256Hash)
 	check.Equal(t, d.store.RemoveAvatarCalls()[0].Sha256, sha256Hash)
 	check.Equal(t, d.queue.Len(), 1)
+}
+
+func TestDeleteByUser_RemovesEveryAvatarAndPurgesAllURLs(t *testing.T) {
+	uc, d := newUsecase(t)
+	d.repo.ListAllByUserFunc = func(_ context.Context, userID string) ([]*biz.Avatar, error) {
+		check.Equal(t, userID, "u1")
+		return []*biz.Avatar{
+			{SHA256: sha256Hash, MD5: md5Hash, UserID: "u1"},
+			{SHA256: "sha-2", MD5: "md5-2", UserID: "u1"},
+		}, nil
+	}
+	d.repo.DeleteFunc = func(context.Context, *biz.Avatar) error { return nil }
+	d.store.RemoveAvatarFunc = func(string) error { return nil }
+	purged := make(chan []string, 1)
+	d.purger.RefreshFunc = func(_ context.Context, urls []string) error {
+		purged <- urls
+		return nil
+	}
+
+	must.NoError(t, uc.DeleteByUser(t.Context(), "u1"))
+
+	check.Len(t, d.tx.RunCalls(), 1)
+	deleted := d.repo.DeleteCalls()
+	must.Len(t, deleted, 2)
+	check.Equal(t, deleted[0].Avatar.SHA256, sha256Hash)
+	check.Equal(t, deleted[1].Avatar.SHA256, "sha-2")
+	removed := d.store.RemoveAvatarCalls()
+	must.Len(t, removed, 2)
+	check.Equal(t, removed[0].Sha256, sha256Hash)
+	check.Equal(t, removed[1].Sha256, "sha-2")
+	check.Equal(t, d.queue.Len(), 1) // one purge for the whole account
+
+	must.NoError(t, d.queue.Start())
+	check.DeepEqual(t, receive(t, purged), []string{
+		"https://weavatar.com/avatar/" + sha256Hash,
+		"https://weavatar.com/avatar/" + md5Hash,
+		"https://weavatar.com/avatar/sha-2",
+		"https://weavatar.com/avatar/md5-2",
+	})
+}
+
+func TestDeleteByUser_NothingToDelete(t *testing.T) {
+	uc, d := newUsecase(t) // tx and store funcs stay nil: nothing may be touched
+	d.repo.ListAllByUserFunc = func(context.Context, string) ([]*biz.Avatar, error) { return nil, nil }
+
+	must.NoError(t, uc.DeleteByUser(t.Context(), "u1"))
+
+	check.Len(t, d.tx.RunCalls(), 0)
+	check.Equal(t, d.queue.Len(), 0)
+}
+
+func TestDeleteByUser_FailureSkipsPurge(t *testing.T) {
+	uc, d := newUsecase(t)
+	d.repo.ListAllByUserFunc = func(context.Context, string) ([]*biz.Avatar, error) {
+		return []*biz.Avatar{{SHA256: sha256Hash, MD5: md5Hash, UserID: "u1"}}, nil
+	}
+	d.repo.DeleteFunc = func(context.Context, *biz.Avatar) error { return nil }
+	boom := errors.New("disk gone")
+	d.store.RemoveAvatarFunc = func(string) error { return boom }
+
+	err := uc.DeleteByUser(t.Context(), "u1")
+
+	must.ErrorIs(t, err, boom)
+	check.Equal(t, d.queue.Len(), 0)
 }
 
 func TestBound(t *testing.T) {

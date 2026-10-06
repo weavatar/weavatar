@@ -13,11 +13,11 @@ WeAvatar 是一个头像服务（类似 Gravatar 的中国替代品），支持�
 - `cmd/app`：HTTP 服务。`cmd/cli`：管理命令（`migrate`、`hash`）。`cmd/gen`：模块与迁移生成器。
 - `internal/app`：组合根。`wire.go` 汇总所有模块，生成 app 与 cli 的注入器；`arch_test.go` 是架构测试。
 - `internal/platform`：基础设施。`bootstrap` 是各 provider，`conf` 是配置，`server` 是 Fiber、中间件、健康检查与 OpenAPI。
-- `internal/shared`：模块共用的契约。`transport` 负责绑定、响应、端点声明、登录与限流；`apperr` 是带类型的错误；`registry` 是 Wire 多绑定集合；`job` 是定时任务；`appinfo` 是注入给模块的配置值；`rule` 是自定义校验规则。
+- `internal/shared`：模块共用的契约。`transport` 负责绑定、响应、端点声明、登录与限流；`apperr` 是带类型的错误；`registry` 是 Wire 多绑定集合；`job` 是定时任务；`appinfo` 是注入给模块的配置值；`rule` 是自定义校验规则；`database` 把事务放进 ctx，让跨模块的写入加入同一事务。
 - `internal/migrations`：数据库迁移。`internal/mocks`：mockery 生成物。
 - `internal/<模块>`：业务模块，按 `biz/data/service` 分层，根上一个 `wire.go`。
   - `avatar`：核心模块。负责头像解析（WeAvatar → Gravatar → QQ → 默认头像）、程序化生成、头像增删改查、AI 审核队列、CDN 刷新、缓存清理定时任务和 `hash` 命令。
-  - `user`：OAuth 登录、JWT 签发、用户资料。
+  - `user`：OAuth 登录、JWT 签发、用户资料、注销账号。
   - `verifycode`：短信与邮件验证码，含发送冷却与限流。
   - `system`：CDN 用量统计、随机头像。
 - `pkg/`：与业务无关的库，包括图片处理、MPHF、QQ 哈希表、CDN、审核、短信、邮件、OAuth、极验、队列等。
@@ -61,12 +61,13 @@ CLI：`go run ./cmd/cli migrate {up,plan,status,rollback --step N}`（不带子�
   - `shared` 只能 import `shared`。`platform` 只能 import `shared`、`platform/conf` 和自己的子包。`platform/conf` 不 import 任何 internal 包。
   - `pkg/` 不受限制。
 - **跨模块调用**：在自己的 biz 里声明端口接口，在 data 里适配对方的 usecase。例如 avatar 的 `Users` 端口适配 user 模块的 `UserUsecase`。
+- **注销账号**：二次确认是重新走一次树新峰通行证 OAuth，state 带 `delete-` 前缀且缓存值为发起人的 userID，回调换到的 `UnionID` 必须与当前用户一致。各模块通过 `registry.UserCleanups` 贡献自己的清理（avatar 的 `data.NewUserCleanup` 删头像行、文件并刷新 CDN），user 模块的 `DeletionUsecase` 在一个事务里依次执行清理再软删 users 行（只打 `deleted_at`，不改其他列）。`Multibind[registry.UserCleanups]()` 只在 `internal/app/wire.go` 声明，user 模块自己不要声明，否则注入的是空集合；`DeletionUsecase` 独立于 `UserUsecase`，因为 avatar 依赖 `UserUsecase`，合在一起会成 wire 环。
 - **配置注入**：模块不能 import `platform/conf`。需要的配置值通过 `internal/shared/appinfo` 的命名类型注入，例如 `appinfo.Domain`、`appinfo.CodeExpire`。
 - **HTTP**：Fiber v3。路由表返回 `transport.Endpoints`，每个端点带 OpenAPI `Document`。需要登录的端点加 `Middlewares: {transport.MustLogin(jwt)}`，限流加 `transport.Throttle`。注意 `Throttle` 每次调用都是独立配额，几个端点要共享配额时得共用同一个 handler。handler 只做三件事：`transport.Bind`、调用 usecase、`transport.Success` 或 `transport.ErrorFrom`。
 - **请求生命周期**：Fiber 未开 `Immutable`，从 `fiber.Ctx` 取到的值（`c.Query`、`c.Params`、`c.Get`、`c.IP`、`c.Body` 以及 `transport.Bind` 的结果）都引用请求缓冲区，只在 handler 内有效；需要在响应返回后使用的值（cache 键值、队列闭包、goroutine）在逃逸点显式 `strings.Clone`。`c.Context()` 不得越过 handler，goroutine 与后台任务用自己的 ctx，由 `arch_test.go` 的 `TestRequestContextDoesNotEscape` 检查。`adaptor.ConvertRequest` 的结果只能在请求内同步使用。
 - **响应**：成功为 `{"msg":"success","data":...}`。失败为 `{"msg":"...","data":null}`，apperr 错误另带机器码 `code`（如 `avatar.not_square`）；框架级错误（404、405、413、panic）也走同一信封。登录态通过 `Authorization: Bearer <jwt>` 传递，未登录返回 401。前端按 HTTP 状态分流：422 弹 toast，401 清除登录态，其余弹对话框。
 - **错误**：客户端可见的错误由 biz 的错误构造器返回，例如 `ErrStateExpired()`，它基于 `apperr`，再由 `transport.ErrorFrom` 映射为状态码。未命中统一透传 `rio.ErrNotFound`，映射为 404。没有 kind 的错误返回通用 500，详情只进日志。
-- **持久化**：PostgreSQL + go-rio/rio。查询写成包级模板 `rio.From[T]().Where("...").Must()`，参数延迟绑定。迁移用 go-rio/migrate，一个文件一个迁移。
+- **持久化**：PostgreSQL + go-rio/rio。查询写成包级模板 `rio.From[T]().Where("...").Must()`，参数延迟绑定。仓库一律用 `database.Q(ctx, db)` 取执行目标，各模块的 `TxRunner` 端口由 `database.Runner` 实现，嵌套调用落成 savepoint。迁移用 go-rio/migrate，一个文件一个迁移。
 - **校验**：libtnb/validator，标签用布尔 DSL，例如 `required && email && max:255`。`required` 开启了严格模式，会拒绝零值。自定义规则 `geetest`、`verify_code`、`cn_mobile`、`exists`、`not_exists` 在 `internal/shared/rule`。
 - **路由**：所有 API 在 `/api` 前缀下，覆盖 `avatar`、`avatars`、`user`、`verify_code`、`system`。核心端点是 `GET /api/avatar/:hash`。另有探针 `/healthz`、`/readyz`，`/` 与 `/api` 302 跳转到 `https://<http.domain>`；`http.docs` 开启时，`/openapi.json` 与 `/docs` 提供接口文档。
 - **其他技术栈**：配置 koanf，日志 log/slog + libtnb/logrotate，定时任务 libtnb/cron，生命周期 libtnb/graceful，错误 samber/oops，图片处理纯 Go、无 CGO。

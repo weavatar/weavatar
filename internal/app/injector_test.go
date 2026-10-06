@@ -71,3 +71,12 @@ func TestGeneratedGraphs(t *testing.T) {
 	must.NoError(t, cleanupCLI())
 	must.NoError(t, cleanupCLI(), "generated cleanup must be idempotent")
 }
+
+// TestUserCleanupsAreMerged reads the generated graph, the only place the
+// collection merged across modules is visible: a Multibind declared inside
+// the user module would silently inject an empty one.
+func TestUserCleanupsAreMerged(t *testing.T) {
+	src, err := os.ReadFile("wire_gen.go")
+	must.NoError(t, err)
+	must.Contains(t, string(src), "make(registry.UserCleanups, 0, 1)")
+}

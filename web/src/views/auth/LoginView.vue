@@ -50,6 +50,7 @@ const loading = ref(false)
 
 const handleLogin = () => {
   loading.value = true
+  sessionStorage.removeItem('oauth_intent') // an abandoned deletion must not hijack this login
   useRequest(auth.login())
     .onSuccess(({ data }: any) => {
       window.location.href = data.url

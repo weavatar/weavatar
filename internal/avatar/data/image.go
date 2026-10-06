@@ -6,6 +6,7 @@ import (
 	"github.com/go-rio/rio"
 
 	"github.com/weavatar/weavatar/internal/avatar/biz"
+	"github.com/weavatar/weavatar/internal/shared/database"
 )
 
 type imageRepo struct {
@@ -17,7 +18,7 @@ func NewImageRepo(db *rio.DB) biz.ImageRepo {
 }
 
 func (r *imageRepo) Find(ctx context.Context, hash string) (*biz.Image, error) {
-	image, err := rio.Find[biz.Image](ctx, queryer(ctx, r.db), hash)
+	image, err := rio.Find[biz.Image](ctx, database.Q(ctx, r.db), hash)
 	if err != nil {
 		return nil, wrap(err, "find image %s", hash)
 	}
@@ -25,7 +26,7 @@ func (r *imageRepo) Find(ctx context.Context, hash string) (*biz.Image, error) {
 }
 
 func (r *imageRepo) Create(ctx context.Context, image *biz.Image) error {
-	if err := rio.Insert(ctx, queryer(ctx, r.db), image); err != nil {
+	if err := rio.Insert(ctx, database.Q(ctx, r.db), image); err != nil {
 		return wrap(err, "create image %s", image.Hash)
 	}
 	return nil
