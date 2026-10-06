@@ -114,7 +114,7 @@ const columns: { title: string; items: FooterItem[] }[] = [
   {
     title: '相关项目',
     items: [
-      { label: '耗子通行证', href: 'https://account.haozi.net/' },
+      { label: '树新峰通行证', href: 'https://account.haozi.net/' },
       { label: 'Moe Tom', href: 'https://tom.moe/' },
       { label: 'Twikoo', href: 'https://twikoo.js.org/' },
       { label: 'Artalk', href: 'https://artalk.js.org/' }

@@ -14,7 +14,7 @@
     <div v-reveal class="relative w-full max-w-sm surface p-8 sm:p-10 shadow-card">
       <brand-logo :height="28" />
       <h1 class="mt-8 display-text text-2xl text-fg">登录 WeAvatar</h1>
-      <p class="mt-2 text-sm text-fg2 leading-relaxed">用耗子通行证一键登录。</p>
+      <p class="mt-2 text-sm text-fg2 leading-relaxed">用树新峰通行证一键登录。</p>
 
       <button
         type="button"
@@ -24,13 +24,13 @@
       >
         <span v-if="loading" class="i-lucide-loader-circle animate-spin text-base" />
         <span v-else class="i-lucide-key-round text-base" />
-        {{ loading ? '正在跳转…' : '使用耗子通行证登录' }}
+        {{ loading ? '正在跳转…' : '使用树新峰通行证登录' }}
       </button>
 
       <p class="mt-6 text-xs text-fg3 leading-relaxed">
         登录即表示你同意我们的
         <router-link :to="{ name: 'privacy' }" class="link">隐私政策</router-link>
-        。耗子通行证由
+        。树新峰通行证由
         <a href="https://account.haozi.net/" target="_blank" rel="noreferrer" class="link">
           account.haozi.net
         </a>
