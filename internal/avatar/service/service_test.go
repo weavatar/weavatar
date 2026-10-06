@@ -29,6 +29,7 @@ import (
 	"github.com/weavatar/weavatar/internal/avatar/service"
 	mocksbiz "github.com/weavatar/weavatar/internal/mocks/avatar/biz"
 	"github.com/weavatar/weavatar/internal/shared/rule"
+	"github.com/weavatar/weavatar/internal/shared/transport"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
 
@@ -39,7 +40,9 @@ const (
 	takenRaw = "taken@example.com"
 )
 
-type env struct {
+// harness serves the avatar routes, MustLogin included, against mocked ports;
+// requests carry token, user u1's by default.
+type harness struct {
 	app     *fiber.App
 	token   string
 	cache   cache.Cache
@@ -63,65 +66,15 @@ func (notExists) Validate(f *validator.Field) (bool, error) {
 	return v != takenRaw, nil
 }
 
-type reply struct {
-	StatusCode int
-	Header     http.Header
-}
-
-// newEnv mounts the real routes, login middleware included, over mocked ports
-// and a validator configured like production minus the database.
-func newEnv(t *testing.T) *env {
-	t.Helper()
-
-	e := &env{
-		cache:   cache.NewCache(),
-		repo:    &mocksbiz.AvatarRepo{},
-		images:  &mocksbiz.ImageRepo{},
-		store:   &mocksbiz.Store{},
-		fetcher: &mocksbiz.Fetcher{},
-		qq:      &mocksbiz.QQHashes{},
-		gen:     &mocksbiz.Generator{},
-	}
-	tx := &mocksbiz.TxRunner{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }}
-	log := slog.New(slog.DiscardHandler)
-	// the queue never starts and the purger has no func: purges stay queued
-	uc := biz.NewAvatarUsecase(e.repo, e.images, tx, &mocksbiz.Users{}, e.store, e.fetcher, e.qq, e.gen,
-		&mocksbiz.Purger{}, &mocksbiz.Auditor{}, queue.New(10, log), e.cache, "weavatar.com", log)
-
-	v, err := validator.New(
-		validator.WithTagNameFunc(fieldName),
-		validator.WithStrictRequired(),
-		validator.WithRules(rule.NewVerifyCode(e.cache)),
-		validator.WithFallibleRules(notExists{}, rule.NewGeetest(nil, true)),
-	)
-	must.NoError(t, err)
-
-	auth := jwt.NewJWT(testKey, time.Hour)
-	e.token, err = auth.Generate(&jwt.Claims{Subject: "u1"})
-	must.NoError(t, err)
-
-	e.app = fiber.New()
-	for _, ep := range service.AvatarRoutes(service.NewAvatarService(uc, v), auth) {
-		handlers := make([]any, 0, len(ep.Middlewares)+1)
-		for _, m := range ep.Middlewares {
-			handlers = append(handlers, m)
-		}
-		handlers = append(handlers, ep.Handler)
-		e.app.Add([]string{ep.Method}, ep.Path, handlers[0], handlers[1:]...)
-	}
-
-	return e
-}
-
-func TestAvatar_ServesImageWithCacheHeaders(t *testing.T) {
-	e := newEnv(t)
-	e.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
+func TestAvatarServesImageWithCacheHeaders(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: md5Hash, UpdatedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)}, nil
 	}
-	e.store.ReadAvatarFunc = func(string) ([]byte, error) { return pngOf(t, 100), nil }
-	e.images.FindFunc = func(context.Context, string) (*biz.Image, error) { return &biz.Image{}, nil }
+	h.store.ReadAvatarFunc = func(string) ([]byte, error) { return pngOf(t, 100), nil }
+	h.images.FindFunc = func(context.Context, string) (*biz.Image, error) { return &biz.Image{}, nil }
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+strings.ToUpper(md5Hash)+".png?s=50", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+strings.ToUpper(md5Hash)+".png?s=50", nil))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	check.Equal(t, resp.Header.Get(fiber.HeaderContentType), "image/png")
@@ -134,30 +87,30 @@ func TestAvatar_ServesImageWithCacheHeaders(t *testing.T) {
 	cfg, err := png.DecodeConfig(strings.NewReader(body))
 	must.NoError(t, err)
 	check.Equal(t, cfg.Width, 50)
-	check.Equal(t, e.repo.FindForServeCalls()[0].Hash, md5Hash)
+	check.Equal(t, h.repo.FindForServeCalls()[0].Hash, md5Hash)
 }
 
-func TestAvatar_Default404(t *testing.T) {
-	e := newEnv(t)
-	e.nothingFound()
+func TestAvatarDefault404IsNotFound(t *testing.T) {
+	h := newHarness(t)
+	h.nothingFound()
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+md5Hash+"?d=404", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+md5Hash+"?d=404", nil))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusNotFound)
 	check.Equal(t, body, "404 Not Found\nWeAvatar")
 }
 
-func TestAvatar_DefaultURLRedirects(t *testing.T) {
-	e := newEnv(t)
-	e.nothingFound()
+func TestAvatarDefaultURLRedirects(t *testing.T) {
+	h := newHarness(t)
+	h.nothingFound()
 
-	resp, _ := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+md5Hash+"?default=https%3A%2F%2Fexample.com%2Fa.png", nil))
+	resp, _ := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatar/"+md5Hash+"?default=https%3A%2F%2Fexample.com%2Fa.png", nil))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusFound)
 	check.Equal(t, resp.Header.Get(fiber.HeaderLocation), "https://example.com/a.png")
 }
 
-func TestAvatar_NormalizesQuery(t *testing.T) {
+func TestAvatarNormalizesQuery(t *testing.T) {
 	tests := []struct {
 		name   string
 		target string
@@ -175,14 +128,14 @@ func TestAvatar_NormalizesQuery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := newEnv(t) // lookup funcs stay nil: every case must be forced
-			e.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 40), nil }
+			h := newHarness(t) // lookup funcs stay nil: every case must be forced
+			h.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 40), nil }
 
-			resp, _ := e.do(t, httptest.NewRequest(fiber.MethodGet, tt.target, nil))
+			resp, _ := h.send(t, httptest.NewRequest(fiber.MethodGet, tt.target, nil))
 
 			must.Equal(t, resp.StatusCode, fiber.StatusOK)
 			check.Equal(t, resp.Header.Get(fiber.HeaderContentType), "image/webp")
-			generated := e.gen.GenerateCalls()
+			generated := h.gen.GenerateCalls()
 			must.Len(t, generated, 1)
 			check.Equal(t, generated[0].Kind, tt.kind)
 			check.Equal(t, generated[0].Seed, tt.seed)
@@ -192,64 +145,64 @@ func TestAvatar_NormalizesQuery(t *testing.T) {
 	}
 }
 
-func TestAvatar_Head(t *testing.T) {
-	e := newEnv(t)
-	e.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 40), nil }
+func TestAvatarHeadSendsNoBody(t *testing.T) {
+	h := newHarness(t)
+	h.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 40), nil }
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodHead, "/api/avatar?d=mp", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodHead, "/api/avatar?d=mp", nil))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusOK)
 	check.Equal(t, resp.Header.Get("X-Avatar-From"), "weavatar")
 	check.Equal(t, body, "")
 }
 
-func TestAvatars_RequireLogin(t *testing.T) {
-	e := newEnv(t)
-	e.token = ""
+func TestAvatarsRequireLogin(t *testing.T) {
+	h := newHarness(t)
+	h.token = ""
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars", nil))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusUnauthorized)
 	check.Contains(t, body, "未登录")
 }
 
-func TestAvatarList(t *testing.T) {
-	e := newEnv(t)
-	e.repo.ListFunc = func(context.Context, string, int, int) ([]*biz.Avatar, int64, error) {
+func TestAvatarListPagesTheUsersAvatars(t *testing.T) {
+	h := newHarness(t)
+	h.repo.ListFunc = func(context.Context, string, int, int) ([]*biz.Avatar, int64, error) {
 		return []*biz.Avatar{{SHA256: md5Hash, Raw: "a@example.com"}}, 1, nil
 	}
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars?page=2", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars?page=2", nil))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	check.Contains(t, body, `"total":1`)
 	check.Contains(t, body, `"raw":"a@example.com"`)
-	listed := e.repo.ListCalls()
+	listed := h.repo.ListCalls()
 	must.Len(t, listed, 1)
 	check.Equal(t, listed[0].UserID, "u1")
 	check.Equal(t, listed[0].Page, 2)
 	check.Equal(t, listed[0].Limit, 10)
 }
 
-func TestAvatarCreate(t *testing.T) {
-	e := newEnv(t)
-	must.NoError(t, e.cache.Put("code:avatar:a@example.com", "123456", time.Minute))
-	e.repo.CreateFunc = func(context.Context, *biz.Avatar) error { return nil }
-	e.store.WriteAvatarFunc = func(string, []byte) error { return nil }
+func TestAvatarCreateStoresTheUpload(t *testing.T) {
+	h := newHarness(t)
+	must.NoError(t, h.cache.Put("code:avatar:a@example.com", "123456", time.Minute))
+	h.repo.CreateFunc = func(context.Context, *biz.Avatar) error { return nil }
+	h.store.WriteAvatarFunc = func(string, []byte) error { return nil }
 
-	resp, body := e.do(t, multipartRequest(t, fiber.MethodPost, "/api/avatars", map[string]string{
+	resp, body := h.send(t, multipartRequest(t, fiber.MethodPost, "/api/avatars", map[string]string{
 		"raw": "a@example.com", "verify_code": "123456", "captcha": captcha,
 	}, pngOf(t, 100)))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	check.Contains(t, body, `"raw":"a@example.com"`)
-	created := e.repo.CreateCalls()
+	created := h.repo.CreateCalls()
 	must.Len(t, created, 1)
 	check.Equal(t, created[0].Avatar.UserID, "u1")
 	check.Equal(t, created[0].Avatar.Raw, "a@example.com")
 }
 
-func TestAvatarCreate_RejectsInvalidForm(t *testing.T) {
+func TestAvatarCreateRejectsInvalidForm(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields map[string]string
@@ -262,115 +215,134 @@ func TestAvatarCreate_RejectsInvalidForm(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := newEnv(t) // repo funcs stay nil: nothing may be created
-			must.NoError(t, e.cache.Put("code:avatar:a@example.com", "123456", time.Minute))
-			must.NoError(t, e.cache.Put("code:avatar:"+takenRaw, "123456", time.Minute))
+			h := newHarness(t) // repo funcs stay nil: nothing may be created
+			must.NoError(t, h.cache.Put("code:avatar:a@example.com", "123456", time.Minute))
+			must.NoError(t, h.cache.Put("code:avatar:"+takenRaw, "123456", time.Minute))
 			img := pngOf(t, 100)
 			if tt.noFile {
 				img = nil
 			}
 
-			resp, _ := e.do(t, multipartRequest(t, fiber.MethodPost, "/api/avatars", tt.fields, img))
+			resp, _ := h.send(t, multipartRequest(t, fiber.MethodPost, "/api/avatars", tt.fields, img))
 
 			check.Equal(t, resp.StatusCode, fiber.StatusUnprocessableEntity)
 		})
 	}
 }
 
-func TestAvatarUpdate(t *testing.T) {
-	e := newEnv(t)
-	e.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
+func TestAvatarUpdateReplacesTheImage(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: md5Hash + md5Hash, MD5: md5Hash, UserID: "u1"}, nil
 	}
-	e.repo.TouchFunc = func(context.Context, *biz.Avatar) error { return nil }
-	e.store.WriteAvatarFunc = func(string, []byte) error { return nil }
+	h.repo.TouchFunc = func(context.Context, *biz.Avatar) error { return nil }
+	h.store.WriteAvatarFunc = func(string, []byte) error { return nil }
 
-	resp, _ := e.do(t, multipartRequest(t, fiber.MethodPut, "/api/avatars/"+md5Hash, map[string]string{"captcha": captcha}, pngOf(t, 100)))
+	resp, _ := h.send(t, multipartRequest(t, fiber.MethodPut, "/api/avatars/"+md5Hash, map[string]string{"captcha": captcha}, pngOf(t, 100)))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
-	found := e.repo.FindCalls()
+	found := h.repo.FindCalls()
 	must.Len(t, found, 1)
 	check.Equal(t, found[0].UserID, "u1")
 	check.Equal(t, found[0].Hash, md5Hash)
 }
 
-func TestAvatarUpdate_BadImageIsRejected(t *testing.T) {
-	e := newEnv(t)
-	e.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
+func TestAvatarUpdateRejectsBadImage(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: md5Hash + md5Hash, MD5: md5Hash, UserID: "u1"}, nil
 	}
 
-	resp, body := e.do(t, multipartRequest(t, fiber.MethodPut, "/api/avatars/"+md5Hash, map[string]string{"captcha": captcha}, pngOf(t, 20)))
+	resp, body := h.send(t, multipartRequest(t, fiber.MethodPut, "/api/avatars/"+md5Hash, map[string]string{"captcha": captcha}, pngOf(t, 20)))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusBadRequest)
 	check.Contains(t, body, "头像必须大于 40px")
 }
 
-func TestAvatarDelete_NotFound(t *testing.T) {
-	e := newEnv(t)
-	e.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) { return nil, rio.ErrNotFound }
+func TestAvatarDeleteOfUnknownHashIsNotFound(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) { return nil, rio.ErrNotFound }
 
-	resp, _ := e.do(t, httptest.NewRequest(fiber.MethodDelete, "/api/avatars/"+md5Hash, nil))
+	resp, _ := h.send(t, httptest.NewRequest(fiber.MethodDelete, "/api/avatars/"+md5Hash, nil))
 
 	check.Equal(t, resp.StatusCode, fiber.StatusNotFound)
 }
 
-func TestAvatarCheck(t *testing.T) {
-	e := newEnv(t)
-	e.repo.ExistsByRawFunc = func(context.Context, string) (bool, error) { return true, nil }
+func TestAvatarCheckReportsBinding(t *testing.T) {
+	h := newHarness(t)
+	h.repo.ExistsByRawFunc = func(context.Context, string) (bool, error) { return true, nil }
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/check?raw=a%40example.com", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/check?raw=a%40example.com", nil))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	check.Contains(t, body, `"bind":true`)
-	check.Equal(t, e.repo.ExistsByRawCalls()[0].Raw, "a@example.com")
+	check.Equal(t, h.repo.ExistsByRawCalls()[0].Raw, "a@example.com")
 }
 
-func TestAvatarQq(t *testing.T) {
-	e := newEnv(t)
+func TestAvatarQqReturnsBase64(t *testing.T) {
+	h := newHarness(t)
 	img := pngOf(t, 100)
-	e.fetcher.QQFunc = func(context.Context, string) ([]byte, error) { return img, nil }
+	h.fetcher.QQFunc = func(context.Context, string) ([]byte, error) { return img, nil }
 
-	resp, body := e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/qq?qq=10001", nil))
+	resp, body := h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/qq?qq=10001", nil))
 
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	var got struct{ Data string }
 	must.NoError(t, json.Unmarshal([]byte(body), &got))
 	check.Equal(t, got.Data, base64.StdEncoding.EncodeToString(img))
 
-	resp, _ = e.do(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/qq?qq=abc", nil))
+	resp, _ = h.send(t, httptest.NewRequest(fiber.MethodGet, "/api/avatars/qq?qq=abc", nil))
 	check.Equal(t, resp.StatusCode, fiber.StatusUnprocessableEntity)
 }
 
-// do sends req as the logged-in user unless req already carries a token.
-func (e *env) do(t *testing.T, req *http.Request) (reply, string) {
+func newHarness(t *testing.T) *harness {
 	t.Helper()
-	if req.Header.Get(fiber.HeaderAuthorization) == "" && e.token != "" {
-		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+e.token)
+
+	h := &harness{
+		app:     fiber.New(),
+		cache:   cache.NewCache(),
+		repo:    &mocksbiz.AvatarRepo{},
+		images:  &mocksbiz.ImageRepo{},
+		store:   &mocksbiz.Store{},
+		fetcher: &mocksbiz.Fetcher{},
+		qq:      &mocksbiz.QQHashes{},
+		gen:     &mocksbiz.Generator{},
 	}
-	resp, err := e.app.Test(req, fiber.TestConfig{Timeout: 0}) // 2048px encodes outlast 1s under -race
+	tx := &mocksbiz.Transactor{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }}
+	log := slog.New(slog.DiscardHandler)
+	// the queue never starts and the purger has no func: purges stay queued
+	uc := biz.NewAvatarUsecase(h.repo, h.images, tx, &mocksbiz.Users{}, h.store, h.fetcher, h.qq, h.gen,
+		&mocksbiz.Purger{}, &mocksbiz.Auditor{}, queue.New(10, log), h.cache, "weavatar.com", log)
+
+	signer := jwt.NewJWT(testKey, time.Hour)
+	token, err := signer.Generate(&jwt.Claims{Subject: "u1"})
+	must.NoError(t, err)
+	h.token = token
+	mount(h.app, service.AvatarRoutes(service.NewAvatarService(uc, newValidator(t, h.cache)), signer))
+
+	return h
+}
+
+// send sends req with h.token unless req already carries one.
+func (h *harness) send(t *testing.T, req *http.Request) (*http.Response, string) {
+	t.Helper()
+	if req.Header.Get(fiber.HeaderAuthorization) == "" && h.token != "" {
+		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+h.token)
+	}
+	resp, err := h.app.Test(req, fiber.TestConfig{Timeout: 0}) // 2048px encodes outlast 1s under -race
 	must.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	must.NoError(t, err)
-	return reply{StatusCode: resp.StatusCode, Header: resp.Header}, string(body)
+	return resp, string(body)
 }
 
 // nothingFound makes every lookup of the avatar endpoint miss.
-func (e *env) nothingFound() {
-	e.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) { return nil, rio.ErrNotFound }
-	e.store.ReadCacheFunc = func(string, string) ([]byte, time.Time, bool) { return nil, time.Time{}, false }
-	e.fetcher.GravatarFunc = func(context.Context, string) ([]byte, error) { return nil, io.EOF }
-	e.qq.LookupFunc = func(string) (uint32, bool) { return 0, false }
-}
-
-func fieldName(field reflect.StructField) string {
-	for _, tag := range []string{"form", "json", "query", "uri"} {
-		if name, _, _ := strings.Cut(field.Tag.Get(tag), ","); name != "" && name != "-" {
-			return name
-		}
-	}
-	return field.Name
+func (h *harness) nothingFound() {
+	h.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) { return nil, rio.ErrNotFound }
+	h.store.ReadCacheFunc = func(string, string) ([]byte, time.Time, bool) { return nil, time.Time{}, false }
+	h.fetcher.GravatarFunc = func(context.Context, string) ([]byte, error) { return nil, io.EOF }
+	h.qq.LookupFunc = func(string) (uint32, bool) { return 0, false }
 }
 
 func pngOf(t *testing.T, size int) []byte {
@@ -398,4 +370,36 @@ func multipartRequest(t *testing.T, method, target string, fields map[string]str
 	req := httptest.NewRequest(method, target, &body)
 	req.Header.Set(fiber.HeaderContentType, w.FormDataContentType())
 	return req
+}
+
+// newValidator mirrors the production validator, with the table rule stubbed.
+func newValidator(t *testing.T, c cache.Cache) *validator.Validator {
+	t.Helper()
+	v, err := validator.New(
+		validator.WithTagNameFunc(func(f reflect.StructField) string {
+			for _, tag := range []string{"form", "json", "query", "uri"} {
+				if name, _, _ := strings.Cut(f.Tag.Get(tag), ","); name != "" && name != "-" {
+					return name
+				}
+			}
+			return f.Name
+		}),
+		validator.WithStrictRequired(),
+		validator.WithRules(rule.NewVerifyCode(c)),
+		validator.WithFallibleRules(notExists{}, rule.NewGeetest(nil, true)),
+	)
+	must.NoError(t, err)
+	return v
+}
+
+// mount registers endpoints the way the server does: middlewares, then handler.
+func mount(app *fiber.App, endpoints transport.Endpoints) {
+	for _, e := range endpoints {
+		handlers := make([]any, 0, len(e.Middlewares)+1)
+		for _, m := range e.Middlewares {
+			handlers = append(handlers, m)
+		}
+		handlers = append(handlers, e.Handler)
+		app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
+	}
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/weavatar/weavatar/pkg/sms"
 )
 
+const brand = "WeAvatar"
+
 type smsSender struct {
 	client *sms.SMS
 }
@@ -20,9 +22,7 @@ func NewSMSSender(client *sms.SMS) biz.SMSSender {
 }
 
 func (s *smsSender) Send(ctx context.Context, phone, code string) error {
-	if err := s.client.Send(ctx, phone, sms.Message{
-		Data: map[string]string{"code": code},
-	}); err != nil {
+	if err := s.client.Send(ctx, phone, sms.Message{Data: map[string]string{"code": code}}); err != nil {
 		return oops.In("verifycode").Wrapf(err, "send sms code")
 	}
 
@@ -38,7 +38,7 @@ func NewMailSender(client *mail.Mail) biz.MailSender {
 }
 
 func (m *mailSender) Send(ctx context.Context, to, code string) error {
-	if err := m.client.Send(ctx, to, "验证码", mail.CodeTmpl("WeAvatar", code)); err != nil {
+	if err := m.client.Send(ctx, to, "验证码", mail.CodeTmpl(brand, code)); err != nil {
 		return oops.In("verifycode").Wrapf(err, "send mail code")
 	}
 

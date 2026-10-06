@@ -9,8 +9,8 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/registry"
 )
 
-// NewCron registers every module's job; specs take an optional leading
-// seconds field.
+// NewCron builds the scheduler with every module's job registered. Specs take
+// an optional leading seconds field.
 func NewCron(log *slog.Logger, jobs registry.Jobs) (*cron.Cron, error) {
 	c, err := cron.New(
 		cron.WithLogger(log),
@@ -20,19 +20,11 @@ func NewCron(log *slog.Logger, jobs registry.Jobs) (*cron.Cron, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := registerJobs(jobs, c); err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func registerJobs(jobs registry.Jobs, c *cron.Cron) error {
-	for _, apply := range jobs {
-		if err := apply(c); err != nil {
-			return err
+	for _, register := range jobs {
+		if err := register(c); err != nil {
+			return nil, err
 		}
 	}
 
-	return nil
+	return c, nil
 }

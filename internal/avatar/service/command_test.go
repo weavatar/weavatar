@@ -11,7 +11,7 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
 )
 
-func TestHashCommand_DirFlagOverridesConfig(t *testing.T) {
+func TestHashCommandDirFlagOverridesConfig(t *testing.T) {
 	configured := filepath.Join(t.TempDir(), "configured")
 	flagged := filepath.Join(t.TempDir(), "flagged")
 

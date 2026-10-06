@@ -5,7 +5,9 @@ package data_test
 import (
 	"context"
 	"errors"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/weavatar/weavatar/internal/avatar/biz"
 	"github.com/weavatar/weavatar/internal/avatar/data"
 	"github.com/weavatar/weavatar/internal/migrations"
+	"github.com/weavatar/weavatar/internal/shared/database"
 )
 
 // fakeClock stamps CreatedAt/UpdatedAt deterministically.
@@ -28,9 +31,9 @@ type fakeClock struct {
 
 func (c *fakeClock) Now() time.Time { return c.now }
 
-func TestIntegrationAvatarRepo_CRUD(t *testing.T) {
+func TestIntegrationAvatarRepoRoundTrip(t *testing.T) {
 	clock := &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)}
-	db := newTestDB(t, clock)
+	db := migratedFixture(t, clock)
 	repo := data.NewAvatarRepo(db)
 	ctx := t.Context()
 
@@ -81,8 +84,8 @@ func TestIntegrationAvatarRepo_CRUD(t *testing.T) {
 	check.False(t, exists)
 }
 
-func TestIntegrationAvatarRepo_FindForServeLoadsAppOverride(t *testing.T) {
-	db := newTestDB(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
+func TestIntegrationFindForServeLoadsAppOverride(t *testing.T) {
+	db := migratedFixture(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
 	repo := data.NewAvatarRepo(db)
 	ctx := t.Context()
 
@@ -110,10 +113,10 @@ func TestIntegrationAvatarRepo_FindForServeLoadsAppOverride(t *testing.T) {
 	must.ErrorIs(t, err, rio.ErrNotFound)
 }
 
-func TestIntegrationTxRunner_RollsBackOnError(t *testing.T) {
-	db := newTestDB(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
+func TestIntegrationRunnerRollsBackOnError(t *testing.T) {
+	db := migratedFixture(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
 	repo := data.NewAvatarRepo(db)
-	tx := data.NewTxRunner(db)
+	tx := database.NewRunner(db)
 	ctx := t.Context()
 	errWrite := errors.New("file write failed")
 
@@ -131,7 +134,7 @@ func TestIntegrationTxRunner_RollsBackOnError(t *testing.T) {
 }
 
 func TestIntegrationImageRepo(t *testing.T) {
-	db := newTestDB(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
+	db := migratedFixture(t, &fakeClock{now: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)})
 	images := data.NewImageRepo(db)
 	ctx := t.Context()
 
@@ -145,25 +148,37 @@ func TestIntegrationImageRepo(t *testing.T) {
 	check.Equal(t, image.Remark, "porn")
 }
 
-// newTestDB migrates TEST_DATABASE_URL (PostgreSQL) and empties the avatar
-// tables; rows are stamped by clock.
-func newTestDB(t *testing.T, clock *fakeClock) *rio.DB {
+// migratedFixture opens TEST_DATABASE_URL on a fresh schema with every
+// migration applied; rows are stamped by clock.
+func migratedFixture(t *testing.T, clock *fakeClock) *rio.DB {
 	t.Helper()
-
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
 		t.Skip("TEST_DATABASE_URL is not set")
 	}
-	db, err := postgres.Open(dsn, rio.WithClock(clock.Now))
+	admin, err := postgres.Open(dsn)
 	must.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	schema := "avatar_" + strconv.Itoa(os.Getpid()) + "_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	_, err = rio.Exec(t.Context(), admin, `CREATE SCHEMA "`+schema+`"`)
+	must.NoError(t, err)
+
+	parsed, err := url.Parse(dsn)
+	must.NoError(t, err)
+	query := parsed.Query()
+	query.Set("search_path", schema)
+	parsed.RawQuery = query.Encode()
+	db, err := postgres.Open(parsed.String(), rio.WithClock(clock.Now))
+	must.NoError(t, err)
+	t.Cleanup(func() {
+		check.NoError(t, db.Close())
+		_, err := rio.Exec(context.Background(), admin, `DROP SCHEMA "`+schema+`" CASCADE`)
+		check.NoError(t, err)
+		check.NoError(t, admin.Close())
+	})
 
 	m, err := migrate.New(db.Unwrap(), migrate.Postgres, migrate.WithCollection(migrations.Collection()))
 	must.NoError(t, err)
 	must.NoError(t, m.Up(t.Context()))
-	_, err = rio.Exec(t.Context(), db, "TRUNCATE avatars, app_avatars, images")
-	must.NoError(t, err)
-
 	return db
 }
 

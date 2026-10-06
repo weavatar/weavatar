@@ -16,34 +16,14 @@ type createReq struct {
 	Name string `json:"name" validate:"required && min:3 && max:10"`
 }
 
-func bindOn[T any](t *testing.T, method, target, body, contentType string) (*T, int) {
-	t.Helper()
+type uriReq struct {
+	ID uint `uri:"id" validate:"required && number"`
+}
 
-	var bound *T
-	app := fiber.New()
-	app.All("/bind/:id?", func(c fiber.Ctx) error {
-		req, err := transport.Bind[T](c, validator.MustNew())
-		if err != nil {
-			return transport.Error(c, fiber.StatusUnprocessableEntity, "%v", err)
-		}
-		bound = req
-		return transport.Success[any](c, nil)
-	})
-
-	var reader *strings.Reader
-	if body == "" {
-		reader = strings.NewReader("")
-	} else {
-		reader = strings.NewReader(body)
-	}
-	req := httptest.NewRequest(method, target, reader)
-	if contentType != "" {
-		req.Header.Set(fiber.HeaderContentType, contentType)
-	}
-	resp, err := app.Test(req)
-	must.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-	return bound, resp.StatusCode
+// layeredReq carries fields every binding source can set.
+type layeredReq struct {
+	Code string `json:"code" form:"code" query:"code"`
+	ID   string `json:"id" query:"id" uri:"id"`
 }
 
 func TestBindBodyAndValidate(t *testing.T) {
@@ -74,20 +54,10 @@ func TestBindQueryOverLimitFailsValidation(t *testing.T) {
 	must.Equal(t, status, fiber.StatusUnprocessableEntity)
 }
 
-type uriReq struct {
-	ID uint `uri:"id" validate:"required && number"`
-}
-
 func TestBindURI(t *testing.T) {
 	got, status := bindOn[uriReq](t, fiber.MethodGet, "/bind/42", "", "")
 	must.Equal(t, status, fiber.StatusOK)
 	must.Equal(t, got.ID, 42)
-}
-
-// layeredReq carries fields every binding source can set.
-type layeredReq struct {
-	Code string `json:"code" form:"code" query:"code"`
-	ID   string `json:"id" query:"id" uri:"id"`
 }
 
 func TestBindLetsBodyOverrideQueryAndPathOverrideBoth(t *testing.T) {
@@ -104,4 +74,28 @@ func TestBindLetsBodyOverrideQueryAndPathOverrideBoth(t *testing.T) {
 	got, status = bindOn[layeredReq](t, fiber.MethodPost, "/bind?code=from-query", `{}`, fiber.MIMEApplicationJSON)
 	must.Equal(t, status, fiber.StatusOK)
 	must.Equal(t, got.Code, "from-query", must.Msgf("the query still fills what the body leaves out"))
+}
+
+func bindOn[T any](t *testing.T, method, target, body, contentType string) (*T, int) {
+	t.Helper()
+
+	var bound *T
+	app := fiber.New()
+	app.All("/bind/:id?", func(c fiber.Ctx) error {
+		req, err := transport.Bind[T](c, validator.MustNew())
+		if err != nil {
+			return transport.Error(c, fiber.StatusUnprocessableEntity, "%v", err)
+		}
+		bound = req
+		return transport.Success[any](c, nil)
+	})
+
+	req := httptest.NewRequest(method, target, strings.NewReader(body))
+	if contentType != "" {
+		req.Header.Set(fiber.HeaderContentType, contentType)
+	}
+	resp, err := app.Test(req)
+	must.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	return bound, resp.StatusCode
 }

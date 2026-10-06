@@ -8,6 +8,7 @@ import (
 	"github.com/libtnb/utils/str"
 	"github.com/samber/oops"
 
+	"github.com/weavatar/weavatar/internal/shared/apperr"
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
 	"github.com/weavatar/weavatar/internal/shared/registry"
 )
@@ -22,7 +23,7 @@ type DeletionUsecase struct {
 	repo     UserRepo
 	oauth    OAuthProvider
 	cache    cache.Cache
-	tx       TxRunner
+	tx       Transactor
 	cleanups registry.UserCleanups
 	domain   string
 	client   appinfo.OAuthClient
@@ -32,7 +33,7 @@ func NewDeletionUsecase(
 	repo UserRepo,
 	oauth OAuthProvider,
 	c cache.Cache,
-	tx TxRunner,
+	tx Transactor,
 	cleanups registry.UserCleanups,
 	domain appinfo.Domain,
 	client appinfo.OAuthClient,
@@ -63,7 +64,7 @@ func (uc *DeletionUsecase) DeletionURL(_ context.Context, userID string) (string
 // the cleanups and the soft delete share one transaction.
 func (uc *DeletionUsecase) ConfirmDeletion(ctx context.Context, userID, code, state string) error {
 	if !strings.HasPrefix(state, deletionStatePrefix) || uc.cache.Pull(state) != userID {
-		return ErrStateExpired()
+		return errStateExpired()
 	}
 
 	user, err := uc.repo.Find(ctx, userID)
@@ -76,7 +77,8 @@ func (uc *DeletionUsecase) ConfirmDeletion(ctx context.Context, userID, code, st
 		return err
 	}
 	if identity.UnionID != user.UnionID {
-		return ErrDeletionIdentityMismatch()
+		return apperr.Forbidden("user.deletion_identity_mismatch", "授权的账号与当前账号不一致").
+			In("user").New("deletion authorized by another account")
 	}
 
 	return uc.tx.Run(ctx, func(ctx context.Context) error {

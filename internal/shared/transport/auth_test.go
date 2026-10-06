@@ -15,32 +15,6 @@ import (
 
 const testKey = "a-long-string-with-32-characters"
 
-func authRequest(t *testing.T, parser *jwt.JWT, header string) (int, string) {
-	t.Helper()
-	app := fiber.New()
-	app.Get("/me", transport.MustLogin(parser), func(c fiber.Ctx) error {
-		return c.SendString(transport.UserID(c))
-	})
-
-	req := httptest.NewRequest(fiber.MethodGet, "/me", nil)
-	if header != "" {
-		req.Header.Set(fiber.HeaderAuthorization, header)
-	}
-	resp, err := app.Test(req)
-	must.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
-	must.NoError(t, err)
-	return resp.StatusCode, string(body)
-}
-
-func issue(t *testing.T, parser *jwt.JWT, subject string) string {
-	t.Helper()
-	token, err := parser.Generate(&jwt.Claims{Subject: subject})
-	must.NoError(t, err)
-	return token
-}
-
 func TestMustLoginAdmitsValidToken(t *testing.T) {
 	parser := jwt.NewJWT(testKey, time.Hour)
 
@@ -89,4 +63,30 @@ func TestBearerToken(t *testing.T) {
 		must.Equal(t, got, want, must.Msgf("header %q", header))
 		must.Equal(t, ok, want != "", must.Msgf("header %q", header))
 	}
+}
+
+func authRequest(t *testing.T, parser *jwt.JWT, header string) (int, string) {
+	t.Helper()
+	app := fiber.New()
+	app.Get("/me", transport.MustLogin(parser), func(c fiber.Ctx) error {
+		return c.SendString(transport.UserID(c))
+	})
+
+	req := httptest.NewRequest(fiber.MethodGet, "/me", nil)
+	if header != "" {
+		req.Header.Set(fiber.HeaderAuthorization, header)
+	}
+	resp, err := app.Test(req)
+	must.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	must.NoError(t, err)
+	return resp.StatusCode, string(body)
+}
+
+func issue(t *testing.T, parser *jwt.JWT, subject string) string {
+	t.Helper()
+	token, err := parser.Generate(&jwt.Claims{Subject: subject})
+	must.NoError(t, err)
+	return token
 }

@@ -15,8 +15,8 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/rule"
 )
 
-// TestAvatarRoutesDocument guards router startup, which fails on a bad document.
-func TestAvatarRoutesDocument(t *testing.T) {
+// TestRoutesDocument guards router startup, which fails on a bad document.
+func TestRoutesDocument(t *testing.T) {
 	v, err := validator.New(rule.Options(nil, nil, nil, true)...)
 	must.NoError(t, err)
 	g, err := openapi.New("weavatar", "dev",

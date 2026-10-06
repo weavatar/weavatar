@@ -12,10 +12,9 @@ import (
 
 var _ validator.Rule = (*VerifyCode)(nil)
 
-// VerifyCode passes when the value equals the code sent to a sibling field:
-// verify_code:phone,register reads cache key "code:register:<phone>". A third
-// argument "true" consumes the code on match, so use it once per request. An
-// empty value fails.
+// VerifyCode passes when the value equals the code sent to a sibling field;
+// verify_code:phone,register reads "code:register:<phone>" and an empty value
+// fails. A third argument "true" consumes the code, so use it once per request.
 type VerifyCode struct {
 	cache cache.Cache
 }

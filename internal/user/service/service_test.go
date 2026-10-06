@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -26,287 +25,299 @@ import (
 	"github.com/weavatar/weavatar/internal/user/service"
 )
 
-type testApp struct {
+// envelope decodes the response wrapper; Code is the apperr key of an error.
+type envelope struct {
+	Msg  string          `json:"msg"`
+	Code string          `json:"code"`
+	Data json.RawMessage `json:"data"`
+}
+
+// harness serves the user routes, MustLogin included, against mocked ports;
+// cleaned records the users handed to the account-deletion cleanup.
+type harness struct {
 	app     *fiber.App
 	repo    *mocksbiz.UserRepo
 	oauth   *mocksbiz.OAuthProvider
 	tokens  *mocksbiz.Tokens
 	cache   cache.Cache
-	parser  *jwt.JWT
-	cleaned []string // userIDs the registered cleanup received
+	signer  *jwt.JWT
+	cleaned []string
 }
 
-func TestLogin(t *testing.T) {
-	a := newTestApp(t)
+func TestLoginReturnsTheAuthorizationURL(t *testing.T) {
+	h := newHarness(t)
 
-	status, env := do[service.LoginURL](t, a, httptest.NewRequest(fiber.MethodGet, "/api/user/login", nil), "")
+	status, body := h.do(t, fiber.MethodGet, "/api/user/login", "", "")
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Msg, "success")
-	u, err := url.Parse(env.Data.URL)
+	check.Equal(t, body.Msg, "success")
+	var login service.LoginURL
+	must.NoError(t, json.Unmarshal(body.Data, &login))
+	u, err := url.Parse(login.URL)
 	must.NoError(t, err)
 	check.Equal(t, u.Host, "account.haozi.net")
-	check.True(t, a.cache.Has(u.Query().Get("state")))
+	check.True(t, h.cache.Has(u.Query().Get("state")))
 }
 
-func TestCallback(t *testing.T) {
-	a := newTestApp(t)
-	must.NoError(t, a.cache.Put("login-abc", true, time.Minute))
-	a.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
+func TestCallbackReturnsAToken(t *testing.T) {
+	h := newHarness(t)
+	must.NoError(t, h.cache.Put("login-abc", true, time.Minute))
+	h.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
 		return biz.Identity{UnionID: "union-1"}, nil
 	}
-	a.repo.FindByUnionIDFunc = func(context.Context, string) (*biz.User, error) {
+	h.repo.FindByUnionIDFunc = func(context.Context, string) (*biz.User, error) {
 		return &biz.User{ID: "u1", UnionID: "union-1"}, nil
 	}
-	a.tokens.IssueFunc = func(string) (string, error) { return "token-1", nil }
+	h.tokens.IssueFunc = func(string) (string, error) { return "token-1", nil }
 
-	status, env := do[service.LoginToken](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/callback", `{"code":"c","state":"login-abc"}`), "")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/callback", "", `{"code":"c","state":"login-abc"}`)
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Data.Token, "token-1")
-	check.Equal(t, a.oauth.ExchangeCalls()[0].Code, "c")
+	check.Equal(t, string(body.Data), `{"token":"token-1"}`)
+	check.Equal(t, h.oauth.ExchangeCalls()[0].Code, "c")
 }
 
-func TestCallback_StateExpiredIs400(t *testing.T) {
-	a := newTestApp(t) // no mock funcs: the usecase must stop at the state
+func TestCallbackWithExpiredStateIsBadRequest(t *testing.T) {
+	h := newHarness(t) // no mock funcs: the usecase must stop at the state
 
-	status, env := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/callback", `{"code":"c","state":"login-gone"}`), "")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/callback", "", `{"code":"c","state":"login-gone"}`)
 
 	check.Equal(t, status, fiber.StatusBadRequest)
-	check.Equal(t, env.Msg, "状态已过期")
+	check.Equal(t, body.Msg, "状态已过期")
 }
 
-func TestCallback_MissingCodeIs422(t *testing.T) {
-	a := newTestApp(t)
+func TestCallbackWithoutCodeIsUnprocessable(t *testing.T) {
+	h := newHarness(t)
 
-	status, _ := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/callback", `{"state":"login-abc"}`), "")
+	status, _ := h.do(t, fiber.MethodPost, "/api/user/callback", "", `{"state":"login-abc"}`)
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
 }
 
-func TestLoginRequired(t *testing.T) {
-	a := newTestApp(t)
+func TestSignedInRoutesRequireLogin(t *testing.T) {
+	h := newHarness(t)
 
-	for _, req := range []*http.Request{
-		httptest.NewRequest(fiber.MethodGet, "/api/user/info", nil),
-		jsonRequest(fiber.MethodPut, "/api/user/info", `{"nickname":"a","avatar":"https://a/b.png"}`),
-		httptest.NewRequest(fiber.MethodPost, "/api/user/logout", nil),
-		httptest.NewRequest(fiber.MethodGet, "/api/user/deletion/login", nil),
-		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`),
+	for _, req := range []struct{ method, path, payload string }{
+		{fiber.MethodGet, "/api/user/info", ""},
+		{fiber.MethodPut, "/api/user/info", `{"nickname":"a","avatar":"https://a/b.png"}`},
+		{fiber.MethodPost, "/api/user/logout", ""},
+		{fiber.MethodGet, "/api/user/deletion/login", ""},
+		{fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`},
 	} {
-		status, env := do[any](t, a, req, "")
-		check.Equal(t, status, fiber.StatusUnauthorized, req.Method+" "+req.URL.Path)
-		check.Equal(t, env.Msg, "未登录")
+		status, body := h.do(t, req.method, req.path, "", req.payload)
+		check.Equal(t, status, fiber.StatusUnauthorized, req.method+" "+req.path)
+		check.Equal(t, body.Msg, "未登录")
 	}
 }
 
-func TestInfo(t *testing.T) {
-	a := newTestApp(t)
-	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+func TestInfoHidesTheOAuthIdentifiers(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
 		return &biz.User{ID: id, OpenID: "secret-open-id", Nickname: "alice", RealName: true}, nil
 	}
 
-	status, env := do[map[string]any](t, a, httptest.NewRequest(fiber.MethodGet, "/api/user/info", nil), "u1")
+	status, body := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t, "u1"), "")
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Data["id"], any("u1"))
-	check.Equal(t, env.Data["nickname"], any("alice"))
-	check.Equal(t, env.Data["real_name"], any(true))
+	var info map[string]any
+	must.NoError(t, json.Unmarshal(body.Data, &info))
+	check.Equal(t, info["id"], any("u1"))
+	check.Equal(t, info["nickname"], any("alice"))
+	check.Equal(t, info["real_name"], any(true))
 	for _, key := range []string{"avatar", "created_at", "updated_at"} {
-		check.MapContainsKey(t, env.Data, key)
+		check.MapContainsKey(t, info, key)
 	}
 	// OAuth identifiers stay server-side
-	check.MapNotContainsKey(t, env.Data, "open_id")
-	check.MapNotContainsKey(t, env.Data, "union_id")
-	check.Equal(t, a.repo.FindCalls()[0].ID, "u1")
+	check.MapNotContainsKey(t, info, "open_id")
+	check.MapNotContainsKey(t, info, "union_id")
+	check.Equal(t, h.repo.FindCalls()[0].ID, "u1")
 }
 
-func TestInfo_DeletedUserIs404(t *testing.T) {
-	a := newTestApp(t)
-	a.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, rio.ErrNotFound }
+func TestInfoOfDeletedUserIsNotFound(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, rio.ErrNotFound }
 
-	status, _ := do[any](t, a, httptest.NewRequest(fiber.MethodGet, "/api/user/info", nil), "u1")
+	status, _ := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t, "u1"), "")
 
 	check.Equal(t, status, fiber.StatusNotFound)
 }
 
-func TestUpdateInfo(t *testing.T) {
-	a := newTestApp(t)
-	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+func TestUpdateInfoSavesNicknameAndAvatar(t *testing.T) {
+	h := newHarness(t)
+	h.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
 		return &biz.User{ID: id, Nickname: "old"}, nil
 	}
-	a.repo.UpdateFunc = func(context.Context, *biz.User) error { return nil }
+	h.repo.UpdateFunc = func(context.Context, *biz.User) error { return nil }
 
-	status, env := do[map[string]any](t, a, jsonRequest(fiber.MethodPut, "/api/user/info",
-		`{"nickname":"alice","avatar":"https://weavatar.com/avatar/?d=mp"}`), "u1")
+	status, body := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t, "u1"),
+		`{"nickname":"alice","avatar":"https://weavatar.com/avatar/?d=mp"}`)
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Data["nickname"], any("alice"))
-	updated := a.repo.UpdateCalls()
+	var info map[string]any
+	must.NoError(t, json.Unmarshal(body.Data, &info))
+	check.Equal(t, info["nickname"], any("alice"))
+	updated := h.repo.UpdateCalls()
 	must.Len(t, updated, 1)
 	check.Equal(t, updated[0].User.ID, "u1")
 	check.Equal(t, updated[0].User.Nickname, "alice")
 	check.Equal(t, updated[0].User.Avatar, "https://weavatar.com/avatar/?d=mp")
 }
 
-func TestUpdateInfo_InvalidAvatarIs422(t *testing.T) {
-	a := newTestApp(t) // no repo funcs: validation must fail first
+func TestUpdateInfoWithInvalidAvatarIsUnprocessable(t *testing.T) {
+	h := newHarness(t) // no repo funcs: validation must fail first
 
-	status, _ := do[any](t, a, jsonRequest(fiber.MethodPut, "/api/user/info",
-		`{"nickname":"alice","avatar":"not a url"}`), "u1")
+	status, _ := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t, "u1"),
+		`{"nickname":"alice","avatar":"not a url"}`)
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
 }
 
-func TestLogout(t *testing.T) {
-	a := newTestApp(t)
+func TestLogoutSucceeds(t *testing.T) {
+	h := newHarness(t)
 
-	status, env := do[any](t, a, httptest.NewRequest(fiber.MethodPost, "/api/user/logout", nil), "u1")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/logout", h.login(t, "u1"), "")
 
 	check.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Msg, "success")
+	check.Equal(t, body.Msg, "success")
 }
 
-func TestDeletionLogin(t *testing.T) {
-	a := newTestApp(t)
+func TestDeletionLoginReturnsAUserBoundState(t *testing.T) {
+	h := newHarness(t)
 
-	status, env := do[service.LoginURL](t, a, httptest.NewRequest(fiber.MethodGet, "/api/user/deletion/login", nil), "u1")
+	status, body := h.do(t, fiber.MethodGet, "/api/user/deletion/login", h.login(t, "u1"), "")
 
 	must.Equal(t, status, fiber.StatusOK)
-	u, err := url.Parse(env.Data.URL)
+	var login service.LoginURL
+	must.NoError(t, json.Unmarshal(body.Data, &login))
+	u, err := url.Parse(login.URL)
 	must.NoError(t, err)
 	check.Equal(t, u.Host, "account.haozi.net")
 	state := u.Query().Get("state")
 	check.True(t, strings.HasPrefix(state, "delete-"))
-	check.Equal(t, a.cache.Get(state), any("u1"))
+	check.Equal(t, h.cache.Get(state), any("u1"))
 }
 
-func TestDeletionConfirm(t *testing.T) {
-	a := newTestApp(t)
-	must.NoError(t, a.cache.Put("delete-abc", "u1", time.Minute))
-	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+func TestDeletionConfirmDeletesTheAccount(t *testing.T) {
+	h := newHarness(t)
+	must.NoError(t, h.cache.Put("delete-abc", "u1", time.Minute))
+	h.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
 		return &biz.User{ID: id, UnionID: "union-1"}, nil
 	}
-	a.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
+	h.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
 		return biz.Identity{UnionID: "union-1"}, nil
 	}
-	a.repo.DeleteFunc = func(context.Context, *biz.User) error { return nil }
+	h.repo.DeleteFunc = func(context.Context, *biz.User) error { return nil }
 
-	status, env := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`), "u1")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-abc"}`)
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, env.Msg, "success")
-	check.Nil(t, env.Data)
-	check.Equal(t, a.oauth.ExchangeCalls()[0].Code, "c")
-	check.DeepEqual(t, a.cleaned, []string{"u1"})
-	deleted := a.repo.DeleteCalls()
+	check.Equal(t, body.Msg, "success")
+	check.Equal(t, string(body.Data), "null")
+	check.Equal(t, h.oauth.ExchangeCalls()[0].Code, "c")
+	check.DeepEqual(t, h.cleaned, []string{"u1"})
+	deleted := h.repo.DeleteCalls()
 	must.Len(t, deleted, 1)
 	check.Equal(t, deleted[0].User.ID, "u1")
 }
 
-func TestDeletionConfirm_OtherAccountIs403(t *testing.T) {
-	a := newTestApp(t)
-	must.NoError(t, a.cache.Put("delete-abc", "u1", time.Minute))
-	a.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
+func TestDeletionConfirmByAnotherAccountIsForbidden(t *testing.T) {
+	h := newHarness(t)
+	must.NoError(t, h.cache.Put("delete-abc", "u1", time.Minute))
+	h.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
 		return &biz.User{ID: id, UnionID: "union-1"}, nil
 	}
-	a.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
+	h.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
 		return biz.Identity{UnionID: "union-2"}, nil
 	}
 
-	status, env := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-abc"}`), "u1")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-abc"}`)
 
 	check.Equal(t, status, fiber.StatusForbidden)
-	check.Equal(t, env.Code, "user.deletion_identity_mismatch")
-	check.Equal(t, env.Msg, "授权的账号与当前账号不一致")
-	check.Len(t, a.cleaned, 0)
+	check.Equal(t, body.Code, "user.deletion_identity_mismatch")
+	check.Equal(t, body.Msg, "授权的账号与当前账号不一致")
+	check.Len(t, h.cleaned, 0)
 }
 
-func TestDeletionConfirm_StateExpiredIs400(t *testing.T) {
-	a := newTestApp(t) // no mock funcs: the usecase must stop at the state
+func TestDeletionConfirmWithExpiredStateIsBadRequest(t *testing.T) {
+	h := newHarness(t) // no mock funcs: the usecase must stop at the state
 
-	status, env := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c","state":"delete-gone"}`), "u1")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-gone"}`)
 
 	check.Equal(t, status, fiber.StatusBadRequest)
-	check.Equal(t, env.Code, "user.state_expired")
+	check.Equal(t, body.Code, "user.state_expired")
 }
 
-func TestDeletionConfirm_MissingStateIs422(t *testing.T) {
-	a := newTestApp(t)
+func TestDeletionConfirmWithoutStateIsUnprocessable(t *testing.T) {
+	h := newHarness(t)
 
-	status, _ := do[any](t, a,
-		jsonRequest(fiber.MethodPost, "/api/user/deletion/confirm", `{"code":"c"}`), "u1")
+	status, _ := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c"}`)
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
 }
 
-// newTestApp mounts the real route table, MustLogin included, over mocked ports.
-func newTestApp(t *testing.T) *testApp {
+func newHarness(t *testing.T) *harness {
 	t.Helper()
 
-	a := &testApp{
+	h := &harness{
+		app:    fiber.New(),
 		repo:   &mocksbiz.UserRepo{},
 		oauth:  &mocksbiz.OAuthProvider{},
 		tokens: &mocksbiz.Tokens{},
 		cache:  cache.NewCache(cache.WithCleanupInterval(0)),
-		parser: jwt.NewJWT("a-long-string-with-32-characters", time.Hour),
+		signer: jwt.NewJWT("a-long-string-with-32-characters", time.Hour),
 	}
-	uc := biz.NewUserUsecase(a.repo, a.oauth, a.tokens, a.cache,
-		appinfo.Domain("weavatar.com"),
-		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
-	)
-	tx := &mocksbiz.TxRunner{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }}
+	domain := appinfo.Domain("weavatar.com")
+	client := appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"}
+	tx := &mocksbiz.Transactor{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }}
 	cleanups := registry.UserCleanups{{Name: "test", Run: func(_ context.Context, userID string) error {
-		a.cleaned = append(a.cleaned, userID)
+		h.cleaned = append(h.cleaned, userID)
 		return nil
 	}}}
-	deletion := biz.NewDeletionUsecase(a.repo, a.oauth, a.cache, tx, cleanups,
-		appinfo.Domain("weavatar.com"),
-		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
-	)
-	user := service.NewUserService(uc, deletion, newValidator(t))
 
-	a.app = fiber.New()
-	for _, e := range service.UserRoutes(user, a.parser) {
+	user := biz.NewUserUsecase(h.repo, h.oauth, h.tokens, h.cache, domain, client)
+	deletion := biz.NewDeletionUsecase(h.repo, h.oauth, h.cache, tx, cleanups, domain, client)
+	mount(h.app, service.UserRoutes(service.NewUserService(user, deletion, newValidator(t)), h.signer))
+
+	return h
+}
+
+// do sends a JSON request, authenticated when token is set, and decodes the envelope.
+func (h *harness) do(t *testing.T, method, path, token, payload string) (int, envelope) {
+	t.Helper()
+
+	var reader io.Reader
+	if payload != "" {
+		reader = strings.NewReader(payload)
+	}
+	req := httptest.NewRequest(method, path, reader)
+	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	if token != "" {
+		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+token)
+	}
+	resp, err := h.app.Test(req)
+	must.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	var body envelope
+	must.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+	return resp.StatusCode, body
+}
+
+func (h *harness) login(t *testing.T, userID string) string {
+	t.Helper()
+	token, err := h.signer.Generate(&jwt.Claims{Subject: userID})
+	must.NoError(t, err)
+	return token
+}
+
+// mount registers endpoints the way the server does: middlewares, then handler.
+func mount(app *fiber.App, endpoints transport.Endpoints) {
+	for _, e := range endpoints {
 		handlers := make([]any, 0, len(e.Middlewares)+1)
 		for _, m := range e.Middlewares {
 			handlers = append(handlers, m)
 		}
 		handlers = append(handlers, e.Handler)
-		a.app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
+		app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
 	}
-
-	return a
-}
-
-// do sends req, optionally as user, and decodes the envelope into data.
-func do[T any](t *testing.T, a *testApp, req *http.Request, userID string) (int, transport.Envelope[T]) {
-	t.Helper()
-
-	if userID != "" {
-		token, err := a.parser.Generate(&jwt.Claims{Subject: userID})
-		must.NoError(t, err)
-		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+token)
-	}
-	resp, err := a.app.Test(req)
-	must.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
-	must.NoError(t, err)
-
-	var env transport.Envelope[T]
-	must.NoError(t, json.Unmarshal(body, &env), string(body))
-	return resp.StatusCode, env
-}
-
-func jsonRequest(method, path, body string) *http.Request {
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	return req
 }

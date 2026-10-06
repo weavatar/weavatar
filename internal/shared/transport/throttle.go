@@ -31,6 +31,7 @@ func Throttle(tokens uint64, interval time.Duration) fiber.Handler {
 
 		resetTime := time.Unix(0, int64(reset)).UTC().Format(time.RFC1123) //nolint:gosec // nanosecond timestamp fits int64
 
+		// headers are set whether or not the request is admitted
 		c.Set(httplimit.HeaderRateLimitLimit, strconv.FormatUint(limit, 10))
 		c.Set(httplimit.HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
 		c.Set(httplimit.HeaderRateLimitReset, resetTime)

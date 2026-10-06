@@ -10,13 +10,13 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/transport"
 )
 
-// Routes collects the modules' endpoint groups.
+// Routes contains the endpoint groups contributed by application modules.
 type Routes []transport.Endpoints
 
-// Commands collects the modules' management commands.
+// Commands contains the management commands contributed by application modules.
 type Commands []*cli.Command
 
-// Jobs collects the modules' scheduled jobs.
+// Jobs contains the scheduled jobs contributed by application modules.
 type Jobs []job.Fn
 
 // HealthCheck is one named readiness dependency.
@@ -25,15 +25,15 @@ type HealthCheck struct {
 	Check func(context.Context) error
 }
 
-// HealthChecks collects the modules' readiness dependencies.
+// HealthChecks contains the readiness dependencies contributed by application modules.
 type HealthChecks []HealthCheck
 
-// UserCleanup removes one module's data about a user inside the account
-// deletion transaction; Run must use the ctx it gets.
+// UserCleanup removes what one module keeps about a user; it runs inside the
+// deletion transaction and must use the ctx it is given.
 type UserCleanup struct {
 	Name string
 	Run  func(ctx context.Context, userID string) error
 }
 
-// UserCleanups collects the modules' account deletion cleanups.
+// UserCleanups contains the per-module cleanups run when a user deletes the account.
 type UserCleanups []UserCleanup

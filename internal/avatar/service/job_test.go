@@ -10,7 +10,7 @@ import (
 	"github.com/weavatar/weavatar/internal/avatar/service"
 )
 
-func TestPurgeExpiredCacheJob_Registers(t *testing.T) {
+func TestPurgeExpiredCacheJobRegisters(t *testing.T) {
 	c, err := cron.New(cron.WithSecondsField())
 	must.NoError(t, err)
 

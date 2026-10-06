@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -26,33 +25,46 @@ import (
 
 const captcha = `"captcha":{"lot_number":"lot","captcha_output":"out","pass_token":"pass","gen_time":"1"}`
 
-func TestSms(t *testing.T) {
-	app, sms, _ := newTestApp(t)
-	sms.SendFunc = okSender
+// envelope decodes the response wrapper.
+type envelope struct {
+	Msg string `json:"msg"`
+}
 
-	status, msg := post(t, app, "/api/verify_code/sms", smsBody("13800138000"))
+// harness serves the verify code routes, throttle included, against mocked
+// senders whose funcs start nil.
+type harness struct {
+	app  *fiber.App
+	sms  *mocksbiz.SMSSender
+	mail *mocksbiz.MailSender
+}
+
+func TestSmsSendsCodeForAllowedPurpose(t *testing.T) {
+	h := newHarness(t)
+	h.sms.SendFunc = okSender
+
+	status, body := h.post(t, "/api/verify_code/sms", smsBody("13800138000"))
 
 	must.Equal(t, status, fiber.StatusOK)
-	check.Equal(t, msg, "success")
-	sent := sms.SendCalls()
+	check.Equal(t, body.Msg, "success")
+	sent := h.sms.SendCalls()
 	must.Len(t, sent, 1)
 	check.Equal(t, sent[0].Phone, "13800138000")
 }
 
-func TestEmail(t *testing.T) {
-	app, _, mail := newTestApp(t)
-	mail.SendFunc = okSender
+func TestEmailSendsCodeByMail(t *testing.T) {
+	h := newHarness(t)
+	h.mail.SendFunc = okSender
 
-	status, _ := post(t, app, "/api/verify_code/email", emailBody("a@weavatar.com"))
+	status, _ := h.post(t, "/api/verify_code/email", emailBody("a@weavatar.com"))
 
 	must.Equal(t, status, fiber.StatusOK)
-	sent := mail.SendCalls()
+	sent := h.mail.SendCalls()
 	must.Len(t, sent, 1)
 	check.Equal(t, sent[0].To, "a@weavatar.com")
 }
 
-func TestInvalidRequestsAre422(t *testing.T) {
-	app, _, _ := newTestApp(t) // no sender funcs: validation must fail first
+func TestInvalidRequestsAreUnprocessable(t *testing.T) {
+	h := newHarness(t) // no sender funcs: validation must fail first
 
 	for _, tc := range []struct{ path, body string }{
 		{"/api/verify_code/sms", smsBody("12345")},
@@ -60,93 +72,81 @@ func TestInvalidRequestsAre422(t *testing.T) {
 		{"/api/verify_code/sms", `{"phone":"13800138000","use_for":"avatar"}`},
 		{"/api/verify_code/email", emailBody("not-an-email")},
 	} {
-		status, _ := post(t, app, tc.path, tc.body)
+		status, _ := h.post(t, tc.path, tc.body)
 		check.Equal(t, status, fiber.StatusUnprocessableEntity, tc.body)
 	}
 }
 
-func TestTooFrequentIs422(t *testing.T) {
-	app, sms, _ := newTestApp(t)
-	sms.SendFunc = okSender
-	status, _ := post(t, app, "/api/verify_code/sms", smsBody("13800138000"))
+func TestCooldownIsUnprocessable(t *testing.T) {
+	h := newHarness(t)
+	h.sms.SendFunc = okSender
+	status, _ := h.post(t, "/api/verify_code/sms", smsBody("13800138000"))
 	must.Equal(t, status, fiber.StatusOK)
 
-	status, msg := post(t, app, "/api/verify_code/sms", smsBody("13800138000"))
+	status, body := h.post(t, "/api/verify_code/sms", smsBody("13800138000"))
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
-	check.Equal(t, msg, "请勿频繁发送验证码")
-	check.Len(t, sms.SendCalls(), 1)
+	check.Equal(t, body.Msg, "请勿频繁发送验证码")
+	check.Len(t, h.sms.SendCalls(), 1)
 }
 
-func TestDeliveryFailureIs500(t *testing.T) {
-	app, _, mail := newTestApp(t)
-	mail.SendFunc = func(context.Context, string, string) error { return errors.New("smtp down") }
+func TestDeliveryFailureIsInternalError(t *testing.T) {
+	h := newHarness(t)
+	h.mail.SendFunc = func(context.Context, string, string) error { return errors.New("smtp down") }
 
-	status, msg := post(t, app, "/api/verify_code/email", emailBody("a@weavatar.com"))
+	status, body := h.post(t, "/api/verify_code/email", emailBody("a@weavatar.com"))
 
 	check.Equal(t, status, fiber.StatusInternalServerError)
-	check.Equal(t, msg, "WeAvatar 服务出现错误")
+	check.Equal(t, body.Msg, "WeAvatar 服务出现错误")
 }
 
-func TestThrottleIsSharedAcrossEndpoints(t *testing.T) {
-	app, sms, mail := newTestApp(t)
-	sms.SendFunc = okSender
-	mail.SendFunc = okSender
+func TestSmsAndEmailShareOneThrottleBudget(t *testing.T) {
+	h := newHarness(t)
+	h.sms.SendFunc = okSender
+	h.mail.SendFunc = okSender
 
 	// distinct targets keep the per-target cooldown out of the way
 	for i := range 3 {
-		status, _ := post(t, app, "/api/verify_code/sms", smsBody("1380013800"+strconv.Itoa(i)))
+		status, _ := h.post(t, "/api/verify_code/sms", smsBody("1380013800"+strconv.Itoa(i)))
 		must.Equal(t, status, fiber.StatusOK)
 	}
 	for i := range 2 {
-		status, _ := post(t, app, "/api/verify_code/email", emailBody("u"+strconv.Itoa(i)+"@weavatar.com"))
+		status, _ := h.post(t, "/api/verify_code/email", emailBody("u"+strconv.Itoa(i)+"@weavatar.com"))
 		must.Equal(t, status, fiber.StatusOK)
 	}
 
-	status, _ := post(t, app, "/api/verify_code/email", emailBody("u9@weavatar.com"))
+	status, _ := h.post(t, "/api/verify_code/email", emailBody("u9@weavatar.com"))
 	check.Equal(t, status, http.StatusTooManyRequests)
-	check.Len(t, mail.SendCalls(), 2)
+	check.Len(t, h.mail.SendCalls(), 2)
 }
 
-// newTestApp mounts the real route table, throttle included, over mocked senders.
-func newTestApp(t *testing.T) (*fiber.App, *mocksbiz.SMSSender, *mocksbiz.MailSender) {
+func newHarness(t *testing.T) *harness {
 	t.Helper()
 
-	sms := &mocksbiz.SMSSender{}
-	mail := &mocksbiz.MailSender{}
-	c := cache.NewCache(cache.WithCleanupInterval(0))
-	code := service.NewVerifyCodeService(
-		biz.NewCodeUsecase(c, sms, mail, appinfo.CodeExpire(5*time.Minute)),
-		newValidator(t),
-	)
-
-	app := fiber.New()
-	for _, e := range service.VerifyCodeRoutes(code) {
-		handlers := make([]any, 0, len(e.Middlewares)+1)
-		for _, m := range e.Middlewares {
-			handlers = append(handlers, m)
-		}
-		handlers = append(handlers, e.Handler)
-		app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
+	h := &harness{
+		app:  fiber.New(),
+		sms:  &mocksbiz.SMSSender{},
+		mail: &mocksbiz.MailSender{},
 	}
+	c := cache.NewCache(cache.WithCleanupInterval(0))
+	uc := biz.NewCodeUsecase(c, h.sms, h.mail, appinfo.CodeExpire(5*time.Minute))
+	mount(h.app, service.VerifyCodeRoutes(service.NewVerifyCodeService(uc, newValidator(t))))
 
-	return app, sms, mail
+	return h
 }
 
-func post(t *testing.T, app *fiber.App, path, body string) (int, string) {
+func (h *harness) post(t *testing.T, path, payload string) (int, envelope) {
 	t.Helper()
 
-	req := httptest.NewRequest(fiber.MethodPost, path, strings.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPost, path, strings.NewReader(payload))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	resp, err := app.Test(req)
+	resp, err := h.app.Test(req)
 	must.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
-	raw, err := io.ReadAll(resp.Body)
-	must.NoError(t, err)
 
-	var env transport.Envelope[any]
-	must.NoError(t, json.Unmarshal(raw, &env), string(raw))
-	return resp.StatusCode, env.Msg
+	var body envelope
+	must.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+	return resp.StatusCode, body
 }
 
 func smsBody(phone string) string {
@@ -158,3 +158,15 @@ func emailBody(email string) string {
 }
 
 func okSender(context.Context, string, string) error { return nil }
+
+// mount registers endpoints the way the server does: middlewares, then handler.
+func mount(app *fiber.App, endpoints transport.Endpoints) {
+	for _, e := range endpoints {
+		handlers := make([]any, 0, len(e.Middlewares)+1)
+		for _, m := range e.Middlewares {
+			handlers = append(handlers, m)
+		}
+		handlers = append(handlers, e.Handler)
+		app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
+	}
+}

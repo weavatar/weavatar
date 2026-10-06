@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// A resend within resendWindow suggests the carrier blocked the last message,
-// so it goes through Tencent.
+// resendWindow: a resend this soon suggests the carrier blocked the last
+// message, so it goes through Tencent instead.
 const resendWindow = 2 * time.Minute
 
 type Config struct {
@@ -69,8 +69,8 @@ func New(config Config, codeExpire time.Duration) *SMS {
 	}
 }
 
-// Send tries Aliyun then Tencent, but a resend within resendWindow goes
-// straight to Tencent.
+// Send goes through Aliyun with Tencent as the fallback, except that a resend
+// within resendWindow goes straight to Tencent.
 func (s *SMS) Send(ctx context.Context, phone string, message Message) error {
 	if s.recentlySent(phone) {
 		if err := s.tencent.Send(ctx, phone, message); err != nil {

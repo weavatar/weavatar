@@ -1,13 +1,13 @@
-name: Set up Go
-description: Sets up Go with a shared module cache and a build cache per scope and commit.
+name: Setup Go
+description: Install Go with a shared module cache and a build cache per scope.
 inputs:
   scope:
-    description: Build cache namespace, such as test or build-amd64.
+    description: Build cache scope, such as test or build-amd64.
     required: true
 runs:
   using: composite
   steps:
-    - name: Set up Go
+    - name: Setup Go
       uses: actions/setup-go@v7
       with:
         go-version-file: go.mod

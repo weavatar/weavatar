@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/libtnb/assert/must"
+	"github.com/samber/oops"
 
 	"github.com/weavatar/weavatar/internal/shared/apperr"
 )
@@ -31,29 +32,14 @@ func TestPlainErrorsCarryNoKind(t *testing.T) {
 }
 
 func TestHelpersSetTheirKinds(t *testing.T) {
-	for helper, kind := range map[string]apperr.Kind{
-		"invalid":       apperr.KindInvalid,
-		"unauthorized":  apperr.KindUnauthorized,
-		"forbidden":     apperr.KindForbidden,
-		"not_found":     apperr.KindNotFound,
-		"conflict":      apperr.KindConflict,
-		"unprocessable": apperr.KindUnprocessable,
+	for kind, helper := range map[apperr.Kind]func(code, public string) oops.OopsErrorBuilder{
+		apperr.KindInvalid:       apperr.Invalid,
+		apperr.KindUnauthorized:  apperr.Unauthorized,
+		apperr.KindForbidden:     apperr.Forbidden,
+		apperr.KindNotFound:      apperr.NotFound,
+		apperr.KindConflict:      apperr.Conflict,
+		apperr.KindUnprocessable: apperr.Unprocessable,
 	} {
-		var err error
-		switch helper {
-		case "invalid":
-			err = apperr.Invalid("c", "p").Errorf("x")
-		case "unauthorized":
-			err = apperr.Unauthorized("c", "p").Errorf("x")
-		case "forbidden":
-			err = apperr.Forbidden("c", "p").Errorf("x")
-		case "not_found":
-			err = apperr.NotFound("c", "p").Errorf("x")
-		case "conflict":
-			err = apperr.Conflict("c", "p").Errorf("x")
-		case "unprocessable":
-			err = apperr.Unprocessable("c", "p").Errorf("x")
-		}
-		must.Equal(t, apperr.KindOf(err), kind, helper)
+		must.Equal(t, apperr.KindOf(helper("c", "p").Errorf("x")), kind, string(kind))
 	}
 }

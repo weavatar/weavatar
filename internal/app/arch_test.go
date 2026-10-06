@@ -14,6 +14,7 @@ import (
 	"testing"
 )
 
+// modulePrefix is this repository's import path for internal packages.
 const modulePrefix = "github.com/weavatar/weavatar/internal/"
 
 // escapeFixture holds the escapes TestRequestContextDoesNotEscape reports,
@@ -108,12 +109,14 @@ func TestModuleBoundaries(t *testing.T) {
 	}
 }
 
-// TestRequestContextDoesNotEscape scans goroutines and queued jobs in service
-// and biz packages, since Fiber recycles the Ctx once the handler returns.
+// TestRequestContextDoesNotEscape guards service and biz packages: Fiber
+// recycles the Ctx after the handler, so goroutines and queued jobs must not
+// capture the request or its context.
 func TestRequestContextDoesNotEscape(t *testing.T) {
 	fset := token.NewFileSet()
 
-	// silence on the repository counts only once the fixture's escapes are caught
+	// the detector must catch the fixture's escapes before its silence on the
+	// repository means anything
 	fixture, err := parser.ParseFile(fset, "fixture.go", escapeFixture, parser.SkipObjectResolution)
 	if err != nil {
 		t.Fatalf("parse fixture: %v", err)

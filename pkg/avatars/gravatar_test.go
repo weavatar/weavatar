@@ -37,7 +37,7 @@ func TestGravatar(t *testing.T) {
 	check.ErrorContains(t, err, "status 404")
 }
 
-func TestGravatar_RejectsOversizedBody(t *testing.T) {
+func TestGravatarRejectsOversizedBody(t *testing.T) {
 	body := bytes.Repeat([]byte{0}, maxResponseSize+1)
 	base := useGravatar(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "image/png")

@@ -36,7 +36,7 @@ var ErrAvatarExists = errors.New("avatar already exists")
 type AvatarUsecase struct {
 	repo    AvatarRepo
 	images  ImageRepo
-	tx      TxRunner
+	tx      Transactor
 	users   Users
 	store   Store
 	fetcher Fetcher
@@ -53,7 +53,7 @@ type AvatarUsecase struct {
 func NewAvatarUsecase(
 	repo AvatarRepo,
 	images ImageRepo,
-	tx TxRunner,
+	tx Transactor,
 	users Users,
 	store Store,
 	fetcher Fetcher,
@@ -169,11 +169,8 @@ func (uc *AvatarUsecase) Delete(ctx context.Context, userID, hash string) error 
 // caller's transaction, and purges the CDN once.
 func (uc *AvatarUsecase) DeleteByUser(ctx context.Context, userID string) error {
 	avatars, err := uc.repo.ListAllByUser(ctx, userID)
-	if err != nil {
+	if err != nil || len(avatars) == 0 {
 		return err
-	}
-	if len(avatars) == 0 {
-		return nil
 	}
 
 	err = uc.tx.Run(ctx, func(ctx context.Context) error {

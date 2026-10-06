@@ -12,13 +12,6 @@ import (
 	"github.com/weavatar/weavatar/internal/platform/conf"
 )
 
-func writeConfig(t *testing.T, yaml string) {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "config.yml")
-	must.NoError(t, os.WriteFile(path, []byte(yaml), 0o600))
-	t.Setenv("APP_CONFIG", path)
-}
-
 const minimal = `
 app:
   name: "test-app"
@@ -166,4 +159,11 @@ func TestLoadMissingFileFails(t *testing.T) {
 	t.Setenv("APP_CONFIG", filepath.Join(t.TempDir(), "absent.yml"))
 	_, err := conf.Load()
 	must.Error(t, err)
+}
+
+func writeConfig(t *testing.T, yaml string) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.yml")
+	must.NoError(t, os.WriteFile(path, []byte(yaml), 0o600))
+	t.Setenv("APP_CONFIG", path)
 }

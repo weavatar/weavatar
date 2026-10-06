@@ -13,6 +13,7 @@ import (
 	"github.com/libtnb/wire"
 
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
+	"github.com/weavatar/weavatar/internal/shared/database"
 	"github.com/weavatar/weavatar/internal/shared/registry"
 	"github.com/weavatar/weavatar/pkg/audit"
 	"github.com/weavatar/weavatar/pkg/cdn"
@@ -28,6 +29,7 @@ var Module = wire.New().
 	Provide(NewLogger).
 	Provide(NewData).
 	Provide(ProvideDB).
+	Provide(database.NewRunner).
 	Provide(NewCache).
 	Provide(NewValidator).
 	Provide(NewMigrate).
@@ -51,6 +53,7 @@ var Module = wire.New().
 	Contribute[registry.Commands](MigrateCommand).
 	Export[*slog.Logger]().
 	Export[*rio.DB]().
+	Export[*database.Runner]().
 	Export[*validator.Validator]().
 	Export[*migrate.Migrator]().
 	Export[cache.Cache]().

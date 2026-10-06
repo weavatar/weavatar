@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"log/slog"
@@ -206,10 +207,7 @@ func (uc *AvatarUsecase) fallback(ctx context.Context, req ResolveRequest, owner
 		return ResolveResult{Redirect: req.Default}, nil
 	}
 
-	seed := req.Hash
-	if seed == "" {
-		seed = defaultSeed
-	}
+	seed := cmp.Or(req.Hash, defaultSeed)
 	text := ""
 	if req.wantsInitials() {
 		text = req.Initials
@@ -246,9 +244,7 @@ func (r ResolveRequest) wantsInitials() bool {
 }
 
 func normalize(req ResolveRequest) ResolveRequest {
-	if req.Ext == "" {
-		req.Ext = defaultExt
-	}
+	req.Ext = cmp.Or(req.Ext, defaultExt)
 	req.Size = min(max(req.Size, 1), maxSize)
 	if !ValidHash(req.Hash) {
 		req.Force = true

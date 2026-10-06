@@ -13,6 +13,7 @@ import (
 	"github.com/libtnb/utils/str"
 	"github.com/samber/oops"
 
+	"github.com/weavatar/weavatar/internal/shared/apperr"
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
 	"github.com/weavatar/weavatar/pkg/id"
 )
@@ -38,7 +39,7 @@ type User struct {
 }
 
 // UserRepo reports a miss as rio.ErrNotFound and a taken union_id as
-// rio.ErrDuplicateKey; calls join the transaction a TxRunner put in ctx.
+// rio.ErrDuplicateKey; calls join the transaction a Transactor put in ctx.
 type UserRepo interface {
 	FindByUnionID(ctx context.Context, unionID string) (*User, error)
 	Find(ctx context.Context, id string) (*User, error)
@@ -48,9 +49,9 @@ type UserRepo interface {
 	Delete(ctx context.Context, user *User) error
 }
 
-// TxRunner runs fn in one transaction carried by the ctx it passes; an error
-// from fn rolls it back.
-type TxRunner interface {
+// Transactor runs fn in one database transaction; repo and cleanup calls
+// made with fn's ctx join it.
+type Transactor interface {
 	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
@@ -114,7 +115,7 @@ func (uc *UserUsecase) LoginURL(_ context.Context) (string, error) {
 // user on first login and refreshing the real-name flag afterwards.
 func (uc *UserUsecase) Callback(ctx context.Context, code, state string) (string, error) {
 	if !strings.HasPrefix(state, statePrefix) || uc.cache.Pull(state) == nil {
-		return "", ErrStateExpired()
+		return "", errStateExpired()
 	}
 
 	identity, err := uc.oauth.Exchange(ctx, code, redirectURI(uc.domain))
@@ -188,6 +189,10 @@ func (uc *UserUsecase) login(ctx context.Context, identity Identity) (*User, err
 	}
 
 	return user, nil
+}
+
+func errStateExpired() error {
+	return apperr.Invalid("user.state_expired", "状态已过期").In("user").New("login state expired")
 }
 
 // authorizeURL is the OAuth server's authorization page for one state.

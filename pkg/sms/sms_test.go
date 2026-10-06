@@ -20,15 +20,6 @@ func (f *fakeDriver) Send(_ context.Context, phone string, _ Message) error {
 	return f.err
 }
 
-func newTestSMS(aliyun, tencent Driver, clock *time.Time) *SMS {
-	return &SMS{
-		aliyun:  aliyun,
-		tencent: tencent,
-		now:     func() time.Time { return *clock },
-		sent:    make(map[string]time.Time),
-	}
-}
-
 func TestNew(t *testing.T) {
 	s := New(Config{
 		Aliyun:  AliyunConfig{AccessKeyID: "ak", SignName: "sign"},
@@ -105,4 +96,13 @@ func TestLazyCleanup(t *testing.T) {
 	check.Len(t, s.sent, 1)
 	_, ok := s.sent["c"]
 	check.True(t, ok)
+}
+
+func newTestSMS(aliyun, tencent Driver, clock *time.Time) *SMS {
+	return &SMS{
+		aliyun:  aliyun,
+		tencent: tencent,
+		now:     func() time.Time { return *clock },
+		sent:    make(map[string]time.Time),
+	}
 }

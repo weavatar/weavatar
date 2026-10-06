@@ -78,7 +78,7 @@ func (r *Oauth) GetUserInfo(ctx context.Context, accessToken string) (BasicInfo,
 	if !resp.IsSuccessState() {
 		return basicInfo, fmt.Errorf("failed to get user info: %s", resp.String())
 	}
-	if basicInfo.Code != 0 || len(basicInfo.Data.OpenID) == 0 || len(basicInfo.Data.UnionID) == 0 {
+	if basicInfo.Code != 0 || basicInfo.Data.OpenID == "" || basicInfo.Data.UnionID == "" {
 		return basicInfo, fmt.Errorf("failed to unmarshal user info: %s", resp.String())
 	}
 

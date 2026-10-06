@@ -11,7 +11,7 @@ import (
 	"github.com/weavatar/weavatar/internal/avatar/data"
 )
 
-func TestGenerator_DrawsEveryKind(t *testing.T) {
+func TestGeneratorDrawsEveryKind(t *testing.T) {
 	g, err := data.NewGenerator()
 	must.NoError(t, err)
 
@@ -25,7 +25,7 @@ func TestGenerator_DrawsEveryKind(t *testing.T) {
 	}
 }
 
-func TestGenerator_IsStablePerSeed(t *testing.T) {
+func TestGeneratorIsStablePerSeed(t *testing.T) {
 	g, err := data.NewGenerator()
 	must.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestGenerator_IsStablePerSeed(t *testing.T) {
 	check.True(t, bytes.Equal(a, b))
 }
 
-func TestGenerator_InitialsTakeEmoji(t *testing.T) {
+func TestGeneratorInitialsTakeEmoji(t *testing.T) {
 	g, err := data.NewGenerator()
 	must.NoError(t, err)
 

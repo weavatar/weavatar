@@ -52,7 +52,7 @@ type Image struct {
 }
 
 // AvatarRepo is the avatar persistence boundary; a missing row is
-// rio.ErrNotFound. Calls join the transaction a TxRunner put in ctx.
+// rio.ErrNotFound. Calls join the transaction a Transactor put in ctx.
 type AvatarRepo interface {
 	List(ctx context.Context, userID string, page, limit int) ([]*Avatar, int64, error)
 	ListAllByUser(ctx context.Context, userID string) ([]*Avatar, error)
@@ -77,9 +77,9 @@ type ImageRepo interface {
 	Create(ctx context.Context, image *Image) error
 }
 
-// TxRunner runs fn in one transaction carried by the ctx it passes; an error
-// from fn rolls it back.
-type TxRunner interface {
+// Transactor runs fn in one database transaction; repo and port calls made
+// with fn's ctx join it.
+type Transactor interface {
 	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
 

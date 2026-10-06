@@ -21,15 +21,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
+      - name: Setup Go
         uses: ./.github/actions/setup-go
         with:
           scope: mockery
 
-      - name: Generate mocks
-        run: go tool mockery
-
-      - name: Verify mocks are up to date
+      - name: Verify mocks are current
         run: |
+          go tool mockery
           git add -N .
           git diff --exit-code

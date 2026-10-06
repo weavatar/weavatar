@@ -15,16 +15,6 @@ import (
 	xdraw "golang.org/x/image/draw"
 )
 
-func testImage(w, h int) *image.NRGBA {
-	img := image.NewNRGBA(image.Rect(0, 0, w, h))
-	for y := range h {
-		for x := range w {
-			img.SetNRGBA(x, y, color.NRGBA{R: uint8(x * 255 / w), G: uint8(y * 255 / h), B: 128, A: 255})
-		}
-	}
-	return img
-}
-
 func TestEncodeDecode(t *testing.T) {
 	src := testImage(64, 64)
 	for format, want := range map[string]string{
@@ -135,4 +125,14 @@ func TestDetectISOBMFF(t *testing.T) {
 	check.Equal(t, detect(ftyp("mif1", "heic")), "heic")
 	check.Equal(t, detect(ftyp("isom", "mp41")), "")
 	check.Equal(t, detect(bytes.Repeat([]byte{0}, 4)), "")
+}
+
+func testImage(w, h int) *image.NRGBA {
+	img := image.NewNRGBA(image.Rect(0, 0, w, h))
+	for y := range h {
+		for x := range w {
+			img.SetNRGBA(x, y, color.NRGBA{R: uint8(x * 255 / w), G: uint8(y * 255 / h), B: 128, A: 255})
+		}
+	}
+	return img
 }

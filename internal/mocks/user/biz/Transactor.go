@@ -8,29 +8,29 @@ import (
 	"context"
 	"sync"
 
-	"github.com/weavatar/weavatar/internal/avatar/biz"
+	"github.com/weavatar/weavatar/internal/user/biz"
 )
 
-// Ensure that TxRunner does implement biz.TxRunner.
+// Ensure that Transactor does implement biz.Transactor.
 // If this is not the case, regenerate this file with mockery.
-var _ biz.TxRunner = &TxRunner{}
+var _ biz.Transactor = &Transactor{}
 
-// TxRunner is a mock implementation of biz.TxRunner.
+// Transactor is a mock implementation of biz.Transactor.
 //
-//	func TestSomethingThatUsesTxRunner(t *testing.T) {
+//	func TestSomethingThatUsesTransactor(t *testing.T) {
 //
-//		// make and configure a mocked biz.TxRunner
-//		mockedTxRunner := &TxRunner{
+//		// make and configure a mocked biz.Transactor
+//		mockedTransactor := &Transactor{
 //			RunFunc: func(ctx context.Context, fn func(ctx context.Context) error) error {
 //				panic("mock out the Run method")
 //			},
 //		}
 //
-//		// use mockedTxRunner in code that requires biz.TxRunner
+//		// use mockedTransactor in code that requires biz.Transactor
 //		// and then make assertions.
 //
 //	}
-type TxRunner struct {
+type Transactor struct {
 	// RunFunc mocks the Run method.
 	RunFunc func(ctx context.Context, fn func(ctx context.Context) error) error
 
@@ -48,9 +48,9 @@ type TxRunner struct {
 }
 
 // Run calls RunFunc.
-func (mock *TxRunner) Run(ctx context.Context, fn func(ctx context.Context) error) error {
+func (mock *Transactor) Run(ctx context.Context, fn func(ctx context.Context) error) error {
 	if mock.RunFunc == nil {
-		panic("TxRunner.RunFunc: method is nil but TxRunner.Run was just called")
+		panic("Transactor.RunFunc: method is nil but Transactor.Run was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -68,8 +68,8 @@ func (mock *TxRunner) Run(ctx context.Context, fn func(ctx context.Context) erro
 // RunCalls gets all the calls that were made to Run.
 // Check the length with:
 //
-//	len(mockedTxRunner.RunCalls())
-func (mock *TxRunner) RunCalls() []struct {
+//	len(mockedTransactor.RunCalls())
+func (mock *Transactor) RunCalls() []struct {
 	Ctx context.Context
 	Fn  func(ctx context.Context) error
 } {

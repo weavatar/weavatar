@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# probe.sh BASE_URL [ATTEMPTS]: polls /healthz and /readyz every two seconds until both
-# return 200; exits 1 after ATTEMPTS (default 30) failures.
+# probe.sh BASE_URL [ATTEMPTS]: polls /healthz and /readyz every two seconds until both answer
+# 200, and exits 1 after ATTEMPTS (default 30) failures.
 set -euo pipefail
 base="${1:?usage: probe.sh BASE_URL [ATTEMPTS]}"
 attempts="${2:-30}"

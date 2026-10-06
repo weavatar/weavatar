@@ -7,9 +7,9 @@ import (
 	"github.com/libtnb/validator"
 )
 
-// Bind binds the query, then the body, then path parameters, each overriding
-// the last, so a case-insensitive query match such as "?code=x" cannot replace
-// a JSON "code"; then it validates.
+// Bind binds the query, the body, then path parameters, later sources winning,
+// and validates the result. The order keeps "?code=x" from replacing a JSON
+// "code", as the query binder matches field names case-insensitively.
 func Bind[T any](c fiber.Ctx, v *validator.Validator) (*T, error) {
 	req := new(T)
 

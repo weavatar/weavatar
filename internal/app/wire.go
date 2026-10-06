@@ -42,3 +42,7 @@ var ApplicationModule = wire.New().
 var InitializeApp = ApplicationModule.Injector[func(string) (*App, func() error, error)]()
 
 var InitializeCLI = ApplicationModule.Injector[func() (*Cli, func() error, error)]()
+
+// InitializeUserCleanups builds the merged account-deletion cleanups, so a
+// test can assert that every module contributed its own.
+var InitializeUserCleanups = ApplicationModule.Injector[func() (registry.UserCleanups, func() error, error)]()

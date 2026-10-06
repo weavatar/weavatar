@@ -14,32 +14,6 @@ import (
 	"github.com/libtnb/assert/must"
 )
 
-//nolint:unparam // spelling out the range start keeps each test readable
-func buildTestTables(tb testing.TB, start, end uint64, partBits uint32) string {
-	tb.Helper()
-	dir := tb.TempDir()
-	err := Build(tb.Context(), BuildOptions{
-		Dir:      dir,
-		Start:    start,
-		End:      end,
-		PartBits: partBits,
-		Workers:  4,
-	})
-	must.NoError(tb, err)
-	return dir
-}
-
-func hashOf(typ, email string) string {
-	switch typ {
-	case TypeMD5:
-		sum := md5.Sum([]byte(email))
-		return hex.EncodeToString(sum[:])
-	default:
-		sum := sha256.Sum256([]byte(email))
-		return hex.EncodeToString(sum[:])
-	}
-}
-
 func TestBuildOpenLookup(t *testing.T) {
 	const start, end = uint64(MinQq), uint64(MinQq + 120_000 - 1)
 	dir := buildTestTables(t, start, end, DefaultPartBits)
@@ -292,6 +266,32 @@ func TestBuildOptions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			check.Error(t, Build(t.Context(), o))
 		})
+	}
+}
+
+//nolint:unparam // spelling out the range start keeps each test readable
+func buildTestTables(tb testing.TB, start, end uint64, partBits uint32) string {
+	tb.Helper()
+	dir := tb.TempDir()
+	err := Build(tb.Context(), BuildOptions{
+		Dir:      dir,
+		Start:    start,
+		End:      end,
+		PartBits: partBits,
+		Workers:  4,
+	})
+	must.NoError(tb, err)
+	return dir
+}
+
+func hashOf(typ, email string) string {
+	switch typ {
+	case TypeMD5:
+		sum := md5.Sum([]byte(email))
+		return hex.EncodeToString(sum[:])
+	default:
+		sum := sha256.Sum256([]byte(email))
+		return hex.EncodeToString(sum[:])
 	}
 }
 

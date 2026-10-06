@@ -9,10 +9,11 @@ import (
 	"github.com/libtnb/utils/str"
 	"github.com/samber/oops"
 
+	"github.com/weavatar/weavatar/internal/shared/apperr"
 	"github.com/weavatar/weavatar/internal/shared/appinfo"
 )
 
-// cooldown is the minimum gap between two codes for one target and purpose.
+// cooldown spaces two codes for the same purpose and target.
 const cooldown = time.Minute
 
 // SMSSender delivers a code by text message.
@@ -25,8 +26,8 @@ type MailSender interface {
 	Send(ctx context.Context, to, code string) error
 }
 
-// CodeUsecase stores codes under "code:<use_for>:<target>", where the
-// verify_code rule reads them.
+// CodeUsecase issues the codes the verify_code rule checks: the code for
+// purpose p and target t lives under cache key "code:<p>:<t>".
 type CodeUsecase struct {
 	cache  cache.Cache
 	sms    SMSSender
@@ -44,35 +45,31 @@ func NewCodeUsecase(c cache.Cache, sms SMSSender, mail MailSender, expire appinf
 }
 
 func (uc *CodeUsecase) SendSMS(ctx context.Context, phone, useFor string) error {
-	return uc.send(ctx, useFor, phone, uc.sms.Send)
+	return uc.send(ctx, phone, useFor, uc.sms.Send)
 }
 
 func (uc *CodeUsecase) SendEmail(ctx context.Context, email, useFor string) error {
-	return uc.send(ctx, useFor, email, uc.mail.Send)
+	return uc.send(ctx, email, useFor, uc.mail.Send)
 }
 
-func (uc *CodeUsecase) send(
-	ctx context.Context,
-	useFor, target string,
-	deliver func(ctx context.Context, target, code string) error,
-) error {
+func (uc *CodeUsecase) send(ctx context.Context, target, useFor string, deliver func(ctx context.Context, target, code string) error) error {
 	key := "code:" + useFor + ":" + target
-
-	// claiming the cooldown atomically keeps concurrent requests from both
-	// sending; it is released again if delivery fails
-	cdKey := key + ":cd"
-	if !uc.cache.Add(cdKey, 1, cooldown) {
-		return ErrTooFrequent()
+	cooldownKey := key + ":cd"
+	// Add claims the cooldown atomically, so concurrent requests send once;
+	// 422 rather than 400 because the frontend shows 422 as a toast
+	if !uc.cache.Add(cooldownKey, true, cooldown) {
+		return apperr.Unprocessable("verify_code.too_frequent", "请勿频繁发送验证码").
+			In("verifycode").Errorf("code %s is cooling down", useFor)
 	}
 
 	code := str.RandomN(6)
 	if err := uc.cache.Put(key, code, uc.expire); err != nil {
-		uc.cache.Forget(cdKey)
+		uc.cache.Forget(cooldownKey)
 		return oops.In("verifycode").Wrapf(err, "store code")
 	}
-
 	if err := deliver(ctx, target, code); err != nil {
-		uc.cache.Forget(cdKey)
+		// a failed delivery must not lock the user out of retrying
+		uc.cache.Forget(cooldownKey)
 		return err
 	}
 

@@ -2,17 +2,19 @@ name: Deploy Backend
 run-name: Deploy the API
 
 # Builds bin/app and bin/cli, uploads them over SSH, migrates, swaps the binaries, reloads the
-# Type=notify-reload unit without downtime and probes /healthz and /readyz. A failed reload or
-# probe rolls the binaries back; migrations stay, so they must be backward compatible.
+# Type=notify-reload unit for a zero-downtime handoff and probes /healthz and /readyz. A failed
+# reload or probe rolls the binaries back; migrations are not reverted, so keep them backward
+# compatible.
 #
-# Repository variables (optional) and secrets:
-#   vars    API_DIR         install directory, default /opt/ace/projects/weavatar
-#           API_PORT        local listen port, default 3100
-#           SERVICE_NAME    systemd unit, default weavatar
-#   secrets DEPLOY_HOST     SSH host
-#           DEPLOY_USER     root, or a user that can write API_DIR and run sudo -u www,
-#                           sudo chown, systemctl and journalctl without a password
-#           DEPLOY_SSH_KEY  private key for DEPLOY_USER
+# Repository variables:
+#   API_DIR         install directory, default /opt/ace/projects/weavatar
+#   API_PORT        local port of the app, default 3100
+#   SERVICE_NAME    systemd unit, default weavatar
+# Repository secrets:
+#   DEPLOY_HOST     SSH host
+#   DEPLOY_USER     root, or a user that can write API_DIR and run sudo -u www, sudo chown,
+#                   systemctl and journalctl without a password
+#   DEPLOY_SSH_KEY  private key for DEPLOY_USER
 #
 # The server needs rsync, curl, sha256sum, a www user, $API_DIR/config/config.yml,
 # $API_DIR/storage owned by www, and a unit running $API_DIR/app as www with
@@ -59,7 +61,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
+      - name: Setup Go
         uses: ./.github/actions/setup-go
         with:
           scope: build-amd64
@@ -76,10 +78,10 @@ jobs:
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          # Self-hosted runner images may lack rsync or ssh.
+          # self-hosted runner images may lack rsync or an SSH client
           if ! command -v rsync >/dev/null || ! command -v ssh >/dev/null; then
             SUDO=""
-            [ "$(id -u)" -eq 0 ] || SUDO=sudo
+            if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
             $SUDO apt-get update -qq
             $SUDO apt-get install -y -qq --no-install-recommends rsync openssh-client
           fi
@@ -102,7 +104,7 @@ jobs:
 
       - name: Upload
         run: |
-          # Seed app.new/cli.new from the running binaries so rsync only sends the delta.
+          # seed app.new and cli.new from the running binaries so rsync only sends the delta
           # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
           ssh deploy-target "set -e
             install -d '$API_DIR/config' '$API_DIR/scripts'
@@ -144,25 +146,28 @@ jobs:
             exit 1
           fi
 
-          # As www, so logs the CLI writes under storage/ stay owned by the service user.
+          # as www, so the logs the CLI writes under storage/ stay owned by the service user
           migrate() { sudo -u www env APP_CONFIG="$APP_CONFIG" ./cli.new migrate "$@"; }
           migrate status
           migrate plan
           migrate up
 
-          # Chown only what this deploy wrote; storage/ stays as server setup left it.
-          owned=(app cli VERSION config/config.example.yml)
           for f in app cli VERSION; do
-            if [ -f "$f" ]; then cp -f "$f" "$f.prev"; owned+=("$f.prev"); fi
+            if [ -f "$f" ]; then cp -f "$f" "$f.prev"; fi
           done
           mv -f app.new app
           mv -f cli.new cli
           printf '%s\n' "$APP_VERSION" > VERSION
+          # hand over only what this deploy wrote; storage/ belongs to www from server setup
+          owned=(app cli VERSION config/config.example.yml)
+          for f in app.prev cli.prev VERSION.prev; do
+            if [ -e "$f" ]; then owned+=("$f"); fi
+          done
           sudo chown -h www:www "${owned[@]}"
           sudo chown -R www:www scripts
 
-          # reload returns once the new binary reports ready, but it becomes MainPID only after
-          # the old one exits, so wait for the PID to move. A stopped unit is started instead.
+          # the reload returns once the new binary is ready, but it becomes the main PID only
+          # after the old one exits, so wait for the PID to move; a stopped unit is started
           old_pid="$(systemctl show -p MainPID --value "$SERVICE_NAME")"
           new_pid="$old_pid"
           if sudo systemctl reload-or-restart "$SERVICE_NAME"; then

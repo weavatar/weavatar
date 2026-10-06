@@ -1,6 +1,7 @@
 //go:build wireinject
 
-// Package avatar is the avatar module's assembly.
+// Package avatar is the avatar module's assembly: resolution and generation,
+// uploads, AI moderation, CDN purges, the cache cleanup job and the hash command.
 package avatar
 
 import (
@@ -9,13 +10,13 @@ import (
 	"github.com/weavatar/weavatar/internal/avatar/biz"
 	"github.com/weavatar/weavatar/internal/avatar/data"
 	"github.com/weavatar/weavatar/internal/avatar/service"
+	"github.com/weavatar/weavatar/internal/shared/database"
 	"github.com/weavatar/weavatar/internal/shared/registry"
 )
 
 var Module = wire.New().
 	Provide(data.NewAvatarRepo).
 	Provide(data.NewImageRepo).
-	Provide(data.NewTxRunner).
 	Provide(data.NewUsers).
 	Provide(data.NewStore).
 	Provide(data.NewFetcher).
@@ -23,6 +24,7 @@ var Module = wire.New().
 	Provide(data.NewGenerator).
 	Provide(data.NewPurger).
 	Provide(data.NewAuditor).
+	Bind[biz.Transactor, *database.Runner]().
 	Provide(biz.NewAvatarUsecase).
 	Provide(service.NewAvatarService).
 	Multibind[registry.Routes]().

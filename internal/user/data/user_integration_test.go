@@ -3,8 +3,12 @@
 package data_test
 
 import (
+	"context"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-rio/migrate"
 	"github.com/go-rio/postgres"
@@ -17,8 +21,8 @@ import (
 	"github.com/weavatar/weavatar/internal/user/data"
 )
 
-func TestIntegrationUserRepo_DeleteKeepsTheRow(t *testing.T) {
-	db := newTestDB(t)
+func TestIntegrationDeleteKeepsTheRow(t *testing.T) {
+	db := migratedFixture(t)
 	repo := data.NewUserRepo(db)
 	ctx := t.Context()
 	user := &biz.User{ID: "u1", OpenID: "open-1", UnionID: "union-1", Nickname: "alice", Avatar: "https://a/1.png", RealName: true}
@@ -43,23 +47,35 @@ func TestIntegrationUserRepo_DeleteKeepsTheRow(t *testing.T) {
 	must.NoError(t, repo.Create(ctx, &biz.User{ID: "u2", OpenID: "open-1", UnionID: "union-1", Nickname: "alice again"}))
 }
 
-// newTestDB migrates TEST_DATABASE_URL (PostgreSQL) and empties the users table.
-func newTestDB(t *testing.T) *rio.DB {
+// migratedFixture opens TEST_DATABASE_URL on a fresh schema with every migration applied.
+func migratedFixture(t *testing.T) *rio.DB {
 	t.Helper()
-
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
 		t.Skip("TEST_DATABASE_URL is not set")
 	}
-	db, err := postgres.Open(dsn)
+	admin, err := postgres.Open(dsn)
 	must.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	schema := "user_" + strconv.Itoa(os.Getpid()) + "_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	_, err = rio.Exec(t.Context(), admin, `CREATE SCHEMA "`+schema+`"`)
+	must.NoError(t, err)
+
+	parsed, err := url.Parse(dsn)
+	must.NoError(t, err)
+	query := parsed.Query()
+	query.Set("search_path", schema)
+	parsed.RawQuery = query.Encode()
+	db, err := postgres.Open(parsed.String())
+	must.NoError(t, err)
+	t.Cleanup(func() {
+		check.NoError(t, db.Close())
+		_, err := rio.Exec(context.Background(), admin, `DROP SCHEMA "`+schema+`" CASCADE`)
+		check.NoError(t, err)
+		check.NoError(t, admin.Close())
+	})
 
 	m, err := migrate.New(db.Unwrap(), migrate.Postgres, migrate.WithCollection(migrations.Collection()))
 	must.NoError(t, err)
 	must.NoError(t, m.Up(t.Context()))
-	_, err = rio.Exec(t.Context(), db, "TRUNCATE users")
-	must.NoError(t, err)
-
 	return db
 }

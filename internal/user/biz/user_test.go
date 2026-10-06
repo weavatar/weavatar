@@ -44,7 +44,7 @@ type fixture struct {
 	uc     *biz.UserUsecase
 }
 
-func TestUserUsecase_LoginURL(t *testing.T) {
+func TestLoginURLCarriesAFreshState(t *testing.T) {
 	f := newFixture()
 
 	raw, err := f.uc.LoginURL(t.Context())
@@ -67,7 +67,7 @@ func TestUserUsecase_LoginURL(t *testing.T) {
 	check.Equal(t, f.cache.ttls[state], 5*time.Minute)
 }
 
-func TestUserUsecase_Callback_StateExpired(t *testing.T) {
+func TestCallbackRejectsExpiredState(t *testing.T) {
 	f := newFixture()
 
 	_, err := f.uc.Callback(t.Context(), "code", "login-missing")
@@ -78,7 +78,7 @@ func TestUserUsecase_Callback_StateExpired(t *testing.T) {
 	check.Equal(t, oops.GetPublic(err, ""), "状态已过期")
 }
 
-func TestUserUsecase_Callback_RejectsForeignCacheKey(t *testing.T) {
+func TestCallbackRejectsForeignCacheKey(t *testing.T) {
 	f := newFixture()
 	must.NoError(t, f.cache.Put("code:avatar:a@b.c", "123456", time.Minute))
 
@@ -87,7 +87,7 @@ func TestUserUsecase_Callback_RejectsForeignCacheKey(t *testing.T) {
 	check.Equal(t, apperr.CodeOf(err), "user.state_expired")
 }
 
-func TestUserUsecase_Callback_StateIsSingleUse(t *testing.T) {
+func TestCallbackStateIsSingleUse(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	f.exchangeReturns(biz.Identity{UnionID: "union-1"})
@@ -104,7 +104,7 @@ func TestUserUsecase_Callback_StateIsSingleUse(t *testing.T) {
 	check.Len(t, f.oauth.ExchangeCalls(), 1)
 }
 
-func TestUserUsecase_Callback_FirstLoginCreatesUser(t *testing.T) {
+func TestCallbackCreatesUserOnFirstLogin(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	f.exchangeReturns(biz.Identity{OpenID: "open-1", UnionID: "union-1", Nickname: "alice", RealName: true})
@@ -137,7 +137,7 @@ func TestUserUsecase_Callback_FirstLoginCreatesUser(t *testing.T) {
 	check.Equal(t, issued[0].UserID, user.ID)
 }
 
-func TestUserUsecase_Callback_RealNameChangeIsSaved(t *testing.T) {
+func TestCallbackSavesRealNameChange(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	f.exchangeReturns(biz.Identity{OpenID: "open-1", UnionID: "union-1", RealName: true})
@@ -158,7 +158,7 @@ func TestUserUsecase_Callback_RealNameChangeIsSaved(t *testing.T) {
 	check.Equal(t, f.tokens.IssueCalls()[0].UserID, "u1")
 }
 
-func TestUserUsecase_Callback_UnchangedUserIsNotWritten(t *testing.T) {
+func TestCallbackLeavesUnchangedUserUnwritten(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	f.exchangeReturns(biz.Identity{UnionID: "union-1", RealName: true})
@@ -173,7 +173,7 @@ func TestUserUsecase_Callback_UnchangedUserIsNotWritten(t *testing.T) {
 	check.Equal(t, token, issuedToken)
 }
 
-func TestUserUsecase_Callback_LostFirstLoginRace(t *testing.T) {
+func TestCallbackUsesTheWinnerOfAFirstLoginRace(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	f.exchangeReturns(biz.Identity{UnionID: "union-1"})
@@ -197,7 +197,7 @@ func TestUserUsecase_Callback_LostFirstLoginRace(t *testing.T) {
 	check.Equal(t, f.tokens.IssueCalls()[0].UserID, "winner")
 }
 
-func TestUserUsecase_Callback_ExchangeFails(t *testing.T) {
+func TestCallbackPassesExchangeFailureThrough(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	boom := errors.New("oauth down")
@@ -211,7 +211,7 @@ func TestUserUsecase_Callback_ExchangeFails(t *testing.T) {
 	check.Equal(t, apperr.KindOf(err), apperr.Kind(""))
 }
 
-func TestUserUsecase_Callback_RepoFailureIsNotTreatedAsNewUser(t *testing.T) {
+func TestCallbackDoesNotTreatRepoFailureAsNewUser(t *testing.T) {
 	f := newFixture()
 	state := f.loginState(t)
 	boom := errors.New("db down")
@@ -223,7 +223,7 @@ func TestUserUsecase_Callback_RepoFailureIsNotTreatedAsNewUser(t *testing.T) {
 	must.ErrorIs(t, err, boom)
 }
 
-func TestUserUsecase_Get_NotFound(t *testing.T) {
+func TestGetUnknownUserIsNotFound(t *testing.T) {
 	f := newFixture()
 	f.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, notFound() }
 
@@ -232,7 +232,7 @@ func TestUserUsecase_Get_NotFound(t *testing.T) {
 	must.ErrorIs(t, err, rio.ErrNotFound)
 }
 
-func TestUserUsecase_Update(t *testing.T) {
+func TestUpdateKeepsFieldsTheUserCannotEdit(t *testing.T) {
 	f := newFixture()
 	created := time.Date(2024, 8, 16, 16, 25, 20, 0, time.UTC)
 	f.repo.FindFunc = func(_ context.Context, id string) (*biz.User, error) {
@@ -254,13 +254,27 @@ func TestUserUsecase_Update(t *testing.T) {
 	check.Equal(t, updated[0].User.CreatedAt, created)
 }
 
-func TestUserUsecase_Update_NotFound(t *testing.T) {
+func TestUpdateUnknownUserIsNotFound(t *testing.T) {
 	f := newFixture()
 	f.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, notFound() }
 
 	_, err := f.uc.Update(t.Context(), "nobody", "new", "https://a/2.png")
 
 	must.ErrorIs(t, err, rio.ErrNotFound)
+}
+
+func newFixture() *fixture {
+	f := &fixture{
+		repo:   &mocksbiz.UserRepo{},
+		oauth:  &mocksbiz.OAuthProvider{},
+		tokens: &mocksbiz.Tokens{},
+		cache:  &ttlCache{Cache: cache.NewCache(cache.WithCleanupInterval(0)), ttls: map[string]time.Duration{}},
+	}
+	f.uc = biz.NewUserUsecase(f.repo, f.oauth, f.tokens, f.cache,
+		appinfo.Domain("weavatar.com"),
+		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
+	)
+	return f
 }
 
 func (f *fixture) loginState(t *testing.T) string {
@@ -281,20 +295,6 @@ func (f *fixture) exchangeReturns(identity biz.Identity) {
 
 func (f *fixture) issueTokens() {
 	f.tokens.IssueFunc = func(string) (string, error) { return issuedToken, nil }
-}
-
-func newFixture() *fixture {
-	f := &fixture{
-		repo:   &mocksbiz.UserRepo{},
-		oauth:  &mocksbiz.OAuthProvider{},
-		tokens: &mocksbiz.Tokens{},
-		cache:  &ttlCache{Cache: cache.NewCache(cache.WithCleanupInterval(0)), ttls: map[string]time.Duration{}},
-	}
-	f.uc = biz.NewUserUsecase(f.repo, f.oauth, f.tokens, f.cache,
-		appinfo.Domain("weavatar.com"),
-		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
-	)
-	return f
 }
 
 // notFound wraps rio.ErrNotFound the way the data layer does.

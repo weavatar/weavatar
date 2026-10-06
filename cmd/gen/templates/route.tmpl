@@ -10,21 +10,23 @@ import (
 )
 
 func {{.Pascal}}Routes({{.Camel}} *{{.Pascal}}Service) transport.Endpoints {
+	tags := []string{"{{.Snake}}"}
+
 	return transport.Endpoints{
 		{Method: fiber.MethodGet, Path: "/{{.Route}}", Handler: {{.Camel}}.List,
-			Summary: "List {{.Table}}", Tags: []string{"{{.Snake}}"},
+			Summary: "List {{.Table}}", Tags: tags,
 			Document: transport.Describe[transport.Paginate, transport.Envelope[transport.Page[*biz.{{.Pascal}}]]](http.StatusOK)},
 		{Method: fiber.MethodPost, Path: "/{{.Route}}", Handler: {{.Camel}}.Create,
-			Summary: "Create a {{.Snake}}", Tags: []string{"{{.Snake}}"},
+			Summary: "Create a {{.Snake}}", Tags: tags,
 			Document: transport.Describe[{{.Pascal}}Add, transport.Envelope[biz.{{.Pascal}}]](http.StatusOK)},
 		{Method: fiber.MethodGet, Path: "/{{.Route}}/:id", Handler: {{.Camel}}.Get,
-			Summary: "Get a {{.Snake}}", Tags: []string{"{{.Snake}}"},
+			Summary: "Get a {{.Snake}}", Tags: tags,
 			Document: transport.Describe[{{.Pascal}}ID, transport.Envelope[biz.{{.Pascal}}]](http.StatusOK)},
 		{Method: fiber.MethodPut, Path: "/{{.Route}}/:id", Handler: {{.Camel}}.Update,
-			Summary: "Update a {{.Snake}}", Tags: []string{"{{.Snake}}"},
+			Summary: "Update a {{.Snake}}", Tags: tags,
 			Document: transport.Describe[{{.Pascal}}Update, transport.Envelope[biz.{{.Pascal}}]](http.StatusOK)},
 		{Method: fiber.MethodDelete, Path: "/{{.Route}}/:id", Handler: {{.Camel}}.Delete,
-			Summary: "Delete a {{.Snake}}", Tags: []string{"{{.Snake}}"},
+			Summary: "Delete a {{.Snake}}", Tags: tags,
 			Document: transport.DescribeNoBody[{{.Pascal}}ID](http.StatusOK)},
 	}
 }

@@ -30,6 +30,7 @@ type WithMessages interface {
 	Messages(c fiber.Ctx) map[string]string
 }
 
+// Prepare fills defaults before validation runs.
 func (r *Paginate) Prepare(c fiber.Ctx) error {
 	if r.Page == 0 {
 		r.Page = 1

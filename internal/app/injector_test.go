@@ -14,32 +14,8 @@ import (
 	"github.com/libtnb/assert/must"
 )
 
-// testConfig points APP_CONFIG at a copy of the example config whose side
-// effects land in a temp dir; the environment cannot override values.
-func testConfig(t *testing.T) {
-	t.Helper()
-	tmp := t.TempDir()
-
-	k := koanf.New(".")
-	must.NoError(t, k.Load(file.Provider("../../config/config.example.yml"), yaml.Parser()))
-	for key, value := range map[string]any{
-		"log.output": "file",
-		"log.path":   filepath.Join(tmp, "test.log"),
-		"hash.dir":   filepath.Join(tmp, "hash"),
-		"http.docs":  true,
-	} {
-		must.NoError(t, k.Set(key, value))
-	}
-	data, err := k.Marshal(yaml.Parser())
-	must.NoError(t, err)
-
-	path := filepath.Join(tmp, "config.yml")
-	must.NoError(t, os.WriteFile(path, data, 0o600))
-	t.Setenv("APP_CONFIG", path)
-}
-
-// TestGeneratedGraphs never contacts the database: the PostgreSQL handle
-// connects lazily and migrations are not run.
+// TestGeneratedGraphs needs no database: the PostgreSQL handle connects
+// lazily and migrations are not run.
 func TestGeneratedGraphs(t *testing.T) {
 	testConfig(t)
 
@@ -71,10 +47,40 @@ func TestGeneratedGraphs(t *testing.T) {
 	must.NoError(t, cleanupCLI(), "generated cleanup must be idempotent")
 }
 
-// TestUserCleanupsAreMerged reads wire_gen.go because a Multibind declared
-// inside the user module would silently inject an empty collection.
 func TestUserCleanupsAreMerged(t *testing.T) {
-	src, err := os.ReadFile("wire_gen.go")
+	testConfig(t)
+
+	cleanups, cleanup, err := InitializeUserCleanups()
 	must.NoError(t, err)
-	must.Contains(t, string(src), "make(registry.UserCleanups, 0, 1)")
+	names := make([]string, len(cleanups))
+	for i, c := range cleanups {
+		names[i] = c.Name
+		must.NotNil(t, c.Run, c.Name)
+	}
+	must.DeepEqual(t, names, []string{"avatar"})
+	must.NoError(t, cleanup())
+}
+
+// testConfig rewrites the example config so side effects land in a temp dir;
+// config values come from the file only, so the test edits the file.
+func testConfig(t *testing.T) {
+	t.Helper()
+	tmp := t.TempDir()
+
+	k := koanf.New(".")
+	must.NoError(t, k.Load(file.Provider("../../config/config.example.yml"), yaml.Parser()))
+	for key, value := range map[string]any{
+		"log.output": "file",
+		"log.path":   filepath.Join(tmp, "test.log"),
+		"hash.dir":   filepath.Join(tmp, "hash"),
+		"http.docs":  true,
+	} {
+		must.NoError(t, k.Set(key, value))
+	}
+	data, err := k.Marshal(yaml.Parser())
+	must.NoError(t, err)
+
+	path := filepath.Join(tmp, "config.yml")
+	must.NoError(t, os.WriteFile(path, data, 0o600))
+	t.Setenv("APP_CONFIG", path)
 }

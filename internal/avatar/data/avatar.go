@@ -1,3 +1,4 @@
+// Package data implements the avatar module's ports.
 package data
 
 import (
@@ -35,12 +36,12 @@ func (r *avatarRepo) List(ctx context.Context, userID string, page, limit int) (
 	q := database.Q(ctx, r.db)
 	total, err := avatarsByUser.Count(ctx, q, userID)
 	if err != nil {
-		return nil, 0, wrap(err, "count avatars of %s", userID)
+		return nil, 0, wrap(err, "count avatars of user %s", userID)
 	}
 
 	list, err := orderedAvatarsByUser.Offset((page-1)*limit).Limit(limit).All(ctx, q, userID)
 	if err != nil {
-		return nil, 0, wrap(err, "list avatars of %s", userID)
+		return nil, 0, wrap(err, "list avatars of user %s", userID)
 	}
 	return pointers(list), total, nil
 }
@@ -48,7 +49,7 @@ func (r *avatarRepo) List(ctx context.Context, userID string, page, limit int) (
 func (r *avatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.Avatar, error) {
 	list, err := avatarsByUser.All(ctx, database.Q(ctx, r.db), userID)
 	if err != nil {
-		return nil, wrap(err, "list all avatars of %s", userID)
+		return nil, wrap(err, "list all avatars of user %s", userID)
 	}
 	return pointers(list), nil
 }
@@ -56,7 +57,7 @@ func (r *avatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.A
 func (r *avatarRepo) Find(ctx context.Context, userID, hash string) (*biz.Avatar, error) {
 	avatar, err := userAvatarByHash.First(ctx, database.Q(ctx, r.db), hash, hash, userID)
 	if err != nil {
-		return nil, wrap(err, "find avatar %s of %s", hash, userID)
+		return nil, wrap(err, "find avatar %s of user %s", hash, userID)
 	}
 	return avatar, nil
 }

@@ -6,10 +6,12 @@ on:
     paths:
       - web/**
       - .github/workflows/web.yml
+      - .github/actions/setup-web/**
   pull_request:
     paths:
       - web/**
       - .github/workflows/web.yml
+      - .github/actions/setup-web/**
 
 permissions:
   contents: read
@@ -30,29 +32,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: web/package.json
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Setup web
+        uses: ./.github/actions/setup-web
 
       - name: Lint
-        # pnpm lint runs eslint --fix; fail if it rewrote committed files.
+        # the lint script runs eslint --fix, so fail when it rewrote committed files
         run: |
           pnpm lint
           git diff --exit-code -- .
 
       - name: Type-check
         run: pnpm type-check
+
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup web
+        uses: ./.github/actions/setup-web
+
+      - name: Test
+        run: pnpm test:unit --run
 
   build:
     name: production build
@@ -61,23 +64,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: web/package.json
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Setup web
+        uses: ./.github/actions/setup-web
 
       - name: Build
         run: pnpm build-only
 
       - name: Check version.json
-        run: jq -e --arg hash "$(git rev-parse --short HEAD)" '.hash == $hash' dist/version.json
+        # the deploy smoke test relies on vite.config.ts writing the git short hash
+        run: node -e 'const v = require("./dist/version.json"); if (v.hash !== process.argv[1]) { console.error("version.json hash mismatch:", v.hash); process.exit(1) }' "$(git rev-parse --short HEAD)"

@@ -21,16 +21,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
+      - name: Setup Go
         uses: ./.github/actions/setup-go
         with:
           scope: test
 
-      - name: Verify Wire output
-        run: go tool wire check ./...
+      - name: Check Wire output
+        run: make wire-check
 
-      - name: Run tests
-        run: go test -v -race -coverprofile="coverage.out" ./...
+      - name: Test
+        run: make test
 
-      - name: Verify generator output
+      - name: Check generator output
         run: make gen-check

@@ -17,7 +17,7 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/apperr"
 )
 
-func TestCreate_StoresAndQueuesPurgeOfBothURLs(t *testing.T) {
+func TestCreateStoresAndQueuesPurgeOfBothURLs(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.CreateFunc = func(context.Context, *biz.Avatar) error { return nil }
 	d.store.WriteAvatarFunc = func(string, []byte) error { return nil }
@@ -48,7 +48,7 @@ func TestCreate_StoresAndQueuesPurgeOfBothURLs(t *testing.T) {
 	})
 }
 
-func TestCreate_ShrinksLargeUploads(t *testing.T) {
+func TestCreateShrinksLargeUploads(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.CreateFunc = func(context.Context, *biz.Avatar) error { return nil }
 	d.store.WriteAvatarFunc = func(string, []byte) error { return nil }
@@ -59,7 +59,7 @@ func TestCreate_ShrinksLargeUploads(t *testing.T) {
 	check.Equal(t, sizeOf(t, d.store.WriteAvatarCalls()[0].Img), 2048)
 }
 
-func TestCreate_RejectsBadImages(t *testing.T) {
+func TestCreateRejectsBadImages(t *testing.T) {
 	var wide bytes.Buffer
 	must.NoError(t, png.Encode(&wide, image.NewRGBA(image.Rect(0, 0, 100, 50))))
 
@@ -84,7 +84,7 @@ func TestCreate_RejectsBadImages(t *testing.T) {
 	}
 }
 
-func TestCreate_TakenRawMapsToConflict(t *testing.T) {
+func TestCreateMapsTakenRawToConflict(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.CreateFunc = func(context.Context, *biz.Avatar) error { return biz.ErrAvatarExists }
 
@@ -95,7 +95,7 @@ func TestCreate_TakenRawMapsToConflict(t *testing.T) {
 	check.Equal(t, d.queue.Len(), 0)
 }
 
-func TestUpdate_TouchesAndReplacesImage(t *testing.T) {
+func TestUpdateTouchesAndReplacesImage(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: sha256Hash, MD5: md5Hash, UserID: "u1"}, nil
@@ -115,7 +115,7 @@ func TestUpdate_TouchesAndReplacesImage(t *testing.T) {
 	check.Equal(t, d.queue.Len(), 1)
 }
 
-func TestUpdate_OthersAvatarIsNotFound(t *testing.T) {
+func TestUpdateOfAnotherUsersAvatarIsNotFound(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) { return nil, rio.ErrNotFound }
 
@@ -124,7 +124,7 @@ func TestUpdate_OthersAvatarIsNotFound(t *testing.T) {
 	must.ErrorIs(t, err, rio.ErrNotFound)
 }
 
-func TestDelete_RemovesRowAndFile(t *testing.T) {
+func TestDeleteRemovesRowAndFile(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: sha256Hash, MD5: md5Hash, UserID: "u1"}, nil
@@ -140,7 +140,7 @@ func TestDelete_RemovesRowAndFile(t *testing.T) {
 	check.Equal(t, d.queue.Len(), 1)
 }
 
-func TestDeleteByUser_RemovesEveryAvatarAndPurgesAllURLs(t *testing.T) {
+func TestDeleteByUserRemovesEveryAvatarAndPurgesAllURLs(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.ListAllByUserFunc = func(_ context.Context, userID string) ([]*biz.Avatar, error) {
 		check.Equal(t, userID, "u1")
@@ -179,7 +179,7 @@ func TestDeleteByUser_RemovesEveryAvatarAndPurgesAllURLs(t *testing.T) {
 	})
 }
 
-func TestDeleteByUser_NothingToDelete(t *testing.T) {
+func TestDeleteByUserWithoutAvatarsTouchesNothing(t *testing.T) {
 	uc, d := newUsecase(t) // tx and store funcs stay nil: nothing may be touched
 	d.repo.ListAllByUserFunc = func(context.Context, string) ([]*biz.Avatar, error) { return nil, nil }
 
@@ -189,7 +189,7 @@ func TestDeleteByUser_NothingToDelete(t *testing.T) {
 	check.Equal(t, d.queue.Len(), 0)
 }
 
-func TestDeleteByUser_FailureSkipsPurge(t *testing.T) {
+func TestDeleteByUserFailureSkipsPurge(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.ListAllByUserFunc = func(context.Context, string) ([]*biz.Avatar, error) {
 		return []*biz.Avatar{{SHA256: sha256Hash, MD5: md5Hash, UserID: "u1"}}, nil
@@ -217,7 +217,7 @@ func TestBound(t *testing.T) {
 	check.False(t, bound)
 }
 
-func TestAudit_RecordsVerdictAndPurgesBanned(t *testing.T) {
+func TestAuditRecordsVerdictAndPurgesBanned(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.noCache()
@@ -240,7 +240,7 @@ func TestAudit_RecordsVerdictAndPurgesBanned(t *testing.T) {
 	check.DeepEqual(t, d.purger.RefreshCalls()[0].Urls, []string{"https://weavatar.com/avatar/" + md5Hash})
 }
 
-func TestAudit_ReusesRecordedVerdict(t *testing.T) {
+func TestAuditReusesRecordedVerdict(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: sha256Hash}, nil
@@ -255,7 +255,7 @@ func TestAudit_ReusesRecordedVerdict(t *testing.T) {
 	check.Len(t, d.purger.RefreshCalls(), 0)
 }
 
-func TestAudit_ChecksTheAppOverride(t *testing.T) {
+func TestAuditChecksTheAppOverride(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		avatar := &biz.Avatar{SHA256: sha256Hash}

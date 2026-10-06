@@ -22,15 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
+      - name: Setup Go
         uses: ./.github/actions/setup-go
         with:
           scope: lint
 
-      - name: Run golangci-lint
+      - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          # build with the job's Go so the linter understands the go.mod version
+          # built with the job's Go so it understands the go.mod version
           install-mode: goinstall
           version: latest
           args: --timeout=30m ./...
@@ -41,13 +41,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
+      - name: Setup Go
         uses: ./.github/actions/setup-go
         with:
           scope: vuln
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run govulncheck
-        run: govulncheck ./...
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...

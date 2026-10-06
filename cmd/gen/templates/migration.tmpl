@@ -3,18 +3,31 @@ package migrations
 import "github.com/go-rio/migrate"
 
 func init() {
-	collection.Add("{{.Name}}", func(s *migrate.Schema) {
+	collection.Add("{{.Name}}", {{.Up}},
+		migrate.WithDown({{.Down}}))
+}
+
+func {{.Up}}(schema *migrate.Schema) {
 {{- if .Create}}
-		s.Create("{{.Table}}", func(t *migrate.Table) {
-			t.ID()
-			t.Timestamps()
-			t.SoftDeletes()
-			t.String("name")
-		})
-{{- else}}
-		s.Table("{{.Table}}", func(t *migrate.Table) {
-			// declare the change, e.g. t.String("email").Nullable()
-		})
-{{- end}}
+	schema.Create("{{.Table}}", func(table *migrate.Table) {
+		table.ID()
+		table.Timestamps()
+		table.SoftDeletes()
+		table.String("name")
 	})
+{{- else}}
+	schema.Table("{{.Table}}", func(table *migrate.Table) {
+		// declare the change, e.g. table.String("email").Nullable()
+	})
+{{- end}}
+}
+
+func {{.Down}}(schema *migrate.Schema) {
+{{- if .Create}}
+	schema.DropIfExists("{{.Table}}")
+{{- else}}
+	schema.Table("{{.Table}}", func(table *migrate.Table) {
+		// revert the change, e.g. table.DropColumn("email")
+	})
+{{- end}}
 }

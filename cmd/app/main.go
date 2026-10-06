@@ -14,7 +14,7 @@ import (
 	"github.com/weavatar/weavatar/internal/app"
 )
 
-// version is set at build time with -ldflags "-X main.version=v1.2.3".
+// version is injected at build time: -ldflags "-X main.version=v1.2.3".
 var version = "dev"
 
 // Errors go to stderr: the app logger's writer is already closed here.

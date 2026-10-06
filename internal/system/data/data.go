@@ -1,4 +1,4 @@
-// Package data adapts the system module's ports.
+// Package data implements the system module's ports.
 package data
 
 import (

@@ -16,27 +16,10 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/transport"
 )
 
-func testConfig() *conf.Config {
-	return &conf.Config{
-		App:  conf.App{Name: "WeAvatar"},
-		HTTP: conf.HTTP{Domain: "weavatar.test", BodyLimit: 4096, HeaderLimit: 4096},
-	}
-}
-
 type response struct {
 	status int
 	header http.Header
 	body   string
-}
-
-func send(t *testing.T, app *fiber.App, req *http.Request) response {
-	t.Helper()
-	resp, err := app.Test(req)
-	must.NoError(t, err)
-	body, err := io.ReadAll(resp.Body)
-	must.NoError(t, err)
-	must.NoError(t, resp.Body.Close())
-	return response{status: resp.StatusCode, header: resp.Header, body: string(body)}
 }
 
 func TestEndpointMiddlewaresRunBeforeHandler(t *testing.T) {
@@ -180,6 +163,23 @@ func TestClientIPFollowsTheProxyHeader(t *testing.T) {
 			must.Equal(t, clientIP(t, tc.proxyHeader, tc.realIP), tc.want)
 		})
 	}
+}
+
+func testConfig() *conf.Config {
+	return &conf.Config{
+		App:  conf.App{Name: "WeAvatar"},
+		HTTP: conf.HTTP{Domain: "weavatar.test", BodyLimit: 4096, HeaderLimit: 4096},
+	}
+}
+
+func send(t *testing.T, app *fiber.App, req *http.Request) response {
+	t.Helper()
+	resp, err := app.Test(req)
+	must.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	must.NoError(t, err)
+	must.NoError(t, resp.Body.Close())
+	return response{status: resp.StatusCode, header: resp.Header, body: string(body)}
 }
 
 // clientIP serves c.IP() on a loopback listener, so the peer is 127.0.0.1,

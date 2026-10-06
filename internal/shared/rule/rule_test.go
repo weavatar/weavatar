@@ -14,35 +14,22 @@ import (
 	"github.com/weavatar/weavatar/pkg/geetest"
 )
 
-func newValidator(t *testing.T, c cache.Cache, verifier rule.Verifier, skip bool) *validator.Validator {
-	t.Helper()
-	opts := rule.Options(nil, c, verifier, skip)
-	opts = append(opts, validator.WithTranslation(translations.ZhHans()))
-	v, err := validator.New(opts...)
-	must.NoError(t, err)
-	return v
-}
-
-// validate runs rules over data and returns the first message, "" on success.
-func validate(t *testing.T, v *validator.Validator, data map[string]any, rules map[string]string) (string, error) {
-	t.Helper()
-	vd, err := v.Map(data, rules)
-	must.NoError(t, err)
-	err = vd.Validate(t.Context())
-	if err == nil {
-		return "", nil
-	}
-	if fields, ok := validator.AsErrors(err); ok {
-		return fields.One(), nil
-	}
-	return "", err
-}
-
 type allRules struct {
 	Login      string         `json:"login" validate:"required && exists:users,phone,email"`
 	NewPhone   string         `json:"new_phone" validate:"required && cn_mobile && not_exists:users,phone"`
 	VerifyCode string         `json:"verify_code" validate:"required && verify_code:new_phone,update_phone,true"`
 	Captcha    geetest.Ticket `json:"captcha" validate:"required && geetest"`
+}
+
+type fakeVerifier struct {
+	passed bool
+	err    error
+	calls  int
+}
+
+func (f *fakeVerifier) Verify(context.Context, geetest.Ticket) (bool, error) {
+	f.calls++
+	return f.passed, f.err
 }
 
 func TestOptionsCompileEveryRule(t *testing.T) {
@@ -115,17 +102,6 @@ func TestVerifyCodeWithoutCacheFails(t *testing.T) {
 		map[string]string{"verify_code": "verify_code:login,login"})
 	must.NoError(t, err)
 	must.Equal(t, msg, "verify_code 验证码错误")
-}
-
-type fakeVerifier struct {
-	passed bool
-	err    error
-	calls  int
-}
-
-func (f *fakeVerifier) Verify(context.Context, geetest.Ticket) (bool, error) {
-	f.calls++
-	return f.passed, f.err
 }
 
 func TestGeetest(t *testing.T) {
@@ -230,4 +206,28 @@ func TestVerifyCodeCheckArgs(t *testing.T) {
 			must.Error(t, err, must.Msgf("%s", expr))
 		}
 	}
+}
+
+func newValidator(t *testing.T, c cache.Cache, verifier rule.Verifier, skip bool) *validator.Validator {
+	t.Helper()
+	opts := rule.Options(nil, c, verifier, skip)
+	opts = append(opts, validator.WithTranslation(translations.ZhHans()))
+	v, err := validator.New(opts...)
+	must.NoError(t, err)
+	return v
+}
+
+// validate runs rules over data and returns the first message, "" on success.
+func validate(t *testing.T, v *validator.Validator, data map[string]any, rules map[string]string) (string, error) {
+	t.Helper()
+	vd, err := v.Map(data, rules)
+	must.NoError(t, err)
+	err = vd.Validate(t.Context())
+	if err == nil {
+		return "", nil
+	}
+	if fields, ok := validator.AsErrors(err); ok {
+		return fields.One(), nil
+	}
+	return "", err
 }

@@ -1,11 +1,13 @@
 //go:build wireinject
 
-// Package user is the user module's assembly.
+// Package user is the user module's assembly: OAuth sign-in against the
+// account server, profile and account deletion.
 package user
 
 import (
 	"github.com/libtnb/wire"
 
+	"github.com/weavatar/weavatar/internal/shared/database"
 	"github.com/weavatar/weavatar/internal/shared/registry"
 	"github.com/weavatar/weavatar/internal/user/biz"
 	"github.com/weavatar/weavatar/internal/user/data"
@@ -16,7 +18,7 @@ var Module = wire.New().
 	Provide(data.NewUserRepo).
 	Provide(data.NewOAuthProvider).
 	Provide(data.NewTokens).
-	Provide(data.NewTxRunner).
+	Bind[biz.Transactor, *database.Runner]().
 	Provide(biz.NewUserUsecase).
 	Provide(biz.NewDeletionUsecase).
 	Provide(service.NewUserService).

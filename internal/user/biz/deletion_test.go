@@ -21,20 +21,19 @@ import (
 	"github.com/weavatar/weavatar/internal/user/biz"
 )
 
-// txMarker tags the ctx the mocked TxRunner hands out, so a test can tell
-// whether a call joined the transaction.
-type txMarker struct{}
+// inTx marks the ctx the fake Transactor hands to the work it runs.
+type inTx struct{}
 
 type deletionFixture struct {
 	repo    *mocksbiz.UserRepo
 	oauth   *mocksbiz.OAuthProvider
-	tx      *mocksbiz.TxRunner
+	tx      *mocksbiz.Transactor
 	cache   *ttlCache
 	cleaned []string // userIDs the cleanups received, in order
 	uc      *biz.DeletionUsecase
 }
 
-func TestDeletionUsecase_DeletionURL(t *testing.T) {
+func TestDeletionURLCarriesAUserBoundState(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 
 	raw, err := f.uc.DeletionURL(t.Context(), "u1")
@@ -56,7 +55,7 @@ func TestDeletionUsecase_DeletionURL(t *testing.T) {
 	check.Equal(t, f.cache.ttls[state], 5*time.Minute)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_StateExpired(t *testing.T) {
+func TestConfirmDeletionRejectsExpiredState(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 
 	err := f.uc.ConfirmDeletion(t.Context(), "u1", "code", "delete-missing")
@@ -67,7 +66,7 @@ func TestDeletionUsecase_ConfirmDeletion_StateExpired(t *testing.T) {
 	check.Len(t, f.oauth.ExchangeCalls(), 0)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_RejectsLoginState(t *testing.T) {
+func TestConfirmDeletionRejectsLoginState(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	must.NoError(t, f.cache.Put("login-abc", true, time.Minute))
 
@@ -77,7 +76,7 @@ func TestDeletionUsecase_ConfirmDeletion_RejectsLoginState(t *testing.T) {
 	check.True(t, f.cache.Has("login-abc")) // another feature's state is left alone
 }
 
-func TestDeletionUsecase_ConfirmDeletion_RejectsAnotherUsersState(t *testing.T) {
+func TestConfirmDeletionRejectsAnotherUsersState(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	state := f.deletionState(t)
 
@@ -87,7 +86,7 @@ func TestDeletionUsecase_ConfirmDeletion_RejectsAnotherUsersState(t *testing.T) 
 	check.Len(t, f.oauth.ExchangeCalls(), 0)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_StateIsSingleUse(t *testing.T) {
+func TestConfirmDeletionStateIsSingleUse(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	state := f.deletionState(t)
 	f.findReturns(&biz.User{ID: "u1", UnionID: "union-1"})
@@ -101,7 +100,7 @@ func TestDeletionUsecase_ConfirmDeletion_StateIsSingleUse(t *testing.T) {
 	check.Len(t, f.oauth.ExchangeCalls(), 1)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_UnknownUser(t *testing.T) {
+func TestConfirmDeletionOfUnknownUserIsNotFound(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	state := f.deletionState(t)
 	f.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, notFound() }
@@ -112,7 +111,7 @@ func TestDeletionUsecase_ConfirmDeletion_UnknownUser(t *testing.T) {
 	check.Len(t, f.oauth.ExchangeCalls(), 0)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_IdentityMismatch(t *testing.T) {
+func TestConfirmDeletionRejectsAnotherIdentity(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	state := f.deletionState(t)
 	f.findReturns(&biz.User{ID: "u1", UnionID: "union-1"})
@@ -132,7 +131,7 @@ func TestDeletionUsecase_ConfirmDeletion_IdentityMismatch(t *testing.T) {
 	check.Len(t, f.cleaned, 0)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_CleanupFailureRollsBack(t *testing.T) {
+func TestConfirmDeletionRollsBackWhenACleanupFails(t *testing.T) {
 	boom := errors.New("avatar store down")
 	f := newDeletionFixture(t, []registry.UserCleanup{
 		{Name: "avatar", Run: func(context.Context, string) error { return boom }},
@@ -154,14 +153,14 @@ func TestDeletionUsecase_ConfirmDeletion_CleanupFailureRollsBack(t *testing.T) {
 	check.Len(t, f.repo.DeleteCalls(), 0)
 }
 
-func TestDeletionUsecase_ConfirmDeletion_RunsCleanupsThenSoftDeletes(t *testing.T) {
+func TestConfirmDeletionRunsCleanupsThenSoftDeletes(t *testing.T) {
 	f := newDeletionFixture(t, nil)
 	state := f.deletionState(t)
 	found := &biz.User{ID: "u1", UnionID: "union-1", Nickname: "alice", RealName: true}
 	f.findReturns(found)
 	f.exchangeReturns(biz.Identity{UnionID: "union-1"})
 	f.repo.DeleteFunc = func(ctx context.Context, _ *biz.User) error {
-		check.True(t, ctx.Value(txMarker{}) == true, "delete must join the transaction")
+		check.True(t, ctx.Value(inTx{}) == true, "delete must join the transaction")
 		check.DeepEqual(t, f.cleaned, []string{"u1", "u1"}) // cleanups ran first
 		return nil
 	}
@@ -175,6 +174,34 @@ func TestDeletionUsecase_ConfirmDeletion_RunsCleanupsThenSoftDeletes(t *testing.
 	check.True(t, deleted[0].User == found)
 	check.Equal(t, deleted[0].User.Nickname, "alice")
 	check.True(t, deleted[0].User.RealName)
+}
+
+// newDeletionFixture defaults cleanups to two recorders that require the
+// transaction ctx.
+func newDeletionFixture(t *testing.T, cleanups registry.UserCleanups) *deletionFixture {
+	t.Helper()
+
+	f := &deletionFixture{
+		repo:  &mocksbiz.UserRepo{},
+		oauth: &mocksbiz.OAuthProvider{},
+		tx: &mocksbiz.Transactor{RunFunc: func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(context.WithValue(ctx, inTx{}, true))
+		}},
+		cache: &ttlCache{Cache: cache.NewCache(cache.WithCleanupInterval(0)), ttls: map[string]time.Duration{}},
+	}
+	if cleanups == nil {
+		record := func(ctx context.Context, userID string) error {
+			check.True(t, ctx.Value(inTx{}) == true, "cleanup must join the transaction")
+			f.cleaned = append(f.cleaned, userID)
+			return nil
+		}
+		cleanups = registry.UserCleanups{{Name: "first", Run: record}, {Name: "second", Run: record}}
+	}
+	f.uc = biz.NewDeletionUsecase(f.repo, f.oauth, f.cache, f.tx, cleanups,
+		appinfo.Domain("weavatar.com"),
+		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
+	)
+	return f
 }
 
 // deletionState starts a deletion for u1 and returns its state.
@@ -196,32 +223,4 @@ func (f *deletionFixture) exchangeReturns(identity biz.Identity) {
 	f.oauth.ExchangeFunc = func(context.Context, string, string) (biz.Identity, error) {
 		return identity, nil
 	}
-}
-
-// newDeletionFixture defaults cleanups to two recorders that require the
-// transaction ctx.
-func newDeletionFixture(t *testing.T, cleanups registry.UserCleanups) *deletionFixture {
-	t.Helper()
-
-	f := &deletionFixture{
-		repo:  &mocksbiz.UserRepo{},
-		oauth: &mocksbiz.OAuthProvider{},
-		tx: &mocksbiz.TxRunner{RunFunc: func(ctx context.Context, fn func(context.Context) error) error {
-			return fn(context.WithValue(ctx, txMarker{}, true))
-		}},
-		cache: &ttlCache{Cache: cache.NewCache(cache.WithCleanupInterval(0)), ttls: map[string]time.Duration{}},
-	}
-	if cleanups == nil {
-		record := func(ctx context.Context, userID string) error {
-			check.True(t, ctx.Value(txMarker{}) == true, "cleanup must join the transaction")
-			f.cleaned = append(f.cleaned, userID)
-			return nil
-		}
-		cleanups = registry.UserCleanups{{Name: "first", Run: record}, {Name: "second", Run: record}}
-	}
-	f.uc = biz.NewDeletionUsecase(f.repo, f.oauth, f.cache, f.tx, cleanups,
-		appinfo.Domain("weavatar.com"),
-		appinfo.OAuthClient{BaseURL: "https://account.haozi.net", ClientID: "client-1"},
-	)
-	return f
 }

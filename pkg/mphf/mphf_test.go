@@ -11,53 +11,6 @@ import (
 	"github.com/libtnb/assert/must"
 )
 
-func randomKeys(tb testing.TB, n, keySize int, seed uint64) []byte {
-	tb.Helper()
-	r := rand.New(rand.NewPCG(seed, seed^0xABCDEF))
-	keys := make([]byte, n*keySize)
-	for i := range n {
-		key := keys[i*keySize : (i+1)*keySize]
-		for j := 0; j+8 <= keySize; j += 8 {
-			binary.LittleEndian.PutUint64(key[j:], r.Uint64())
-		}
-		for j := keySize &^ 7; j < keySize; j++ {
-			key[j] = byte(r.Uint32())
-		}
-	}
-	return keys
-}
-
-// digestKeys mimics production keys with MD5 digests of consecutive integers.
-func digestKeys(n int) []byte {
-	keys := make([]byte, n*md5.Size)
-	var buf [8]byte
-	for i := range n {
-		binary.LittleEndian.PutUint64(buf[:], uint64(i))
-		sum := md5.Sum(buf[:])
-		copy(keys[i*md5.Size:], sum[:])
-	}
-	return keys
-}
-
-func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int, slots []uint32) {
-	t.Helper()
-	n := len(keys) / keySize
-	must.Equal(t, m.KeyCount(), uint64(n))
-
-	seen := make([]bool, n)
-	for i := range n {
-		key := keys[i*keySize : (i+1)*keySize]
-		slot, ok := m.Find(key)
-		must.True(t, ok, must.Msgf("key %d not found", i))
-		must.Less(t, slot, uint64(n), must.Msgf("key %d slot out of range", i))
-		must.False(t, seen[slot], must.Msgf("key %d collides at slot %d", i, slot))
-		seen[slot] = true
-		if slots != nil {
-			must.Equal(t, uint64(slots[i]), slot, must.Msgf("key %d: Build slot differs from Find", i))
-		}
-	}
-}
-
 func TestBuildFind(t *testing.T) {
 	const n, keySize = 200_000, 16
 	keys := randomKeys(t, n, keySize, 1)
@@ -235,6 +188,53 @@ func TestSeedRetry(t *testing.T) {
 	m, slots, err := Build(keys, 16, Options{MaxLevels: 64, Seed: 42})
 	must.NoError(t, err)
 	assertBijection(t, m, keys, 16, slots)
+}
+
+func randomKeys(tb testing.TB, n, keySize int, seed uint64) []byte {
+	tb.Helper()
+	r := rand.New(rand.NewPCG(seed, seed^0xABCDEF))
+	keys := make([]byte, n*keySize)
+	for i := range n {
+		key := keys[i*keySize : (i+1)*keySize]
+		for j := 0; j+8 <= keySize; j += 8 {
+			binary.LittleEndian.PutUint64(key[j:], r.Uint64())
+		}
+		for j := keySize &^ 7; j < keySize; j++ {
+			key[j] = byte(r.Uint32())
+		}
+	}
+	return keys
+}
+
+// digestKeys mimics production keys with MD5 digests of consecutive integers.
+func digestKeys(n int) []byte {
+	keys := make([]byte, n*md5.Size)
+	var buf [8]byte
+	for i := range n {
+		binary.LittleEndian.PutUint64(buf[:], uint64(i))
+		sum := md5.Sum(buf[:])
+		copy(keys[i*md5.Size:], sum[:])
+	}
+	return keys
+}
+
+func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int, slots []uint32) {
+	t.Helper()
+	n := len(keys) / keySize
+	must.Equal(t, m.KeyCount(), uint64(n))
+
+	seen := make([]bool, n)
+	for i := range n {
+		key := keys[i*keySize : (i+1)*keySize]
+		slot, ok := m.Find(key)
+		must.True(t, ok, must.Msgf("key %d not found", i))
+		must.Less(t, slot, uint64(n), must.Msgf("key %d slot out of range", i))
+		must.False(t, seen[slot], must.Msgf("key %d collides at slot %d", i, slot))
+		seen[slot] = true
+		if slots != nil {
+			must.Equal(t, uint64(slots[i]), slot, must.Msgf("key %d: Build slot differs from Find", i))
+		}
+	}
 }
 
 func BenchmarkFind(b *testing.B) {

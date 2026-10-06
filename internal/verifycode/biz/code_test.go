@@ -41,7 +41,7 @@ func (c *ttlCache) Add(key string, value any, ttl time.Duration) bool {
 	return added
 }
 
-func TestCodeUsecase_SendSMS(t *testing.T) {
+func TestSendSMSStoresAndDeliversASixDigitCode(t *testing.T) {
 	uc, sms, _, c := newUsecase()
 	sms.SendFunc = okSender
 
@@ -57,7 +57,7 @@ func TestCodeUsecase_SendSMS(t *testing.T) {
 	check.Equal(t, c.ttls["code:avatar:13800138000:cd"], time.Minute)
 }
 
-func TestCodeUsecase_SendEmail(t *testing.T) {
+func TestSendEmailDeliversByMail(t *testing.T) {
 	uc, _, mail, c := newUsecase()
 	mail.SendFunc = okSender
 
@@ -69,7 +69,7 @@ func TestCodeUsecase_SendEmail(t *testing.T) {
 	check.Equal(t, c.GetString("code:avatar:a@weavatar.com"), sent[0].Code)
 }
 
-func TestCodeUsecase_Cooldown(t *testing.T) {
+func TestSendRefusesAgainWithinCooldown(t *testing.T) {
 	uc, sms, _, _ := newUsecase()
 	sms.SendFunc = okSender
 	must.NoError(t, uc.SendSMS(t.Context(), "13800138000", "avatar"))
@@ -87,7 +87,7 @@ func TestCodeUsecase_Cooldown(t *testing.T) {
 	must.NoError(t, uc.SendSMS(t.Context(), "13800138000", "other"))
 }
 
-func TestCodeUsecase_FailedDeliveryReleasesCooldown(t *testing.T) {
+func TestSendFailureLeavesNoCooldown(t *testing.T) {
 	uc, sms, _, _ := newUsecase()
 	boom := errors.New("gateway down")
 	sms.SendFunc = func(context.Context, string, string) error { return boom }

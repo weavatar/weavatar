@@ -21,8 +21,8 @@ func NewMigrate(db *rio.DB, c *migrate.Collection, log *slog.Logger) (*migrate.M
 	)
 }
 
-// MigrateCommand is the "migrate" CLI command, where bare "migrate" runs "up";
-// output goes to the root command's Writer.
+// MigrateCommand is the "migrate" CLI command; bare "migrate" equals
+// "migrate up". Output goes to the root command's Writer.
 func MigrateCommand(m *migrate.Migrator) *cli.Command {
 	up := func(ctx context.Context, cmd *cli.Command) error {
 		if err := m.Up(ctx); err != nil {
@@ -115,8 +115,8 @@ func renderPlan(planned []migrate.Planned) string {
 	return b.String()
 }
 
-// terminate appends ";" except to comment-only statements, keeping a trailing
-// "-- args:" line after it.
+// terminate appends the statement terminator; rendered placeholders are
+// comments, and bound arguments trail the SQL as a comment line.
 func terminate(stmt string) string {
 	if strings.HasPrefix(stmt, "--") {
 		return stmt

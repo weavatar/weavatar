@@ -40,14 +40,7 @@ func TestCheckReadiness(t *testing.T) {
 		}
 		err := checkReadiness(t.Context(), checks, 10*time.Millisecond)
 		must.ErrorEqual(t, err, "readiness checks timed out")
-		must.Eventually(t, func() bool {
-			select {
-			case <-cancelled:
-				return true
-			default:
-				return false
-			}
-		}, must.Tick(time.Millisecond))
+		must.Eventually(t, closed(cancelled), must.Tick(time.Millisecond))
 	})
 
 	t.Run("failure cancels siblings", func(t *testing.T) {
@@ -61,13 +54,17 @@ func TestCheckReadiness(t *testing.T) {
 			}},
 		}
 		must.ErrorEqual(t, checkReadiness(t.Context(), checks, time.Second), "failed unavailable")
-		must.Eventually(t, func() bool {
-			select {
-			case <-cancelled:
-				return true
-			default:
-				return false
-			}
-		}, must.Tick(time.Millisecond))
+		must.Eventually(t, closed(cancelled), must.Tick(time.Millisecond))
 	})
+}
+
+func closed(ch <-chan struct{}) func() bool {
+	return func() bool {
+		select {
+		case <-ch:
+			return true
+		default:
+			return false
+		}
+	}
 }

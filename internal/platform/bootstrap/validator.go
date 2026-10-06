@@ -14,8 +14,8 @@ import (
 	"github.com/weavatar/weavatar/pkg/geetest"
 )
 
-// NewValidator builds the shared validator; strict required also rejects "",
-// 0 and false.
+// NewValidator builds the shared validator with the custom rules.
+// required runs in strict mode and rejects zero values too ("", 0, false).
 func NewValidator(
 	config *conf.Config,
 	db *rio.DB,

@@ -1,5 +1,9 @@
-// Command gen scaffolds a CRUD module or a schema migration; run it without
-// arguments for usage.
+// Command gen scaffolds a CRUD module or a standalone schema migration.
+//
+// Usage:
+//
+//	go run ./cmd/gen <name>            new module (singular snake_case, e.g. article)
+//	go run ./cmd/gen migration <name>  new migration (e.g. add_email_to_users_table)
 package main
 
 import (
@@ -45,6 +49,8 @@ type migration struct {
 	Name   string // 20260708120000_create_articles_table
 	Table  string // articles
 	Create bool   // create-table skeleton instead of an alter skeleton
+	Up     string // createArticlesTable
+	Down   string // dropArticlesTable
 }
 
 func main() {
@@ -99,7 +105,7 @@ func generateModule(name string) error {
 		{"migration.tmpl", filepath.Join("internal", "migrations", mig.Name+".go"), mig},
 	}
 
-	// check every target first so a clash writes nothing
+	// refuse to overwrite anything: check all targets before writing any
 	for _, f := range files {
 		if _, err := os.Stat(f.dst); err == nil {
 			return fmt.Errorf("%s already exists", f.dst)
@@ -142,13 +148,14 @@ func generateMigration(name string) error {
 	return nil
 }
 
-// migrationFor derives the skeleton from a create_<table>_table or
-// add_<column>_to_<table>_table name.
+// migrationFor derives the skeleton from the migration name, following the
+// create_<table>_table / add_<column>_to_<table>_table naming convention.
 func migrationFor(date, name string) migration {
-	mig := migration{Name: date + "_" + name, Table: "CHANGE_ME"}
+	mig := migration{Name: date + "_" + name, Table: "CHANGE_ME", Up: toCamel(name), Down: "revert" + toPascal(name)}
 	base := strings.TrimSuffix(name, "_table")
 	if table, ok := strings.CutPrefix(base, "create_"); ok {
 		mig.Table, mig.Create = table, true
+		mig.Down = "drop" + toPascal(strings.TrimPrefix(name, "create_"))
 	} else if sub := alterTarget.FindStringSubmatch(base); sub != nil {
 		mig.Table = sub[1]
 	}

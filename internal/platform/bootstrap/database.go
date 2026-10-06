@@ -22,11 +22,11 @@ type slogHook struct {
 	verbose bool
 }
 
-// NewData opens the PostgreSQL handle without connecting; the first query or
-// /readyz surfaces connection errors.
+// NewData opens the PostgreSQL handle; it validates the DSN but does not
+// connect, so the first query (or /readyz) surfaces connection errors.
 func NewData(config *conf.Config, log *slog.Logger) (*Data, func() error, error) {
 	db, err := postgres.Open(config.Database.DSN,
-		rio.WithQueryHook(newSlogHook(log, config.Database.Debug)),
+		rio.WithQueryHook(slogHook{log: log, verbose: config.Database.Debug}),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -46,6 +46,7 @@ func NewData(config *conf.Config, log *slog.Logger) (*Data, func() error, error)
 	return &Data{DB: db}, db.Close, nil
 }
 
+// ProvideDB exposes the plain handle for the data layers.
 func ProvideDB(data *Data) *rio.DB {
 	return data.DB
 }
@@ -79,8 +80,4 @@ func (h slogHook) AfterQuery(ctx context.Context, e *rio.QueryEvent) {
 			slog.Duration("elapsed", e.Duration),
 		)
 	}
-}
-
-func newSlogHook(log *slog.Logger, verbose bool) rio.QueryHook {
-	return slogHook{log: log, verbose: verbose}
 }

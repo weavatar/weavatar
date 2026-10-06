@@ -16,7 +16,7 @@ import (
 	"github.com/weavatar/weavatar/pkg/oauth"
 )
 
-func TestTokens_IssueParsesBack(t *testing.T) {
+func TestIssuedTokenParsesBack(t *testing.T) {
 	parser := jwt.NewJWT("a-long-string-with-32-characters", time.Hour)
 
 	token, err := NewTokens(parser, appinfo.Domain("weavatar.com")).Issue("u1")
@@ -29,7 +29,7 @@ func TestTokens_IssueParsesBack(t *testing.T) {
 	check.True(t, slices.Contains(claims.Audience, "weavatar.com"))
 }
 
-func TestOAuthProvider_Exchange(t *testing.T) {
+func TestExchangeReturnsTheIdentity(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -53,7 +53,7 @@ func TestOAuthProvider_Exchange(t *testing.T) {
 	check.Equal(t, identity, biz.Identity{OpenID: "open-1", UnionID: "union-1", Nickname: "alice", RealName: true})
 }
 
-func TestOAuthProvider_ExchangeRejectedCode(t *testing.T) {
+func TestExchangeFailsOnRejectedCode(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, `{"error":"invalid_grant"}`, http.StatusBadRequest)
 	}))

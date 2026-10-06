@@ -57,8 +57,9 @@ type HTTP struct {
 	DebugAddress string `koanf:"debug_address"`
 	// CorsOrigins allows cross-origin requests; empty = same-origin only.
 	CorsOrigins []string `koanf:"cors_origins"`
-	// ProxyHeader names the client IP header set by a reverse proxy, e.g.
-	// X-Real-IP; it is trusted from any peer, so never expose the port directly.
+	// ProxyHeader names the header carrying the client IP behind a reverse
+	// proxy, e.g. X-Real-IP behind nginx; empty uses the TCP peer address.
+	// It is believed from any peer, so never expose the port directly.
 	ProxyHeader string `koanf:"proxy_header"`
 	// Docs serves the OpenAPI document and UI at /openapi.json and /docs.
 	Docs bool `koanf:"docs"`
@@ -115,6 +116,7 @@ type Geetest struct {
 }
 
 type Code struct {
+	// Expire is how long a verification code stays valid.
 	Expire time.Duration `koanf:"expire"`
 }
 
@@ -124,8 +126,8 @@ type OAuth struct {
 	ClientSecret string `koanf:"client_secret"`
 }
 
-// Load reads $APP_CONFIG (default config/config.yml); the environment never
-// overrides values.
+// Load reads $APP_CONFIG (default config/config.yml). Values come from the
+// file only; the environment never overrides them.
 func Load() (*Config, error) {
 	path := os.Getenv("APP_CONFIG")
 	if path == "" {

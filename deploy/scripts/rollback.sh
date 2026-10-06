@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# rollback.sh API_DIR [SERVICE]: restores app.prev, cli.prev and VERSION.prev, then reloads
-# SERVICE (default $SERVICE_NAME). Migrations are not reverted.
+# rollback.sh API_DIR [SERVICE]: restores app.prev, cli.prev and VERSION.prev, then reloads or
+# restarts the systemd unit SERVICE (default $SERVICE_NAME). Migrations are not reverted.
 set -euo pipefail
 dir="${1:?usage: rollback.sh API_DIR [SERVICE]}"
 service="${2:-${SERVICE_NAME:-}}"

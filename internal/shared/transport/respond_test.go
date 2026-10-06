@@ -14,19 +14,6 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/transport"
 )
 
-func respond(t *testing.T, err error) (int, string) {
-	t.Helper()
-	app := fiber.New()
-	app.Get("/", func(c fiber.Ctx) error { return transport.ErrorFrom(c, err) })
-
-	resp, aerr := app.Test(httptest.NewRequest(fiber.MethodGet, "/", nil))
-	must.NoError(t, aerr)
-	defer func() { _ = resp.Body.Close() }()
-	body, aerr := io.ReadAll(resp.Body)
-	must.NoError(t, aerr)
-	return resp.StatusCode, string(body)
-}
-
 func TestErrorFromNotFound(t *testing.T) {
 	status, body := respond(t, rio.ErrNotFound)
 	must.Equal(t, status, fiber.StatusNotFound)
@@ -58,4 +45,17 @@ func TestErrorFromUnknownErrorHidesDetails(t *testing.T) {
 	must.Equal(t, status, fiber.StatusInternalServerError)
 	must.Contains(t, body, "WeAvatar 服务出现错误")
 	must.NotContains(t, body, "hunter2")
+}
+
+func respond(t *testing.T, err error) (int, string) {
+	t.Helper()
+	app := fiber.New()
+	app.Get("/", func(c fiber.Ctx) error { return transport.ErrorFrom(c, err) })
+
+	resp, aerr := app.Test(httptest.NewRequest(fiber.MethodGet, "/", nil))
+	must.NoError(t, aerr)
+	defer func() { _ = resp.Body.Close() }()
+	body, aerr := io.ReadAll(resp.Body)
+	must.NoError(t, aerr)
+	return resp.StatusCode, string(body)
 }

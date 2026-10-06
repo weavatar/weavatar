@@ -18,30 +18,34 @@ import (
 	"github.com/libtnb/validator/contrib/openapi"
 
 	mocksbiz "github.com/weavatar/weavatar/internal/mocks/system/biz"
+	"github.com/weavatar/weavatar/internal/shared/transport"
 	"github.com/weavatar/weavatar/internal/system/biz"
 	"github.com/weavatar/weavatar/internal/system/service"
 )
 
-func TestCount(t *testing.T) {
-	usage := &mocksbiz.Usage{
-		FetchFunc: func(context.Context, string, time.Time, time.Time) (uint, error) { return 7, nil },
-	}
-	app := newTestApp(t, usage, &mocksbiz.Avatars{})
-
-	check.Equal(t, get(t, app, "/api/system/count"), `{"msg":"success","data":{"usage":7}}`)
+// harness serves the system routes against mocked ports.
+type harness struct {
+	app     *fiber.App
+	usage   *mocksbiz.Usage
+	avatars *mocksbiz.Avatars
 }
 
-func TestRandomAvatars_EmptyListOnFailure(t *testing.T) {
-	avatars := &mocksbiz.Avatars{
-		RandomHashesFunc: func(context.Context, int) ([]string, error) { return nil, errors.New("db down") },
-	}
-	app := newTestApp(t, &mocksbiz.Usage{}, avatars)
+func TestCountReturnsUsage(t *testing.T) {
+	h := newHarness(t)
+	h.usage.FetchFunc = func(context.Context, string, time.Time, time.Time) (uint, error) { return 7, nil }
 
-	check.Equal(t, get(t, app, "/api/system/random_avatars"), `{"msg":"success","data":{"avatars":[]}}`)
+	check.Equal(t, h.get(t, "/api/system/count"), `{"msg":"success","data":{"usage":7}}`)
 }
 
-// TestSystemRoutesDocument guards router startup, which fails on a bad document.
-func TestSystemRoutesDocument(t *testing.T) {
+func TestRandomAvatarsIsAnEmptyListOnFailure(t *testing.T) {
+	h := newHarness(t)
+	h.avatars.RandomHashesFunc = func(context.Context, int) ([]string, error) { return nil, errors.New("db down") }
+
+	check.Equal(t, h.get(t, "/api/system/random_avatars"), `{"msg":"success","data":{"avatars":[]}}`)
+}
+
+// TestRoutesDocument guards router startup, which fails on a bad document.
+func TestRoutesDocument(t *testing.T) {
 	g, err := openapi.New("weavatar", "dev", openapi.WithValidator(validator.MustNew()))
 	must.NoError(t, err)
 
@@ -53,24 +57,41 @@ func TestSystemRoutesDocument(t *testing.T) {
 	must.NoError(t, err)
 }
 
-func newTestApp(t *testing.T, usage *mocksbiz.Usage, avatars *mocksbiz.Avatars) *fiber.App {
+func newHarness(t *testing.T) *harness {
 	t.Helper()
 
-	uc := biz.NewSystemUsecase(usage, avatars, cache.NewCache(), "weavatar.com", slog.New(slog.DiscardHandler))
-	app := fiber.New()
-	for _, e := range service.SystemRoutes(service.NewSystemService(uc)) {
-		app.Add([]string{e.Method}, e.Path, e.Handler)
+	h := &harness{
+		app:     fiber.New(),
+		usage:   &mocksbiz.Usage{},
+		avatars: &mocksbiz.Avatars{},
 	}
-	return app
+	uc := biz.NewSystemUsecase(h.usage, h.avatars, cache.NewCache(), "weavatar.com", slog.New(slog.DiscardHandler))
+	mount(h.app, service.SystemRoutes(service.NewSystemService(uc)))
+
+	return h
 }
 
-func get(t *testing.T, app *fiber.App, target string) string {
+// get expects a 200 and returns the body.
+func (h *harness) get(t *testing.T, target string) string {
 	t.Helper()
-	resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, target, nil))
+
+	resp, err := h.app.Test(httptest.NewRequest(fiber.MethodGet, target, nil))
 	must.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	must.Equal(t, resp.StatusCode, fiber.StatusOK)
 	body, err := io.ReadAll(resp.Body)
 	must.NoError(t, err)
 	return string(body)
+}
+
+// mount registers endpoints the way the server does: middlewares, then handler.
+func mount(app *fiber.App, endpoints transport.Endpoints) {
+	for _, e := range endpoints {
+		handlers := make([]any, 0, len(e.Middlewares)+1)
+		for _, m := range e.Middlewares {
+			handlers = append(handlers, m)
+		}
+		handlers = append(handlers, e.Handler)
+		app.Add([]string{e.Method}, e.Path, handlers[0], handlers[1:]...)
+	}
 }

@@ -13,7 +13,8 @@ import (
 )
 
 func TestCheckRules(t *testing.T) {
-	v, err := validator.New(rule.Options(nil, nil, nil, true)...)
+	opts := append([]validator.Option{validator.WithStrictRequired()}, rule.Options(nil, nil, nil, true)...)
+	v, err := validator.New(opts...)
 	must.NoError(t, err)
 
 	check.NoError(t, v.Check[transport.Paginate]())

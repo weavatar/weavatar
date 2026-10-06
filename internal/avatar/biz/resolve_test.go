@@ -33,7 +33,7 @@ var errUpstream = errors.New("upstream down")
 type deps struct {
 	repo    *mocksbiz.AvatarRepo
 	images  *mocksbiz.ImageRepo
-	tx      *mocksbiz.TxRunner
+	tx      *mocksbiz.Transactor
 	users   *mocksbiz.Users
 	store   *mocksbiz.Store
 	fetcher *mocksbiz.Fetcher
@@ -45,31 +45,7 @@ type deps struct {
 	cache   cache.Cache
 }
 
-func newUsecase(t *testing.T) (*biz.AvatarUsecase, *deps) {
-	t.Helper()
-
-	d := &deps{
-		repo:    &mocksbiz.AvatarRepo{},
-		images:  &mocksbiz.ImageRepo{},
-		tx:      &mocksbiz.TxRunner{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }},
-		users:   &mocksbiz.Users{},
-		store:   &mocksbiz.Store{},
-		fetcher: &mocksbiz.Fetcher{},
-		qq:      &mocksbiz.QQHashes{},
-		gen:     &mocksbiz.Generator{},
-		purger:  &mocksbiz.Purger{}, // purges must go through the queue
-		auditor: &mocksbiz.Auditor{},
-		queue:   queue.New(10, slog.New(slog.DiscardHandler)), // never started: jobs stay countable
-		cache:   cache.NewCache(),
-	}
-	t.Cleanup(func() { _ = d.queue.Stop(context.Background()) })
-	uc := biz.NewAvatarUsecase(d.repo, d.images, d.tx, d.users, d.store, d.fetcher, d.qq, d.gen,
-		d.purger, d.auditor, d.queue, d.cache, "weavatar.com", slog.New(slog.DiscardHandler))
-
-	return uc, d
-}
-
-func TestResolve_ServesUploadFirst(t *testing.T) {
+func TestResolveServesUploadFirst(t *testing.T) {
 	uc, d := newUsecase(t)
 	updated := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	d.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
@@ -87,7 +63,7 @@ func TestResolve_ServesUploadFirst(t *testing.T) {
 	check.Len(t, d.fetcher.GravatarCalls(), 0)
 }
 
-func TestResolve_PrefersAppOverride(t *testing.T) {
+func TestResolvePrefersAppOverride(t *testing.T) {
 	uc, d := newUsecase(t)
 	appUpdated := time.Date(2026, 5, 6, 0, 0, 0, 0, time.UTC)
 	d.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
@@ -109,7 +85,7 @@ func TestResolve_PrefersAppOverride(t *testing.T) {
 	check.Equal(t, read[0].Sha256, sha256Hash)
 }
 
-func TestResolve_FallsBackToGravatarAndCachesIt(t *testing.T) {
+func TestResolveFallsBackToGravatarAndCachesIt(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.noCache()
@@ -126,7 +102,7 @@ func TestResolve_FallsBackToGravatarAndCachesIt(t *testing.T) {
 	check.Equal(t, written[0].Key, md5Hash)
 }
 
-func TestResolve_ServesFreshCacheWithoutFetching(t *testing.T) {
+func TestResolveServesFreshCacheWithoutFetching(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	cachedAt := time.Now().Add(-time.Hour)
@@ -140,7 +116,7 @@ func TestResolve_ServesFreshCacheWithoutFetching(t *testing.T) {
 	check.Equal(t, res.LastModified, cachedAt)
 }
 
-func TestResolve_RefetchesStaleCache(t *testing.T) {
+func TestResolveRefetchesStaleCache(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.store.ReadCacheFunc = func(string, string) ([]byte, time.Time, bool) {
@@ -156,7 +132,7 @@ func TestResolve_RefetchesStaleCache(t *testing.T) {
 	check.Len(t, d.fetcher.GravatarCalls(), 1)
 }
 
-func TestResolve_FallsBackToQQWithoutBanCheck(t *testing.T) {
+func TestResolveFallsBackToQQWithoutBanCheck(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.noCache()
@@ -174,7 +150,7 @@ func TestResolve_FallsBackToQQWithoutBanCheck(t *testing.T) {
 	check.Equal(t, fetched[0].Qq, "10001")
 }
 
-func TestResolve_SwapsBannedImage(t *testing.T) {
+func TestResolveSwapsBannedImage(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.noCache()
@@ -194,7 +170,7 @@ func TestResolve_SwapsBannedImage(t *testing.T) {
 	check.True(t, bytes.Equal(res.Image, want))
 }
 
-func TestResolve_QueuesOneAuditForUnauditedImage(t *testing.T) {
+func TestResolveQueuesOneAuditForUnauditedImage(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.noUpload()
 	d.noCache()
@@ -210,7 +186,7 @@ func TestResolve_QueuesOneAuditForUnauditedImage(t *testing.T) {
 	check.Equal(t, d.queue.Len(), 1)
 }
 
-func TestResolve_DefaultWhenNothingFound(t *testing.T) {
+func TestResolveDrawsDefaultWhenNothingFound(t *testing.T) {
 	tests := []struct {
 		name     string
 		dflt     string
@@ -250,7 +226,7 @@ func TestResolve_DefaultWhenNothingFound(t *testing.T) {
 	}
 }
 
-func TestResolve_ForceSkipsLookups(t *testing.T) {
+func TestResolveForceSkipsLookups(t *testing.T) {
 	uc, d := newUsecase(t)
 	// repo, store and fetcher funcs stay nil: any lookup would panic
 	d.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 80), nil }
@@ -262,7 +238,7 @@ func TestResolve_ForceSkipsLookups(t *testing.T) {
 	check.Equal(t, d.gen.GenerateCalls()[0].Kind, "mp")
 }
 
-func TestResolve_InvalidHashDrawsDefaultWithStableSeed(t *testing.T) {
+func TestResolveInvalidHashDrawsDefaultWithStableSeed(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 80), nil }
 
@@ -272,7 +248,7 @@ func TestResolve_InvalidHashDrawsDefaultWithStableSeed(t *testing.T) {
 	check.Equal(t, d.gen.GenerateCalls()[0].Seed, "weavatar")
 }
 
-func TestResolve_InvalidHashSkipsOwnerLookup(t *testing.T) {
+func TestResolveInvalidHashSkipsOwnerLookup(t *testing.T) {
 	uc, d := newUsecase(t)
 	// repo.FindForServeFunc stays nil: querying a malformed hash would panic
 	d.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 80), nil }
@@ -283,7 +259,7 @@ func TestResolve_InvalidHashSkipsOwnerLookup(t *testing.T) {
 	check.Equal(t, d.gen.GenerateCalls()[0].Kind, "initials")
 }
 
-func TestResolve_InitialsFromOwnerNickname(t *testing.T) {
+func TestResolveTakesInitialsFromOwnerNickname(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.repo.FindForServeFunc = func(context.Context, string, string) (*biz.Avatar, error) {
 		return &biz.Avatar{SHA256: sha256Hash, UserID: "u1"}, nil
@@ -298,7 +274,7 @@ func TestResolve_InitialsFromOwnerNickname(t *testing.T) {
 	check.Equal(t, d.gen.GenerateCalls()[0].Text, "耗")
 }
 
-func TestResolve_InitialsPreferRequestName(t *testing.T) {
+func TestResolveInitialsPreferRequestName(t *testing.T) {
 	uc, d := newUsecase(t)
 	d.gen.GenerateFunc = func(string, string, int, string) ([]byte, error) { return pngOf(t, 80), nil }
 
@@ -306,6 +282,30 @@ func TestResolve_InitialsPreferRequestName(t *testing.T) {
 
 	must.NoError(t, err)
 	check.Equal(t, d.gen.GenerateCalls()[0].Text, "a")
+}
+
+func newUsecase(t *testing.T) (*biz.AvatarUsecase, *deps) {
+	t.Helper()
+
+	d := &deps{
+		repo:    &mocksbiz.AvatarRepo{},
+		images:  &mocksbiz.ImageRepo{},
+		tx:      &mocksbiz.Transactor{RunFunc: func(ctx context.Context, fn func(context.Context) error) error { return fn(ctx) }},
+		users:   &mocksbiz.Users{},
+		store:   &mocksbiz.Store{},
+		fetcher: &mocksbiz.Fetcher{},
+		qq:      &mocksbiz.QQHashes{},
+		gen:     &mocksbiz.Generator{},
+		purger:  &mocksbiz.Purger{}, // purges must go through the queue
+		auditor: &mocksbiz.Auditor{},
+		queue:   queue.New(10, slog.New(slog.DiscardHandler)), // never started: jobs stay countable
+		cache:   cache.NewCache(),
+	}
+	t.Cleanup(func() { _ = d.queue.Stop(context.Background()) })
+	uc := biz.NewAvatarUsecase(d.repo, d.images, d.tx, d.users, d.store, d.fetcher, d.qq, d.gen,
+		d.purger, d.auditor, d.queue, d.cache, "weavatar.com", slog.New(slog.DiscardHandler))
+
+	return uc, d
 }
 
 // noUpload makes every hash miss the WeAvatar uploads.

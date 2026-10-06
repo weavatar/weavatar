@@ -31,23 +31,6 @@ func (b *syncBuffer) String() string {
 	return b.buf.String()
 }
 
-func newTestQueue(t *testing.T, size int) (*Queue, *syncBuffer) {
-	t.Helper()
-	buf := &syncBuffer{}
-	q := New(size, slog.New(slog.NewTextHandler(buf, nil)))
-	t.Cleanup(func() { _ = q.Stop(context.Background()) })
-	return q, buf
-}
-
-func waitFor(t *testing.T, ch <-chan struct{}) {
-	t.Helper()
-	select {
-	case <-ch:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for job")
-	}
-}
-
 func TestPushAndRun(t *testing.T) {
 	q, _ := newTestQueue(t, 10)
 	must.NoError(t, q.Start())
@@ -201,4 +184,21 @@ func TestJobErrorAndPanicAreLogged(t *testing.T) {
 	check.Contains(t, out, "boom")
 	check.Contains(t, out, "queue job panicked")
 	check.Contains(t, out, "kaboom")
+}
+
+func newTestQueue(t *testing.T, size int) (*Queue, *syncBuffer) {
+	t.Helper()
+	buf := &syncBuffer{}
+	q := New(size, slog.New(slog.NewTextHandler(buf, nil)))
+	t.Cleanup(func() { _ = q.Stop(context.Background()) })
+	return q, buf
+}
+
+func waitFor(t *testing.T, ch <-chan struct{}) {
+	t.Helper()
+	select {
+	case <-ch:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for job")
+	}
 }

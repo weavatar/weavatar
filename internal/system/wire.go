@@ -1,6 +1,7 @@
 //go:build wireinject
 
-// Package system is the system module's assembly.
+// Package system is the system module's assembly: CDN usage statistics and
+// random avatars.
 package system
 
 import (

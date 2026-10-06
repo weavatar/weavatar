@@ -15,7 +15,7 @@ import (
 	"github.com/weavatar/weavatar/internal/system/biz"
 )
 
-func TestCount_FetchesYesterdayInChinaAndCaches(t *testing.T) {
+func TestCountFetchesYesterdayInChinaAndCaches(t *testing.T) {
 	usage := &mocksbiz.Usage{
 		FetchFunc: func(context.Context, string, time.Time, time.Time) (uint, error) { return 42, nil },
 	}
@@ -33,7 +33,7 @@ func TestCount_FetchesYesterdayInChinaAndCaches(t *testing.T) {
 	check.True(t, !time.Now().Before(end) && time.Now().Before(end.Add(24*time.Hour)))
 }
 
-func TestCount_FailureReportsZeroUncached(t *testing.T) {
+func TestCountFailureReportsZeroUncached(t *testing.T) {
 	usage := &mocksbiz.Usage{
 		FetchFunc: func(context.Context, string, time.Time, time.Time) (uint, error) { return 0, errors.New("cdn down") },
 	}
@@ -45,7 +45,7 @@ func TestCount_FailureReportsZeroUncached(t *testing.T) {
 	check.Len(t, usage.FetchCalls(), 2)
 }
 
-func TestRandomAvatars_BuildsURLs(t *testing.T) {
+func TestRandomAvatarsBuildsURLs(t *testing.T) {
 	avatars := &mocksbiz.Avatars{
 		RandomHashesFunc: func(context.Context, int) ([]string, error) { return []string{"abc"}, nil },
 	}
@@ -55,7 +55,7 @@ func TestRandomAvatars_BuildsURLs(t *testing.T) {
 	check.Equal(t, avatars.RandomHashesCalls()[0].N, 50)
 }
 
-func TestRandomAvatars_FailureReportsNone(t *testing.T) {
+func TestRandomAvatarsFailureReportsNone(t *testing.T) {
 	avatars := &mocksbiz.Avatars{
 		RandomHashesFunc: func(context.Context, int) ([]string, error) { return nil, errors.New("db down") },
 	}

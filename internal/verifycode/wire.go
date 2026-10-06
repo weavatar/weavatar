@@ -1,6 +1,7 @@
 //go:build wireinject
 
-// Package verifycode is the verification code module's assembly.
+// Package verifycode is the verification code module's assembly: SMS and
+// email codes checked by the verify_code validation rule.
 package verifycode
 
 import (
