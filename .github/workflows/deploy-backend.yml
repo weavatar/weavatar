@@ -7,7 +7,7 @@ run-name: Deploy the API
 #
 # Repository secrets (Settings -> Secrets):
 #   vars    API_DIR       install directory, default /opt/ace/projects/weavatar
-#           API_PORT      port the app listens on locally, default 3000
+#           API_PORT      port the app listens on locally, default 3100
 #           SERVICE_NAME  systemd unit name, default weavatar
 #   secrets DEPLOY_HOST          SSH host
 #           DEPLOY_USER          SSH user: root, or a user that can write API_DIR and run
@@ -36,7 +36,7 @@ jobs:
     env:
       APP_VERSION: ${{ github.sha }}
       API_DIR: ${{ vars.API_DIR || '/opt/ace/projects/weavatar' }}
-      API_PORT: ${{ vars.API_PORT || '3000' }}
+      API_PORT: ${{ vars.API_PORT || '3100' }}
       SERVICE_NAME: ${{ vars.SERVICE_NAME || 'weavatar' }}
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
