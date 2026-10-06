@@ -32,7 +32,9 @@
         </h1>
 
         <p v-reveal="120" class="mt-6 text-base sm:text-lg text-fg2 leading-relaxed max-w-xl">
-          用邮箱或手机号设置一次头像，所有接入 WeAvatar 的网站都会自动显示。
+          将邮箱或手机号变成您的数字护照，<br
+            class="hidden sm:block"
+          />您在互联网上发帖、评论或在线互动时均可使用。
         </p>
 
         <div v-reveal="180" class="mt-8 flex flex-wrap items-center gap-3">
