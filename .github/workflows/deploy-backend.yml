@@ -167,11 +167,18 @@ jobs:
           sudo chown -R www:www scripts
 
           # A Type=notify-reload unit hands the listeners to the new binary on reload and only
-          # returns once it reports ready, so the main PID must have moved; a stopped unit is
-          # started instead.
+          # returns once it reports ready; the new process claims the main PID once the old one
+          # has exited, so wait for it to move. A stopped unit is started instead.
           old_pid="$(systemctl show -p MainPID --value "$SERVICE_NAME")"
-          if ! sudo systemctl reload-or-restart "$SERVICE_NAME" ||
-             [ "$(systemctl show -p MainPID --value "$SERVICE_NAME")" = "$old_pid" ] ||
+          new_pid="$old_pid"
+          if sudo systemctl reload-or-restart "$SERVICE_NAME"; then
+            for _ in $(seq 1 60); do
+              new_pid="$(systemctl show -p MainPID --value "$SERVICE_NAME")"
+              if [ "$new_pid" != 0 ] && [ "$new_pid" != "$old_pid" ]; then break; fi
+              sleep 0.5
+            done
+          fi
+          if [ "$new_pid" = 0 ] || [ "$new_pid" = "$old_pid" ] ||
              ! scripts/probe.sh "http://127.0.0.1:$API_PORT"; then
             sudo systemctl status "$SERVICE_NAME" --no-pager || true
             sudo journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
