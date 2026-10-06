@@ -1,18 +1,15 @@
 name: Deploy Frontend
 run-name: Deploy web
 
-# Builds web/ and publishes it as an immutable release directory:
-#   $WEB_ROOT/releases/<git short hash>/   one directory per release, the 3 newest are kept
-#   $WEB_ROOT/current -> releases/<hash>   switched atomically; point the web server's root here
-#   $WEB_ROOT/.previous-release            the release that was live before the last deploy switched current
-# A failed smoke test (version.json must report the new hash) switches current back.
+# Builds web/ and syncs dist/ into $WEB_ROOT, the directory the web server already serves.
+# The smoke test checks that version.json reports the deployed commit.
 #
 # Repository secrets (Settings -> Secrets):
 #   vars    API_URL   baked into the build as VITE_API_URL, default https://weavatar.com/api
-#           WEB_ROOT  default /opt/ace/sites/weavatar
+#           WEB_ROOT  default /opt/ace/sites/weavatar/public
 #           WEB_URL   public site URL used by the smoke test, default https://weavatar.com
 #           all three are optional overrides
-#   secrets DEPLOY_HOST, DEPLOY_USER (must be able to write WEB_ROOT), DEPLOY_SSH_KEY,
+#   secrets DEPLOY_HOST, DEPLOY_USER (must be able to write WEB_ROOT and sudo chown), DEPLOY_SSH_KEY
 
 on:
   workflow_dispatch:
@@ -30,17 +27,17 @@ jobs:
     timeout-minutes: 20
     env:
       API_URL: ${{ vars.API_URL || 'https://weavatar.com/api' }}
-      WEB_ROOT: ${{ vars.WEB_ROOT || '/opt/ace/sites/weavatar' }}
+      WEB_ROOT: ${{ vars.WEB_ROOT || '/opt/ace/sites/weavatar/public' }}
       WEB_URL: ${{ vars.WEB_URL || 'https://weavatar.com' }}
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      # Identifies this attempt on the server so the rollback only undoes its own switch.
-      DEPLOY_TOKEN: ${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check the deployment configuration
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
           missing=()
-          for name in DEPLOY_HOST DEPLOY_USER; do
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -gt 0 ]; then
@@ -101,59 +98,21 @@ jobs:
             ServerAliveInterval 10
           EOF
 
-      - name: Upload the release
-        env:
-          RELEASE: ${{ steps.release.outputs.hash }}
+      - name: Upload
         run: |
-          # Upload into a hidden staging directory; the live release is never written to.
-          staging="$WEB_ROOT/releases/.staging-$RELEASE"
           # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
-          ssh deploy-target "set -e; install -d '$WEB_ROOT/releases'; rm -rf '$staging'"
+          ssh deploy-target "install -d '$WEB_ROOT'"
+          # Updated files are renamed into place together at the end, so index.html never
+          # references assets that have not arrived yet.
           for attempt in 1 2 3; do
-            if rsync -az --delete --timeout=60 web/dist/ "deploy-target:$staging/"; then
+            if rsync -az --delete-delay --delay-updates --timeout=60 web/dist/ "deploy-target:$WEB_ROOT/"; then
+              # shellcheck disable=SC2029
+              ssh deploy-target "sudo chown -R www:www '$WEB_ROOT'"
               exit 0
             fi
             [ "$attempt" -eq 3 ] && { echo "upload failed after 3 attempts" >&2; exit 1; }
             sleep $((attempt * 3))
           done
-
-      - name: Activate the release
-        id: activate
-        env:
-          RELEASE: ${{ steps.release.outputs.hash }}
-        run: |
-          remote_env="$(printf 'WEB_ROOT=%q RELEASE=%q DEPLOY_TOKEN=%q' "$WEB_ROOT" "$RELEASE" "$DEPLOY_TOKEN")"
-          # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
-          ssh deploy-target "$remote_env bash -s" <<'SCRIPT'
-          set -euo pipefail
-          cd "$WEB_ROOT"
-          target="releases/$RELEASE"
-          staging="releases/.staging-$RELEASE"
-          live="$(readlink current 2>/dev/null || true)"
-          live="${live#"$WEB_ROOT"/}"
-
-          if [ "$live" = "$target" ]; then
-            # Redeploying the live commit: identical output is a no-op, anything else would mean
-            # rewriting the directory that is being served, so refuse instead.
-            if diff -rq "$staging" "$target" >/dev/null; then
-              rm -rf "$staging"
-              echo "release $RELEASE is already live with identical content"
-              exit 0
-            fi
-            rm -rf "$staging"
-            echo "release $RELEASE is live with different content (did vars.API_URL change?); push a new commit to redeploy" >&2
-            exit 1
-          fi
-
-          rm -rf "$target"
-          mv "$staging" "$target"
-          touch "$target"
-          if [ -n "$live" ]; then printf '%s\n' "$live" > .previous-release; else rm -f .previous-release; fi
-          printf '%s\n' "$DEPLOY_TOKEN" > .activation
-          ln -sfn "$target" current.next
-          mv -Tf current.next current
-          echo "activated $target (previous: ${live:-none})"
-          SCRIPT
 
       - name: Smoke test
         env:
@@ -168,52 +127,3 @@ jobs:
           done
           echo "::error::$WEB_URL does not serve release $RELEASE"
           exit 1
-
-      - name: Roll back
-        if: failure() && steps.activate.outcome != 'skipped'
-        env:
-          RELEASE: ${{ steps.release.outputs.hash }}
-        run: |
-          remote_env="$(printf 'WEB_ROOT=%q RELEASE=%q DEPLOY_TOKEN=%q' "$WEB_ROOT" "$RELEASE" "$DEPLOY_TOKEN")"
-          # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
-          ssh deploy-target "$remote_env bash -s" <<'SCRIPT'
-          set -euo pipefail
-          cd "$WEB_ROOT"
-          live="$(readlink current 2>/dev/null || true)"
-          live="${live#"$WEB_ROOT"/}"
-          # Only undo a switch this attempt made; otherwise .previous-release may be stale.
-          if [ "$live" != "releases/$RELEASE" ] || [ "$(cat .activation 2>/dev/null || true)" != "$DEPLOY_TOKEN" ]; then
-            echo "this run did not switch current; nothing to roll back"
-            exit 0
-          fi
-          previous="$(cat .previous-release 2>/dev/null || true)"
-          if [ -z "$previous" ] || [ ! -d "$previous" ]; then
-            echo "no previous release to roll back to" >&2
-            exit 1
-          fi
-          ln -sfn "$previous" current.next
-          mv -Tf current.next current
-          rm -f .activation
-          echo "rolled back to $previous"
-          SCRIPT
-
-      - name: Prune old releases
-        run: |
-          remote_env="$(printf 'WEB_ROOT=%q' "$WEB_ROOT")"
-          # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
-          ssh deploy-target "$remote_env bash -s" <<'SCRIPT'
-          set -euo pipefail
-          cd "$WEB_ROOT"
-          live="$(readlink current 2>/dev/null || true)"
-          live="${live#"$WEB_ROOT"/}"
-          previous="$(cat .previous-release 2>/dev/null || true)"
-          # Deploys never overlap (concurrency group), so any staging directory left now is stale.
-          find releases -mindepth 1 -maxdepth 1 -type d -name '.staging-*' -exec rm -rf {} +
-          find releases -mindepth 1 -maxdepth 1 -type d ! -name '.*' -printf '%T@ %p\n' |
-            sort -rn | tail -n +4 | cut -d' ' -f2- |
-            while read -r dir; do
-              if [ "$dir" = "$live" ] || [ "$dir" = "$previous" ]; then continue; fi
-              rm -rf -- "$dir"
-              echo "pruned $dir"
-            done
-          SCRIPT
