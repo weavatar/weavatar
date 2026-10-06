@@ -54,6 +54,12 @@ type harness struct {
 	gen     *mocksbiz.Generator
 }
 
+// response is what a test inspects of a reply; the body is already read and closed.
+type response struct {
+	StatusCode int
+	Header     http.Header
+}
+
 // notExists stands in for the database-backed rule.
 type notExists struct{}
 
@@ -324,7 +330,7 @@ func newHarness(t *testing.T) *harness {
 }
 
 // send sends req with h.token unless req already carries one.
-func (h *harness) send(t *testing.T, req *http.Request) (*http.Response, string) {
+func (h *harness) send(t *testing.T, req *http.Request) (response, string) {
 	t.Helper()
 	if req.Header.Get(fiber.HeaderAuthorization) == "" && h.token != "" {
 		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+h.token)
@@ -334,7 +340,7 @@ func (h *harness) send(t *testing.T, req *http.Request) (*http.Response, string)
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	must.NoError(t, err)
-	return resp, string(body)
+	return response{StatusCode: resp.StatusCode, Header: resp.Header}, string(body)
 }
 
 // nothingFound makes every lookup of the avatar endpoint miss.

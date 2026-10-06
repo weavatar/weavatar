@@ -116,7 +116,7 @@ func TestInfoHidesTheOAuthIdentifiers(t *testing.T) {
 		return &biz.User{ID: id, OpenID: "secret-open-id", Nickname: "alice", RealName: true}, nil
 	}
 
-	status, body := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t, "u1"), "")
+	status, body := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t), "")
 
 	must.Equal(t, status, fiber.StatusOK)
 	var info map[string]any
@@ -137,7 +137,7 @@ func TestInfoOfDeletedUserIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	h.repo.FindFunc = func(context.Context, string) (*biz.User, error) { return nil, rio.ErrNotFound }
 
-	status, _ := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t, "u1"), "")
+	status, _ := h.do(t, fiber.MethodGet, "/api/user/info", h.login(t), "")
 
 	check.Equal(t, status, fiber.StatusNotFound)
 }
@@ -149,7 +149,7 @@ func TestUpdateInfoSavesNicknameAndAvatar(t *testing.T) {
 	}
 	h.repo.UpdateFunc = func(context.Context, *biz.User) error { return nil }
 
-	status, body := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t, "u1"),
+	status, body := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t),
 		`{"nickname":"alice","avatar":"https://weavatar.com/avatar/?d=mp"}`)
 
 	must.Equal(t, status, fiber.StatusOK)
@@ -166,7 +166,7 @@ func TestUpdateInfoSavesNicknameAndAvatar(t *testing.T) {
 func TestUpdateInfoWithInvalidAvatarIsUnprocessable(t *testing.T) {
 	h := newHarness(t) // no repo funcs: validation must fail first
 
-	status, _ := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t, "u1"),
+	status, _ := h.do(t, fiber.MethodPut, "/api/user/info", h.login(t),
 		`{"nickname":"alice","avatar":"not a url"}`)
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
@@ -175,7 +175,7 @@ func TestUpdateInfoWithInvalidAvatarIsUnprocessable(t *testing.T) {
 func TestLogoutSucceeds(t *testing.T) {
 	h := newHarness(t)
 
-	status, body := h.do(t, fiber.MethodPost, "/api/user/logout", h.login(t, "u1"), "")
+	status, body := h.do(t, fiber.MethodPost, "/api/user/logout", h.login(t), "")
 
 	check.Equal(t, status, fiber.StatusOK)
 	check.Equal(t, body.Msg, "success")
@@ -184,7 +184,7 @@ func TestLogoutSucceeds(t *testing.T) {
 func TestDeletionLoginReturnsAUserBoundState(t *testing.T) {
 	h := newHarness(t)
 
-	status, body := h.do(t, fiber.MethodGet, "/api/user/deletion/login", h.login(t, "u1"), "")
+	status, body := h.do(t, fiber.MethodGet, "/api/user/deletion/login", h.login(t), "")
 
 	must.Equal(t, status, fiber.StatusOK)
 	var login service.LoginURL
@@ -208,7 +208,7 @@ func TestDeletionConfirmDeletesTheAccount(t *testing.T) {
 	}
 	h.repo.DeleteFunc = func(context.Context, *biz.User) error { return nil }
 
-	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-abc"}`)
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t), `{"code":"c","state":"delete-abc"}`)
 
 	must.Equal(t, status, fiber.StatusOK)
 	check.Equal(t, body.Msg, "success")
@@ -230,7 +230,7 @@ func TestDeletionConfirmByAnotherAccountIsForbidden(t *testing.T) {
 		return biz.Identity{UnionID: "union-2"}, nil
 	}
 
-	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-abc"}`)
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t), `{"code":"c","state":"delete-abc"}`)
 
 	check.Equal(t, status, fiber.StatusForbidden)
 	check.Equal(t, body.Code, "user.deletion_identity_mismatch")
@@ -241,7 +241,7 @@ func TestDeletionConfirmByAnotherAccountIsForbidden(t *testing.T) {
 func TestDeletionConfirmWithExpiredStateIsBadRequest(t *testing.T) {
 	h := newHarness(t) // no mock funcs: the usecase must stop at the state
 
-	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c","state":"delete-gone"}`)
+	status, body := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t), `{"code":"c","state":"delete-gone"}`)
 
 	check.Equal(t, status, fiber.StatusBadRequest)
 	check.Equal(t, body.Code, "user.state_expired")
@@ -250,7 +250,7 @@ func TestDeletionConfirmWithExpiredStateIsBadRequest(t *testing.T) {
 func TestDeletionConfirmWithoutStateIsUnprocessable(t *testing.T) {
 	h := newHarness(t)
 
-	status, _ := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t, "u1"), `{"code":"c"}`)
+	status, _ := h.do(t, fiber.MethodPost, "/api/user/deletion/confirm", h.login(t), `{"code":"c"}`)
 
 	check.Equal(t, status, fiber.StatusUnprocessableEntity)
 }
@@ -303,9 +303,9 @@ func (h *harness) do(t *testing.T, method, path, token, payload string) (int, en
 	return resp.StatusCode, body
 }
 
-func (h *harness) login(t *testing.T, userID string) string {
+func (h *harness) login(t *testing.T) string {
 	t.Helper()
-	token, err := h.signer.Generate(&jwt.Claims{Subject: userID})
+	token, err := h.signer.Generate(&jwt.Claims{Subject: "u1"})
 	must.NoError(t, err)
 	return token
 }
