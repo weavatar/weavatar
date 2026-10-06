@@ -1,11 +1,11 @@
 name: Deploy Backend
-run-name: Deploy the API to ${{ inputs.environment }}
+run-name: Deploy the API
 
 # Builds bin/app and bin/cli, uploads them over SSH, runs the database migrations, swaps the
 # binaries, restarts the systemd unit and probes /healthz and /readyz. A failed restart or probe
 # rolls the binaries back (migrations are not reverted, so they must stay backward compatible).
 #
-# Environment "prod" (Settings -> Environments -> prod):
+# Repository secrets (Settings -> Secrets):
 #   vars    API_DIR       install directory, default /opt/ace/projects/weavatar
 #           API_PORT      port the app listens on locally, default 3000
 #           SERVICE_NAME  systemd unit name, default weavatar
@@ -22,25 +22,17 @@ run-name: Deploy the API to ${{ inputs.environment }}
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Deploy environment
-        required: true
-        type: choice
-        options:
-          - prod
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-backend-${{ inputs.environment }}
+  group: deploy-backend
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     timeout-minutes: 30
     env:
       APP_VERSION: ${{ github.sha }}
@@ -50,7 +42,7 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
     steps:
-      - name: Check the environment configuration
+      - name: Check the deployment configuration
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -60,7 +52,7 @@ jobs:
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::missing environment configuration: ${missing[*]}"
+            echo "::error::missing deployment configuration: ${missing[*]}"
             exit 1
           fi
           [[ "$API_DIR" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "::error::API_DIR must be an absolute path"; exit 1; }

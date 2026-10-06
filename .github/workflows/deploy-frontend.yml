@@ -1,5 +1,5 @@
 name: Deploy Frontend
-run-name: Deploy web to ${{ inputs.environment }}
+run-name: Deploy web
 
 # Builds web/ and publishes it as an immutable release directory:
 #   $WEB_ROOT/releases/<git short hash>/   one directory per release, the 3 newest are kept
@@ -7,7 +7,7 @@ run-name: Deploy web to ${{ inputs.environment }}
 #   $WEB_ROOT/.previous-release            the release that was live before the last deploy switched current
 # A failed smoke test (version.json must report the new hash) switches current back.
 #
-# Environment "prod" (Settings -> Environments -> prod):
+# Repository secrets (Settings -> Secrets):
 #   vars    API_URL   baked into the build as VITE_API_URL, default https://weavatar.com/api
 #           WEB_ROOT  default /opt/ace/sites/weavatar
 #           WEB_URL   public site URL used by the smoke test, default https://weavatar.com
@@ -17,25 +17,17 @@ run-name: Deploy web to ${{ inputs.environment }}
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Deploy environment
-        required: true
-        type: choice
-        options:
-          - prod
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-frontend-${{ inputs.environment }}
+  group: deploy-frontend
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     timeout-minutes: 20
     env:
       API_URL: ${{ vars.API_URL || 'https://weavatar.com/api' }}
@@ -46,14 +38,14 @@ jobs:
       # Identifies this attempt on the server so the rollback only undoes its own switch.
       DEPLOY_TOKEN: ${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - name: Check the environment configuration
+      - name: Check the deployment configuration
         run: |
           missing=()
           for name in DEPLOY_HOST DEPLOY_USER; do
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::missing environment configuration: ${missing[*]}"
+            echo "::error::missing deployment configuration: ${missing[*]}"
             exit 1
           fi
           [[ "$WEB_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "::error::WEB_ROOT must be an absolute path"; exit 1; }
