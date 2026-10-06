@@ -2,7 +2,6 @@
   <footer class="border-t border-line bg-elev">
     <div class="wrap py-14 sm:py-16">
       <div class="grid grid-cols-2 gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <!-- 品牌 -->
         <div class="col-span-2 md:col-span-1 max-w-xs">
           <brand-logo :height="26" />
           <p class="mt-5 text-sm text-fg2 leading-relaxed">每个人的头像。一次设置，随处可见。</p>
@@ -23,7 +22,6 @@
           </div>
         </div>
 
-        <!-- 链接列 -->
         <div v-for="col in columns" :key="col.title">
           <div class="text-sm font-600 text-fg mb-4">{{ col.title }}</div>
           <ul class="space-y-2.5 text-sm">
@@ -50,7 +48,6 @@
         </div>
       </div>
 
-      <!-- 版权与备案 -->
       <div
         class="mt-14 pt-6 border-t border-line flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-fg3"
       >

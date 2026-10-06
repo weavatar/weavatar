@@ -9,8 +9,7 @@ import (
 	"github.com/spf13/cast"
 )
 
-// WafPro drives the SCDN console API, which WafPro and WjDun both run under
-// their own hosts.
+// WafPro drives the SCDN console API that WafPro and WjDun each host.
 type WafPro struct {
 	name     string
 	endpoint string

@@ -1,4 +1,3 @@
-// global.d.ts
 import { useDialog, useLoadingBar, useMessage, useNotification } from 'naive-ui'
 
 declare global {

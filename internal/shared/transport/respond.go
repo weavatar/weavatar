@@ -14,9 +14,8 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/apperr"
 )
 
-// Envelope is the one response shape, typed so routes can document bodies.
-// Data is never omitted, so false, 0 and "" reach the client; Code is the
-// machine-readable key of an apperr error.
+// Envelope is the one response shape, generic so routes can document bodies;
+// Data is never omitted so false, 0 and "" reach the client.
 type Envelope[T any] struct {
 	Msg  string `json:"msg"`
 	Code string `json:"code,omitempty"`

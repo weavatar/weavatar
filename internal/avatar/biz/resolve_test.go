@@ -29,8 +29,7 @@ const (
 
 var errUpstream = errors.New("upstream down")
 
-// deps holds every port of the usecase; a nil Func panics when called, which
-// pins down the calls a rule must not make.
+// deps holds the usecase's ports; a nil Func pins down a call a rule must not make.
 type deps struct {
 	repo    *mocksbiz.AvatarRepo
 	images  *mocksbiz.ImageRepo

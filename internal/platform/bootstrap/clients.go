@@ -10,12 +10,10 @@ import (
 	"github.com/weavatar/weavatar/pkg/sms"
 )
 
-// NewCDN builds the CDN purger over every configured driver.
 func NewCDN(config *conf.Config) (*cdn.Cdn, error) {
 	return cdn.New(config.CDN)
 }
 
-// NewAudit builds the image moderation client.
 func NewAudit(config *conf.Config) (*audit.Audit, error) {
 	return audit.New(config.Audit)
 }

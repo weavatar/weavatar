@@ -1,24 +1,22 @@
 name: Deploy Backend
 run-name: Deploy the API
 
-# Builds bin/app and bin/cli, uploads them over SSH, runs the database migrations, swaps the
-# binaries, reloads the systemd unit (Type=notify-reload: a zero-downtime handoff) and probes
-# /healthz and /readyz. A failed reload or probe rolls the binaries back (migrations are not
-# reverted, so they must stay backward compatible).
+# Builds bin/app and bin/cli, uploads them over SSH, migrates, swaps the binaries, reloads the
+# Type=notify-reload unit without downtime and probes /healthz and /readyz. A failed reload or
+# probe rolls the binaries back; migrations stay, so they must be backward compatible.
 #
-# Repository secrets (Settings -> Secrets):
-#   vars    API_DIR       install directory, default /opt/ace/projects/weavatar
-#           API_PORT      port the app listens on locally, default 3100
-#           SERVICE_NAME  systemd unit name, default weavatar
-#   secrets DEPLOY_HOST          SSH host
-#           DEPLOY_USER          SSH user: root, or a user that can write API_DIR and run
-#                                sudo -u www, sudo chown, systemctl and journalctl without a password
-#           DEPLOY_SSH_KEY       private key for DEPLOY_USER
+# Repository variables (optional) and secrets:
+#   vars    API_DIR         install directory, default /opt/ace/projects/weavatar
+#           API_PORT        local listen port, default 3100
+#           SERVICE_NAME    systemd unit, default weavatar
+#   secrets DEPLOY_HOST     SSH host
+#           DEPLOY_USER     root, or a user that can write API_DIR and run sudo -u www,
+#                           sudo chown, systemctl and journalctl without a password
+#           DEPLOY_SSH_KEY  private key for DEPLOY_USER
 #
-# The server needs rsync, curl and sha256sum, a `www` user, $API_DIR/config/config.yml, a
-# $API_DIR/storage directory created and owned by www, and a systemd unit that runs
-# $API_DIR/app as www with WorkingDirectory=$API_DIR and
-# Environment=APP_CONFIG=$API_DIR/config/config.yml.
+# The server needs rsync, curl, sha256sum, a www user, $API_DIR/config/config.yml,
+# $API_DIR/storage owned by www, and a unit running $API_DIR/app as www with
+# WorkingDirectory=$API_DIR and Environment=APP_CONFIG=$API_DIR/config/config.yml.
 
 on:
   workflow_dispatch:
@@ -42,7 +40,7 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
     steps:
-      - name: Check the deployment configuration
+      - name: Check configuration
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
@@ -61,12 +59,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Go and caches
+      - name: Set up Go
         uses: ./.github/actions/setup-go
         with:
           scope: build-amd64
 
-      - name: Build binaries
+      - name: Build
         run: |
           make build
           {
@@ -78,10 +76,10 @@ jobs:
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          # Some runner images, such as self-hosted Gitea ones, ship without rsync or an SSH client.
+          # Self-hosted runner images may lack rsync or ssh.
           if ! command -v rsync >/dev/null || ! command -v ssh >/dev/null; then
             SUDO=""
-            if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
+            [ "$(id -u)" -eq 0 ] || SUDO=sudo
             $SUDO apt-get update -qq
             $SUDO apt-get install -y -qq --no-install-recommends rsync openssh-client
           fi
@@ -102,7 +100,7 @@ jobs:
             ServerAliveInterval 10
           EOF
 
-      - name: Upload binaries and scripts
+      - name: Upload
         run: |
           # Seed app.new/cli.new from the running binaries so rsync only sends the delta.
           # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
@@ -146,29 +144,25 @@ jobs:
             exit 1
           fi
 
-          # Run as www so the logs the CLI writes under storage/ stay owned by the service user.
+          # As www, so logs the CLI writes under storage/ stay owned by the service user.
           migrate() { sudo -u www env APP_CONFIG="$APP_CONFIG" ./cli.new migrate "$@"; }
           migrate status
           migrate plan
           migrate up
 
-          if [ -f app ]; then cp -f app app.prev; fi
-          if [ -f cli ]; then cp -f cli cli.prev; fi
-          if [ -f VERSION ]; then cp -f VERSION VERSION.prev; fi
+          # Chown only what this deploy wrote; storage/ stays as server setup left it.
+          owned=(app cli VERSION config/config.example.yml)
+          for f in app cli VERSION; do
+            if [ -f "$f" ]; then cp -f "$f" "$f.prev"; owned+=("$f.prev"); fi
+          done
           mv -f app.new app
           mv -f cli.new cli
           printf '%s\n' "$APP_VERSION" > VERSION
-          # Hand over only what this deploy wrote; storage/ belongs to www from server setup.
-          owned=(app cli VERSION config/config.example.yml)
-          for f in app.prev cli.prev VERSION.prev; do
-            if [ -e "$f" ]; then owned+=("$f"); fi
-          done
           sudo chown -h www:www "${owned[@]}"
           sudo chown -R www:www scripts
 
-          # A Type=notify-reload unit hands the listeners to the new binary on reload and only
-          # returns once it reports ready; the new process claims the main PID once the old one
-          # has exited, so wait for it to move. A stopped unit is started instead.
+          # reload returns once the new binary reports ready, but it becomes MainPID only after
+          # the old one exits, so wait for the PID to move. A stopped unit is started instead.
           old_pid="$(systemctl show -p MainPID --value "$SERVICE_NAME")"
           new_pid="$old_pid"
           if sudo systemctl reload-or-restart "$SERVICE_NAME"; then

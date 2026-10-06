@@ -58,8 +58,7 @@ const userStore = useUserStore()
 
 const status = ref<'pending' | 'success' | 'error'>('pending')
 
-// account deletion reuses the login callback; the intent is consumed at once
-// so an abandoned deletion cannot hijack the next login
+// 注销复用登录回调，意图读完即删，免得放弃的注销劫持下次登录
 const deleting = sessionStorage.getItem('oauth_intent') === 'delete'
 sessionStorage.removeItem('oauth_intent')
 

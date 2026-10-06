@@ -10,7 +10,6 @@
     @update:show="$emit('update:show', $event)"
   >
     <div class="space-y-7">
-      <!-- 第一步：地址 -->
       <section>
         <step-label :index="1" title="要绑定的地址" desc="需要验证码确认归属。" />
         <div class="mt-4 space-y-3">
@@ -42,7 +41,6 @@
         </div>
       </section>
 
-      <!-- 第二步：头像 -->
       <section>
         <step-label :index="2" title="选择头像" desc="上传图片，或直接获取社交头像。" />
         <div class="mt-4">
@@ -86,7 +84,6 @@ const model = ref({ raw: '', verify_code: '' })
 const avatarBlob = ref<Blob | null>(null)
 const submitLoading = ref(false)
 
-// 极验
 let captchaInstance: any = null
 const onCaptchaInit = (instance: any) => {
   captchaInstance = instance

@@ -13,7 +13,6 @@
     <div
       class="relative wrap grid items-center gap-12 pt-16 pb-14 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:py-0 lg:min-h-[calc(100vh-4rem)] lg:max-h-[56rem]"
     >
-      <!-- 文案 -->
       <div class="max-w-2xl">
         <div v-reveal class="eyebrow mb-6">
           <span class="relative flex w-2 h-2">
@@ -57,13 +56,11 @@
         </div>
       </div>
 
-      <!-- 头像墙（桌面端） -->
       <div v-reveal="200" class="hidden lg:block">
         <avatar-wall :avatars="avatars" />
       </div>
     </div>
 
-    <!-- 头像跑马灯（移动端） -->
     <div class="relative lg:hidden pb-14 overflow-hidden wa-mask-x">
       <div class="flex w-max animate-marquee">
         <div v-for="copy in 2" :key="copy" class="flex gap-3 pr-3">

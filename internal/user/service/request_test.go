@@ -12,7 +12,6 @@ import (
 	"github.com/weavatar/weavatar/internal/user/service"
 )
 
-// TestCheckRules catches invalid validate tags at test time.
 func TestCheckRules(t *testing.T) {
 	v := newValidator(t)
 

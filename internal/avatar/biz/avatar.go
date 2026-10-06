@@ -77,8 +77,8 @@ type ImageRepo interface {
 	Create(ctx context.Context, image *Image) error
 }
 
-// TxRunner runs fn in one database transaction, carried by the ctx it passes;
-// an error from fn rolls the transaction back.
+// TxRunner runs fn in one transaction carried by the ctx it passes; an error
+// from fn rolls it back.
 type TxRunner interface {
 	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
@@ -117,10 +117,8 @@ type QQHashes interface {
 	Lookup(hash string) (uint32, bool)
 }
 
-// Generator draws default avatars. kind is a Gravatar-style d value (mp,
-// identicon, monsterid, wavatar, retro, robohash, blank, color, initials, ...;
-// anything else draws the WeAvatar default); seed keeps the drawing stable per
-// hash, size applies to identicon and color, text to initials.
+// Generator draws a default avatar of a Gravatar-style d kind, unknown kinds
+// the WeAvatar default; size applies to identicon and color, text to initials.
 type Generator interface {
 	Generate(kind, seed string, size int, text string) ([]byte, error)
 }

@@ -1,5 +1,5 @@
-// Package apperr standardizes client-facing errors: transports map the
-// closed set of kinds to HTTP statuses.
+// Package apperr defines client-facing errors whose closed set of kinds
+// transports map to HTTP statuses.
 package apperr
 
 import (
@@ -20,16 +20,14 @@ const (
 	KindNotFound Kind = "not_found"
 	// KindConflict reports a state conflict, e.g. a taken name (HTTP 409).
 	KindConflict Kind = "conflict"
-	// KindUnprocessable rejects a semantically impossible request, e.g. a
-	// reference to a missing row (HTTP 422).
+	// KindUnprocessable rejects a well-formed but impossible request (HTTP 422).
 	KindUnprocessable Kind = "unprocessable"
 )
 
-// kindKey stores the Kind in the oops error context.
 const kindKey = "apperr.kind"
 
-// New starts an error of the given kind: code is the stable identifier sent
-// to clients, public the message safe to expose. Finish with .Wrap/.Errorf.
+// New starts an error with code, the stable key sent to clients, and public,
+// the message safe to expose; finish with .Wrap or .Errorf.
 func New(kind Kind, code, public string) oops.OopsErrorBuilder {
 	return oops.Code(code).Public(public).With(kindKey, kind)
 }

@@ -1,13 +1,13 @@
-name: Setup Go with separate caches
-description: Share downloaded modules and refresh compiled packages for each commit.
+name: Set up Go
+description: Sets up Go with a shared module cache and a build cache per scope and commit.
 inputs:
   scope:
-    description: Build mode and package set, such as unit-internal or build.
+    description: Build cache namespace, such as test or build-amd64.
     required: true
 runs:
   using: composite
   steps:
-    - name: Setup Go
+    - name: Set up Go
       uses: actions/setup-go@v7
       with:
         go-version-file: go.mod

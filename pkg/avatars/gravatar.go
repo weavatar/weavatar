@@ -6,9 +6,8 @@ import (
 	"strings"
 )
 
-// Gravatar fetches hash from baseURL, the Gravatar origin or a mirror of it.
-// It rejects non-image replies: callers cache the bytes for days, so a proxy's
-// error page must not pass for an avatar.
+// Gravatar fetches hash from baseURL, the origin or a mirror, and rejects
+// non-image replies because callers cache the bytes for days.
 func Gravatar(ctx context.Context, baseURL, hash string) ([]byte, error) {
 	resp, err := client().R().SetContext(ctx).SetQueryParams(map[string]string{
 		"r": "g",

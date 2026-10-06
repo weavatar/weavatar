@@ -12,12 +12,12 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/registry"
 )
 
-// deletionStatePrefix keeps deletion states apart from login states, so a
-// login callback cannot confirm a deletion and vice versa.
+// deletionStatePrefix keeps a login callback from confirming a deletion and
+// vice versa.
 const deletionStatePrefix = "delete-"
 
-// DeletionUsecase deletes accounts. It stays out of UserUsecase because the
-// cleanups it runs come from modules that depend on UserUsecase themselves.
+// DeletionUsecase is separate from UserUsecase because its cleanups come from
+// modules that depend on UserUsecase.
 type DeletionUsecase struct {
 	repo     UserRepo
 	oauth    OAuthProvider
@@ -48,8 +48,8 @@ func NewDeletionUsecase(
 	}
 }
 
-// DeletionURL starts the re-authorization that confirms a deletion. The
-// state remembers who asked, so only that user's callback can finish it.
+// DeletionURL starts the re-authorization that confirms a deletion, with a
+// state only userID's callback can redeem.
 func (uc *DeletionUsecase) DeletionURL(_ context.Context, userID string) (string, error) {
 	state := deletionStatePrefix + str.Random(16)
 	if err := uc.cache.Put(state, userID, stateTTL); err != nil {
@@ -59,10 +59,8 @@ func (uc *DeletionUsecase) DeletionURL(_ context.Context, userID string) (string
 	return authorizeURL(uc.client, redirectURI(uc.domain), state), nil
 }
 
-// ConfirmDeletion deletes userID's account once the OAuth server vouches
-// that the same person authorized it. Every module's cleanup and the soft
-// delete of the user run in one transaction, so a failure leaves the
-// account intact.
+// ConfirmDeletion deletes userID's account once the OAuth identity matches;
+// the cleanups and the soft delete share one transaction.
 func (uc *DeletionUsecase) ConfirmDeletion(ctx context.Context, userID, code, state string) error {
 	if !strings.HasPrefix(state, deletionStatePrefix) || uc.cache.Pull(state) != userID {
 		return ErrStateExpired()

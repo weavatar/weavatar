@@ -22,8 +22,8 @@ type Driver interface {
 	GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error)
 }
 
-// newClient is built once per driver; a req client serves concurrent requests
-// as long as its settings are not changed afterwards.
+// newClient is called once per driver; a req client is safe for concurrent
+// requests while its settings stay unchanged.
 func newClient() *req.Client {
 	return req.C().SetTimeout(requestTimeout)
 }

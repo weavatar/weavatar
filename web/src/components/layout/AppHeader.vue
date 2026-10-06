@@ -8,7 +8,6 @@
     "
   >
     <div class="wrap h-16 flex items-center justify-between gap-6">
-      <!-- 左：Logo -->
       <router-link
         :to="{ name: 'home' }"
         class="flex items-center shrink-0"
@@ -17,7 +16,6 @@
         <brand-logo :height="26" />
       </router-link>
 
-      <!-- 中：导航 -->
       <nav class="hidden md:flex items-center gap-0.5" aria-label="主导航">
         <router-link
           v-for="item in navItems"
@@ -30,7 +28,7 @@
         </router-link>
       </nav>
 
-      <!-- 右：操作区 -->
+      <!-- 操作区 -->
       <div class="flex items-center gap-1.5">
         <a
           :href="GITHUB_URL"
@@ -84,7 +82,6 @@
       </div>
     </div>
 
-    <!-- 移动端菜单 -->
     <transition name="drop">
       <div
         v-if="mobileOpen"

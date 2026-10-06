@@ -16,8 +16,8 @@ type Verifier interface {
 	Verify(ctx context.Context, ticket geetest.Ticket) (bool, error)
 }
 
-// Geetest passes when the captcha ticket verifies. Unlike most rules an empty
-// ticket fails: the captcha is a security check, not a format.
+// Geetest passes when the captcha ticket verifies; unlike format rules, an
+// empty ticket fails.
 type Geetest struct {
 	verifier Verifier
 	skip     bool
@@ -46,8 +46,8 @@ func (r *Geetest) Validate(f *validator.Field) (bool, error) {
 		return false, errors.New("rule: no geetest verifier configured")
 	}
 
-	// an unreachable geetest service counts as a failed captcha, not an
-	// evaluation error, so the client sees the captcha message
+	// an unreachable geetest service fails the captcha instead of erroring, so
+	// the client sees the captcha message
 	passed, err := r.verifier.Verify(f.Context(), ticket)
 	return passed && err == nil, nil
 }

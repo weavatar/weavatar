@@ -1,7 +1,7 @@
 <template>
   <div class="wrap">
     <div class="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
-      <!-- 左侧目录 -->
+      <!-- 目录 -->
       <aside class="hidden lg:block">
         <nav
           class="sticky top-24 py-16 max-h-[calc(100vh-6rem)] overflow-y-auto"
@@ -36,7 +36,6 @@
         </nav>
       </aside>
 
-      <!-- 正文 -->
       <div class="min-w-0 py-14 sm:py-16">
         <h1 class="display-text text-[2rem] sm:text-[2.75rem] text-fg">文档</h1>
         <p class="mt-3 text-base sm:text-[17px] text-fg2 max-w-2xl">
@@ -61,7 +60,6 @@
         </div>
 
         <article class="prose mt-6">
-          <!-- 基本概念 -->
           <section id="basic">
             <h2>基本概念</h2>
             <p>WeAvatar 头像 API 可以像普通的图片 URL 一样请求，具体格式是：</p>
@@ -99,7 +97,6 @@
             </div>
           </section>
 
-          <!-- 哈希 -->
           <section id="hash">
             <h2>邮箱 / 手机号的哈希</h2>
             <ol>
@@ -115,7 +112,6 @@
             </p>
           </section>
 
-          <!-- CMS -->
           <section id="cms">
             <h2>在 CMS 中使用</h2>
 
@@ -179,7 +175,6 @@
             </section>
           </section>
 
-          <!-- 评论系统 -->
           <section id="comments">
             <h2>在评论系统中使用</h2>
             <section id="twikoo">
@@ -192,7 +187,6 @@
             </section>
           </section>
 
-          <!-- 图片格式 -->
           <section id="format">
             <h2>指定图片格式</h2>
             <p>我们当前支持 10 种图片返回格式：</p>
@@ -219,7 +213,6 @@
             <p>如无必要，请保持使用默认的 WebP 格式，这是当下兼容性、速度、大小之间的最佳选择。</p>
           </section>
 
-          <!-- 额外参数 -->
           <section id="params">
             <h2>额外的参数</h2>
 
@@ -500,7 +493,7 @@ if ( ! function_exists( 'set_user_profile_picture_for_weavatar' ) ) {
     add_filter( 'user_profile_picture_description', 'set_user_profile_picture_for_weavatar', 1 );
 }`
 
-/* ── 滚动高亮 ── */
+// 目录随滚动高亮
 const active = ref('basic')
 const indicatorStyle = ref({ top: '0px', height: '0px' })
 

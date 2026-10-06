@@ -5,7 +5,6 @@
     <div
       class="mx-auto w-full max-w-5xl px-6 sm:px-10 py-10 sm:py-12 grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]"
     >
-      <!-- 概览 -->
       <div class="surface p-6 flex flex-col items-center text-center">
         <div class="relative">
           <avatar-image
@@ -47,7 +46,6 @@
         </dl>
       </div>
 
-      <!-- 表单 -->
       <div class="surface p-6 sm:p-8">
         <h2 class="text-base font-700 text-fg">基本资料</h2>
         <n-spin :show="pageLoading">
@@ -91,7 +89,6 @@
         </n-spin>
       </div>
 
-      <!-- 注销 -->
       <div class="surface p-6 sm:p-8 lg:col-span-2">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
@@ -184,7 +181,7 @@ const handleSave = () => {
     })
 }
 
-// the callback page reads the intent to finish the deletion instead of a login
+// 回调页凭此意图完成注销而不是登录
 const handleDeletion = () => {
   deletionLoading.value = true
   useRequest(userApi.deletionLogin())

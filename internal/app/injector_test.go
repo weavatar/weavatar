@@ -14,8 +14,8 @@ import (
 	"github.com/libtnb/assert/must"
 )
 
-// testConfig rewrites the example config so side effects land in a temp dir;
-// config values come from the file only, so the test edits the file.
+// testConfig points APP_CONFIG at a copy of the example config whose side
+// effects land in a temp dir; the environment cannot override values.
 func testConfig(t *testing.T) {
 	t.Helper()
 	tmp := t.TempDir()
@@ -38,9 +38,8 @@ func testConfig(t *testing.T) {
 	t.Setenv("APP_CONFIG", path)
 }
 
-// TestGeneratedGraphs builds both generated object graphs, catching wiring
-// and resource-lifecycle mistakes early. The database is never contacted:
-// the PostgreSQL handle connects lazily and migrations are not run.
+// TestGeneratedGraphs never contacts the database: the PostgreSQL handle
+// connects lazily and migrations are not run.
 func TestGeneratedGraphs(t *testing.T) {
 	testConfig(t)
 
@@ -72,9 +71,8 @@ func TestGeneratedGraphs(t *testing.T) {
 	must.NoError(t, cleanupCLI(), "generated cleanup must be idempotent")
 }
 
-// TestUserCleanupsAreMerged reads the generated graph, the only place the
-// collection merged across modules is visible: a Multibind declared inside
-// the user module would silently inject an empty one.
+// TestUserCleanupsAreMerged reads wire_gen.go because a Multibind declared
+// inside the user module would silently inject an empty collection.
 func TestUserCleanupsAreMerged(t *testing.T) {
 	src, err := os.ReadFile("wire_gen.go")
 	must.NoError(t, err)

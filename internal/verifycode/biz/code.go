@@ -25,8 +25,8 @@ type MailSender interface {
 	Send(ctx context.Context, to, code string) error
 }
 
-// CodeUsecase sends verification codes. Codes live in the shared cache under
-// "code:<use_for>:<target>", where the verify_code validation rule reads them.
+// CodeUsecase stores codes under "code:<use_for>:<target>", where the
+// verify_code rule reads them.
 type CodeUsecase struct {
 	cache  cache.Cache
 	sms    SMSSender

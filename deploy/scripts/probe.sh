@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# probe.sh BASE_URL [ATTEMPTS]: waits until /healthz and /readyz both answer 200, every
-# two seconds, 30 attempts by default. Exits 1 when the API never became ready.
+# probe.sh BASE_URL [ATTEMPTS]: polls /healthz and /readyz every two seconds until both
+# return 200; exits 1 after ATTEMPTS (default 30) failures.
 set -euo pipefail
 base="${1:?usage: probe.sh BASE_URL [ATTEMPTS]}"
 attempts="${2:-30}"

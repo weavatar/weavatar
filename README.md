@@ -22,14 +22,14 @@ make run                    # 启动 HTTP 服务，默认 :3000
 
 ## 部署
 
-`.github/workflows/deploy-backend.yml` 通过 SSH 上传二进制、执行迁移并重启 systemd 服务，所需的变量与密钥见文件开头的注释。
+`.github/workflows/deploy-backend.yml` 通过 SSH 上传二进制、执行迁移并平滑重载 systemd 服务，所需的变量与密钥见文件开头的注释。
 
 服务器准备：
 
-- 创建 `www` 用户与安装目录，放好 `config/config.yml`，systemd 服务以 `www` 运行。
-- 由运维创建安装目录下的 `storage/` 并把属主设为 `www`。部署不会创建或遍历 `storage/`，迁移命令以 `www` 身份运行，日志也归 `www` 所有。
+- 创建 `www` 用户与安装目录，放好 `config/config.yml`，systemd 服务以 `www` 运行且为 `Type=notify-reload`。
+- 安装目录下的 `storage/` 由运维创建并归 `www` 所有，部署不会创建或遍历它；迁移命令也以 `www` 身份运行。
 - `DEPLOY_USER` 用 root，或者能免密执行 `sudo -u www`、`sudo chown`、`systemctl` 与 `journalctl` 的用户。
-- 部署在 nginx 之后时，在配置里把 `http.proxy_header` 设为 `X-Real-IP`，并确保服务端口只对 nginx 开放。
+- 部署在 nginx 后要把 `http.proxy_header` 设为 `X-Real-IP`，并确保服务端口只对 nginx 开放。
 
 ## 文档
 

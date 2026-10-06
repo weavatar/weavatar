@@ -25,7 +25,6 @@ const props = defineProps<{
   useFor: string
 }>()
 
-// 极验实例
 let captchaInstance: any = null
 const onCaptchaInit = (instance: any) => {
   captchaInstance = instance
@@ -37,7 +36,6 @@ const onCaptchaInit = (instance: any) => {
   })
 }
 
-// 倒计时
 const remaining = ref(0)
 const isActive = computed(() => remaining.value > 0)
 let timer: ReturnType<typeof setInterval> | null = null
@@ -57,7 +55,6 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-// 发送
 const loading = ref(false)
 
 const handleSend = () => {

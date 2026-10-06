@@ -50,7 +50,7 @@ const loading = ref(false)
 
 const handleLogin = () => {
   loading.value = true
-  sessionStorage.removeItem('oauth_intent') // an abandoned deletion must not hijack this login
+  sessionStorage.removeItem('oauth_intent') // 放弃的注销不能劫持本次登录
   useRequest(auth.login())
     .onSuccess(({ data }: any) => {
       window.location.href = data.url

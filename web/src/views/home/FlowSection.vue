@@ -12,7 +12,6 @@
           :key="step.title"
           class="relative flex flex-col lg:px-8 first:lg:pl-0 last:lg:pr-0"
         >
-          <!-- 步骤间连接线 -->
           <div
             v-if="i < steps.length - 1"
             class="hidden lg:block absolute top-5 left-[calc(100%-2rem)] w-16 dash-line z-10"

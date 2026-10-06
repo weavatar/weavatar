@@ -1,15 +1,14 @@
 name: Deploy Frontend
 run-name: Deploy web
 
-# Builds web/ and syncs dist/ into $WEB_ROOT, the directory the web server already serves.
-# The smoke test checks that version.json reports the deployed commit.
+# Builds web/, syncs dist/ into the served $WEB_ROOT and checks that version.json reports the
+# deployed commit.
 #
-# Repository secrets (Settings -> Secrets):
-#   vars    API_URL   baked into the build as VITE_API_URL, default https://weavatar.com/api
+# Repository variables (optional) and secrets:
+#   vars    API_URL   VITE_API_URL for the build, default https://weavatar.com/api
 #           WEB_ROOT  default /opt/ace/sites/weavatar/public
-#           WEB_URL   public site URL used by the smoke test, default https://weavatar.com
-#           all three are optional overrides
-#   secrets DEPLOY_HOST, DEPLOY_USER (must be able to write WEB_ROOT and sudo chown), DEPLOY_SSH_KEY
+#           WEB_URL   public URL for the smoke test, default https://weavatar.com
+#   secrets DEPLOY_HOST, DEPLOY_USER (can write WEB_ROOT and sudo chown), DEPLOY_SSH_KEY
 
 on:
   workflow_dispatch:
@@ -32,7 +31,7 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
     steps:
-      - name: Check the deployment configuration
+      - name: Check configuration
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
@@ -49,12 +48,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup pnpm
+      - name: Set up pnpm
         uses: pnpm/action-setup@v6
         with:
           package_json_file: web/package.json
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -69,11 +68,11 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build-only
 
-      - name: Identify the release
+      - name: Check version.json
         id: release
         run: |
           release="$(git rev-parse --short HEAD)"
-          # vite.config.ts writes the same short hash into version.json; the smoke test relies on it.
+          # The smoke test compares the served version.json against this hash.
           jq -e --arg hash "$release" '.hash == $hash' web/dist/version.json
           echo "hash=$release" >> "$GITHUB_OUTPUT"
 
@@ -102,8 +101,8 @@ jobs:
         run: |
           # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
           ssh deploy-target "install -d '$WEB_ROOT'"
-          # Updated files are renamed into place together at the end, so index.html never
-          # references assets that have not arrived yet.
+          # --delay-updates renames files into place at the end, so index.html never points at
+          # assets that have not arrived.
           for attempt in 1 2 3; do
             if rsync -az --delete-delay --delay-updates --timeout=60 web/dist/ "deploy-target:$WEB_ROOT/"; then
               # shellcheck disable=SC2029

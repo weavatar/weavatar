@@ -198,8 +198,8 @@ func (f *deletionFixture) exchangeReturns(identity biz.Identity) {
 	}
 }
 
-// newDeletionFixture mocks every port; cleanups defaults to two recorders
-// that each require the transaction ctx. Unset mock funcs panic when called.
+// newDeletionFixture defaults cleanups to two recorders that require the
+// transaction ctx.
 func newDeletionFixture(t *testing.T, cleanups registry.UserCleanups) *deletionFixture {
 	t.Helper()
 

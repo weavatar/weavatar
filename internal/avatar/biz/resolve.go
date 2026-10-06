@@ -68,10 +68,8 @@ func ValidHash(hash string) bool {
 	return hashPattern.MatchString(hash)
 }
 
-// Resolve tries a WeAvatar upload (app override first), Gravatar, then QQ.
-// WeAvatar and Gravatar images audited as banned are swapped for the ban
-// image, and queued for audit when not audited yet. With nothing found, or
-// Force, Default decides. Images are re-encoded as Ext at Size.
+// Resolve tries a WeAvatar upload (app override first), Gravatar, then QQ, and
+// falls back to Default; banned uploads and Gravatar images become the ban image.
 func (uc *AvatarUsecase) Resolve(ctx context.Context, req ResolveRequest) (ResolveResult, error) {
 	req = normalize(req)
 

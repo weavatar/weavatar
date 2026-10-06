@@ -7,10 +7,9 @@ import (
 	"github.com/libtnb/validator"
 )
 
-// Bind binds and validates the request against the given validator. Later
-// sources win: the body overrides the query, path parameters override both.
-// The query binder also matches Go field names case-insensitively, so without
-// this order "?code=x" could replace a JSON "code".
+// Bind binds the query, then the body, then path parameters, each overriding
+// the last, so a case-insensitive query match such as "?code=x" cannot replace
+// a JSON "code"; then it validates.
 func Bind[T any](c fiber.Ctx, v *validator.Validator) (*T, error) {
 	req := new(T)
 

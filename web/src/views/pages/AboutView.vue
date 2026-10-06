@@ -5,7 +5,6 @@
     <div
       class="wrap py-12 sm:py-16 grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20"
     >
-      <!-- 左：文字 -->
       <div class="prose">
         <h2>WeAvatar 的前生</h2>
         <p>WeAvatar 的立项可以追溯至 2022 年 3 月，彼时我们依然在为 LitePress 项目工作。</p>
@@ -36,7 +35,6 @@
         </a>
       </div>
 
-      <!-- 右：时间线 -->
       <div>
         <h2 class="text-2xl font-700 tracking-tight text-fg pb-2.5 mb-6 border-b border-line">
           WeAvatar 的今世

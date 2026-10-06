@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	// statePrefix marks login states in the shared cache, so a client cannot
-	// pass another feature's cache key off as a state.
+	// statePrefix keeps a client from passing another cache key off as a state.
 	statePrefix = "login-"
 	stateTTL    = 5 * time.Minute
 
@@ -38,9 +37,8 @@ type User struct {
 	DeletedAt *time.Time `rio:",softdelete" json:"-"`
 }
 
-// UserRepo is the persistence boundary; a missing row is rio.ErrNotFound and
-// a taken union_id on Create is rio.ErrDuplicateKey. Calls join the
-// transaction a TxRunner put in ctx.
+// UserRepo reports a miss as rio.ErrNotFound and a taken union_id as
+// rio.ErrDuplicateKey; calls join the transaction a TxRunner put in ctx.
 type UserRepo interface {
 	FindByUnionID(ctx context.Context, unionID string) (*User, error)
 	Find(ctx context.Context, id string) (*User, error)
@@ -50,8 +48,8 @@ type UserRepo interface {
 	Delete(ctx context.Context, user *User) error
 }
 
-// TxRunner runs fn in one database transaction, carried by the ctx it passes;
-// an error from fn rolls the transaction back.
+// TxRunner runs fn in one transaction carried by the ctx it passes; an error
+// from fn rolls it back.
 type TxRunner interface {
 	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
@@ -102,8 +100,7 @@ func NewUserUsecase(
 	}
 }
 
-// LoginURL starts an OAuth login: it remembers a fresh state for five
-// minutes and returns the authorization URL carrying it.
+// LoginURL returns the authorization URL for a fresh login state.
 func (uc *UserUsecase) LoginURL(_ context.Context) (string, error) {
 	state := statePrefix + str.Random(16)
 	if err := uc.cache.Put(state, true, stateTTL); err != nil {
@@ -113,9 +110,8 @@ func (uc *UserUsecase) LoginURL(_ context.Context) (string, error) {
 	return authorizeURL(uc.client, redirectURI(uc.domain), state), nil
 }
 
-// Callback finishes an OAuth login and returns a login token. The first
-// login creates the user; later logins refresh the real-name flag. A state
-// is consumed atomically on first use, so a callback cannot be replayed.
+// Callback redeems a one-shot state and code for a login token, creating the
+// user on first login and refreshing the real-name flag afterwards.
 func (uc *UserUsecase) Callback(ctx context.Context, code, state string) (string, error) {
 	if !strings.HasPrefix(state, statePrefix) || uc.cache.Pull(state) == nil {
 		return "", ErrStateExpired()

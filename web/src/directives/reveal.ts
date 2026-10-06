@@ -1,9 +1,5 @@
 import type { Directive } from 'vue'
 
-/**
- * v-reveal — 元素进入视口时添加 .is-visible，配合 main.scss 中的 .reveal 做入场动画。
- * 可传入延迟毫秒数：v-reveal="120"
- */
 let observer: IntersectionObserver | null = null
 
 function getObserver() {
@@ -22,6 +18,7 @@ function getObserver() {
   return observer
 }
 
+// 进入视口时加 .is-visible 触发 main.scss 的 .reveal 动画，绑定值为延迟毫秒数
 export const vReveal: Directive<HTMLElement, number | undefined> = {
   mounted(el, binding) {
     el.classList.add('reveal')

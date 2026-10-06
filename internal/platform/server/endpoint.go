@@ -18,7 +18,6 @@ var pathParams = regexp.MustCompile(`:([A-Za-z0-9_]+)`)
 // Version is the build version, injected by main; the OpenAPI document carries it.
 type Version string
 
-// NewVersion normalizes the build-time version for generated documentation.
 func NewVersion(version string) Version {
 	if version == "" {
 		return "dev"
@@ -26,8 +25,7 @@ func NewVersion(version string) Version {
 	return Version(version)
 }
 
-// HTTP registers every route contribution on r, in contribution order; an
-// endpoint's middlewares run before its handler.
+// HTTP registers every route contribution on r in contribution order.
 func HTTP(groups registry.Routes, r fiber.Router) {
 	for _, endpoints := range groups {
 		for _, e := range endpoints {
@@ -46,7 +44,7 @@ func SpecJSON(title string, version Version, validate *validator.Validator, grou
 	g, err := openapi.New(title, string(version),
 		openapi.WithValidator(validate),
 		openapi.WithSchema[time.Time](&openapi.Schema{Type: "string", Format: "date-time"}),
-		// Uploads bind from multipart forms; document the file, not the header struct.
+		// document uploads as a file, not the multipart header struct
 		openapi.WithSchemaTransform[multipart.FileHeader](func(s *openapi.Schema) error {
 			*s = openapi.Schema{Type: "string", Format: "binary"}
 			return nil

@@ -283,7 +283,6 @@ func (f *fixture) issueTokens() {
 	f.tokens.IssueFunc = func(string) (string, error) { return issuedToken, nil }
 }
 
-// newFixture leaves every mock func nil, so an unexpected call panics the test.
 func newFixture() *fixture {
 	f := &fixture{
 		repo:   &mocksbiz.UserRepo{},

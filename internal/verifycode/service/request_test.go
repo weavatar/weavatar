@@ -14,7 +14,6 @@ import (
 
 var ticket = geetest.Ticket{LotNumber: "lot", CaptchaOutput: "out", PassToken: "pass", GenTime: "1"}
 
-// TestCheckRules catches invalid validate tags at test time.
 func TestCheckRules(t *testing.T) {
 	v := newValidator(t)
 

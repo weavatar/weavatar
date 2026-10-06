@@ -1,6 +1,3 @@
-/**
- * 计算 WeAvatar 头像哈希：去除首尾空格 → 转小写 → SHA256（十六进制）
- */
 export function normalizeRaw(raw: string) {
   return raw.trim().toLowerCase()
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -61,7 +62,7 @@ func (r *Geetest) Verify(ctx context.Context, ticket Ticket) (bool, error) {
 	}
 
 	if res.Result != "success" {
-		return false, fmt.Errorf("%s", res.Reason)
+		return false, errors.New(res.Reason)
 	}
 
 	return true, nil

@@ -44,7 +44,6 @@ func TestBuildOpenLookup(t *testing.T) {
 	const start, end = uint64(MinQq), uint64(MinQq + 120_000 - 1)
 	dir := buildTestTables(t, start, end, DefaultPartBits)
 
-	// intermediate files are cleaned up
 	_, err := os.Stat(dir + "/tmp")
 	check.True(t, os.IsNotExist(err))
 
@@ -65,7 +64,7 @@ func TestBuildOpenLookup(t *testing.T) {
 		check.Equal(t, s.KeyCount, end-start+1)
 		check.Equal(t, s.Partitions, 256)
 		check.Equal(t, s.ValSize, s.KeyCount*4)
-		// a few hundred keys per partition cannot amortize fixed overhead; TestBitsPerKey checks bits/key
+		// too few keys per partition to assert bits/key; TestBitsPerKey does
 		t.Logf("%s: idx=%d val=%d bits/key=%.2f levels=%d", typ, s.IdxSize, s.ValSize, s.BitsPerKey, s.MaxLevels)
 	}
 
@@ -79,7 +78,6 @@ func TestBuildOpenLookup(t *testing.T) {
 		}
 	}
 
-	// uppercase hex is accepted too
 	got, ok := ts.Lookup(strings.ToUpper(hashOf(TypeMD5, "12345@qq.com")))
 	check.True(t, ok)
 	check.Equal(t, got, uint32(12345))

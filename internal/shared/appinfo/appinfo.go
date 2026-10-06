@@ -1,6 +1,6 @@
 // Package appinfo carries configuration values to business modules, which
-// cannot import platform/conf. Each value has its own named type because wire
-// keys bindings by exact type.
+// cannot import platform/conf; each has its own type because wire keys
+// bindings by type.
 package appinfo
 
 import "time"

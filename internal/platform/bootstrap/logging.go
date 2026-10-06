@@ -13,8 +13,8 @@ import (
 	"github.com/weavatar/weavatar/internal/platform/conf"
 )
 
-// NewLogger builds the logger writing to a rotated file, stderr, or both.
-// Console logs go to stderr so stdout stays clean for command output.
+// NewLogger writes to a rotated file, stderr, or both; stdout stays free for
+// command output.
 func NewLogger(config *conf.Config) (*slog.Logger, func() error, error) {
 	var (
 		writers []io.Writer

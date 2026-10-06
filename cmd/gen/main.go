@@ -1,11 +1,5 @@
-// Command gen scaffolds a CRUD module (biz entity + repo interface, data repo
-// implementation, service handlers, request structs, create-table migration
-// and Wire module) or a standalone schema migration.
-//
-// Usage:
-//
-//	go run ./cmd/gen <name>            new module (singular snake_case, e.g. article)
-//	go run ./cmd/gen migration <name>  new migration (e.g. add_email_to_users_table)
+// Command gen scaffolds a CRUD module or a schema migration; run it without
+// arguments for usage.
 package main
 
 import (
@@ -105,7 +99,7 @@ func generateModule(name string) error {
 		{"migration.tmpl", filepath.Join("internal", "migrations", mig.Name+".go"), mig},
 	}
 
-	// refuse to overwrite anything: check all targets before writing any
+	// check every target first so a clash writes nothing
 	for _, f := range files {
 		if _, err := os.Stat(f.dst); err == nil {
 			return fmt.Errorf("%s already exists", f.dst)
@@ -123,10 +117,8 @@ func generateModule(name string) error {
 Next steps:
   1. internal/app/wire.go: import "%[2]s/internal/%[1]s" and add
      "%[1]s.Module" to ApplicationModule.Include.
-  2. run "make generate" to regenerate Wire code and mocks.
+  2. run "make generate" to regenerate Wire code and the internal/mocks/%[1]s/biz mocks.
   3. run "make gen-check" to verify the generated module compiles.
-     Mockery auto-discovers the new biz package and
-     writes its repo mock under internal/mocks/%[1]s/biz (no .mockery.yaml edit needed).
 `, m.Snake, m.Module)
 
 	return nil
@@ -150,8 +142,8 @@ func generateMigration(name string) error {
 	return nil
 }
 
-// migrationFor derives the skeleton from the migration name, following the
-// create_<table>_table / add_<column>_to_<table>_table naming convention.
+// migrationFor derives the skeleton from a create_<table>_table or
+// add_<column>_to_<table>_table name.
 func migrationFor(date, name string) migration {
 	mig := migration{Name: date + "_" + name, Table: "CHANGE_ME"}
 	base := strings.TrimSuffix(name, "_table")

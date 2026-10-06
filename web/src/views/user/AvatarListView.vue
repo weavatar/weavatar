@@ -10,7 +10,6 @@
     </page-header>
 
     <div class="wrap py-10 sm:py-12">
-      <!-- 提示 -->
       <div class="surface-muted px-5 py-4 flex items-start gap-3 text-sm text-fg2 leading-relaxed">
         <span class="i-lucide-info text-brand text-lg mt-0.5" />
         <div>
@@ -23,7 +22,6 @@
         </div>
       </div>
 
-      <!-- 骨架屏 -->
       <div v-if="loading && !data.length" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div v-for="i in 6" :key="i" class="surface p-5 flex gap-4 animate-pulse">
           <div class="w-[4.5rem] h-[4.5rem] rounded-2xl bg-muted shrink-0" />
@@ -35,7 +33,6 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
       <div
         v-else-if="!loading && !data.length"
         class="mt-8 rounded-3xl border border-dashed border-line-strong wa-dots py-20 px-6 text-center"
@@ -55,7 +52,6 @@
         </button>
       </div>
 
-      <!-- 列表 -->
       <div
         v-else
         class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -108,7 +104,6 @@
         </article>
       </div>
 
-      <!-- 分页 -->
       <div
         v-if="pagination.itemCount > 0"
         class="mt-10 flex flex-wrap items-center justify-between gap-4"

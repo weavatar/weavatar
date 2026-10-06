@@ -10,7 +10,6 @@
         v-reveal
         class="mt-12 grid gap-px bg-line border border-line rounded-3xl overflow-hidden md:grid-cols-6"
       >
-        <!-- 多级头像匹配 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-4 flex flex-col">
           <feature-head icon="i-lucide-layers" title="多级头像匹配">
             按 WeAvatar、Gravatar、社交头像的顺序逐级匹配，70% 以上的请求都能命中真实头像。
@@ -40,7 +39,6 @@
           </div>
         </article>
 
-        <!-- 手机号 & 字母头像 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-2 flex flex-col">
           <feature-head icon="i-lucide-smartphone" title="手机号 & 字母头像">
             支持手机号作为头像标识，内置字母默认头像，更符合国内使用习惯。
@@ -58,7 +56,6 @@
           </div>
         </article>
 
-        <!-- 下一代图片格式 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-2 flex flex-col">
           <feature-head icon="i-lucide-image" title="下一代图片格式">
             默认输出 WebP，节省约 80% 流量，另支持 AVIF、HEIC、JXL 等 10 种格式。
@@ -75,7 +72,6 @@
           </div>
         </article>
 
-        <!-- AI 内容审核 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-2 flex flex-col">
           <feature-head icon="i-lucide-shield-check" title="AI 内容审核">
             每张头像都经过 AI 自动审核，违规内容不会输出。
@@ -89,7 +85,6 @@
           </div>
         </article>
 
-        <!-- 极致性能 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-2 flex flex-col">
           <feature-head icon="i-lucide-gauge" title="极致性能">
             Go 语言编写，多级缓存加全球 CDN，毫秒级响应。
@@ -100,7 +95,6 @@
           </div>
         </article>
 
-        <!-- 开源 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-3 flex flex-col">
           <feature-head icon="i-lucide-github" title="开源透明">
             前后端代码全部开源，可自行部署。
@@ -118,7 +112,6 @@
           </div>
         </article>
 
-        <!-- 开放平台 -->
         <article class="bg-elev p-7 sm:p-8 md:col-span-3 flex flex-col">
           <feature-head icon="i-lucide-blocks" title="开放平台">
             开放平台与 SDK 即将推出，可为不同应用设置不同头像。

@@ -90,8 +90,8 @@ func (q *Queue) Start() error {
 	return nil
 }
 
-// Stop refuses new jobs, drops pending ones and waits for the running job.
-// When ctx expires first it cancels the job's context and returns ctx.Err().
+// Stop refuses new jobs, drops pending ones and waits for the running job,
+// canceling its ctx if ctx expires first.
 func (q *Queue) Stop(ctx context.Context) error {
 	q.mu.Lock()
 	q.stopped = true
@@ -99,18 +99,16 @@ func (q *Queue) Stop(ctx context.Context) error {
 	q.mu.Unlock()
 
 	q.quitOnce.Do(func() { close(q.quit) })
+	defer q.cancel()
 
 	if !started {
-		q.cancel()
 		return nil
 	}
 
 	select {
 	case <-q.done:
-		q.cancel()
 		return nil
 	case <-ctx.Done():
-		q.cancel()
 		return ctx.Err()
 	}
 }

@@ -7,9 +7,8 @@ import (
 	"github.com/weavatar/weavatar/pkg/imaging"
 )
 
-// Qq prefers the 640px avatar but falls back to 100px when the 640 one is
-// missing or undecodable or smaller than 100px, which qlogo serves for some
-// accounts. Some accounts also break at 100px, so that reply must decode too.
+// Qq falls back to the 100px avatar when qlogo serves the 640px one missing,
+// undecodable or undersized; the fallback must decode too.
 func Qq(ctx context.Context, qq string) ([]byte, error) {
 	img, err := fetchQq(ctx, qq, "640")
 	if err != nil {

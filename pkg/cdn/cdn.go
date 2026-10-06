@@ -118,35 +118,16 @@ func New(config Config) (*Cdn, error) {
 
 // RefreshUrl keeps going past a failing driver and joins the errors.
 func (c *Cdn) RefreshUrl(ctx context.Context, urls []string) error {
-	var errs []error
-	for _, driver := range c.drivers {
-		if err := ctx.Err(); err != nil {
-			return errors.Join(append(errs, err)...)
-		}
-		if err := driver.RefreshUrl(ctx, urls); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
+	return c.each(ctx, func(d Driver) error { return d.RefreshUrl(ctx, urls) })
 }
 
 // RefreshPath keeps going past a failing driver and joins the errors.
 func (c *Cdn) RefreshPath(ctx context.Context, paths []string) error {
-	var errs []error
-	for _, driver := range c.drivers {
-		if err := ctx.Err(); err != nil {
-			return errors.Join(append(errs, err)...)
-		}
-		if err := driver.RefreshPath(ctx, paths); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
+	return c.each(ctx, func(d Driver) error { return d.RefreshPath(ctx, paths) })
 }
 
-// GetUsage sums every driver's count and fails if any driver does. Drivers
-// format dates in the location of start and end, so pass them in the zone the
-// day boundaries belong to.
+// GetUsage sums every driver's count, stopping at the first error; drivers
+// format dates in start's location, so pass the zone the days belong to.
 func (c *Cdn) GetUsage(ctx context.Context, domain string, start, end time.Time) (uint, error) {
 	var total uint
 	for _, driver := range c.drivers {
@@ -157,4 +138,17 @@ func (c *Cdn) GetUsage(ctx context.Context, domain string, start, end time.Time)
 		total += usage
 	}
 	return total, nil
+}
+
+func (c *Cdn) each(ctx context.Context, fn func(Driver) error) error {
+	var errs []error
+	for _, driver := range c.drivers {
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
+		if err := fn(driver); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }

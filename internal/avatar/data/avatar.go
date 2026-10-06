@@ -42,12 +42,7 @@ func (r *avatarRepo) List(ctx context.Context, userID string, page, limit int) (
 	if err != nil {
 		return nil, 0, wrap(err, "list avatars of %s", userID)
 	}
-
-	avatars := make([]*biz.Avatar, len(list))
-	for i := range list {
-		avatars[i] = &list[i]
-	}
-	return avatars, total, nil
+	return pointers(list), total, nil
 }
 
 func (r *avatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.Avatar, error) {
@@ -55,12 +50,7 @@ func (r *avatarRepo) ListAllByUser(ctx context.Context, userID string) ([]*biz.A
 	if err != nil {
 		return nil, wrap(err, "list all avatars of %s", userID)
 	}
-
-	avatars := make([]*biz.Avatar, len(list))
-	for i := range list {
-		avatars[i] = &list[i]
-	}
-	return avatars, nil
+	return pointers(list), nil
 }
 
 func (r *avatarRepo) Find(ctx context.Context, userID, hash string) (*biz.Avatar, error) {
@@ -137,4 +127,12 @@ func wrap(err error, format string, args ...any) error {
 		return err
 	}
 	return oops.In("avatar").Wrapf(err, format, args...)
+}
+
+func pointers(list []biz.Avatar) []*biz.Avatar {
+	avatars := make([]*biz.Avatar, len(list))
+	for i := range list {
+		avatars[i] = &list[i]
+	}
+	return avatars
 }

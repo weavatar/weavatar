@@ -126,7 +126,7 @@ func (y *YunDun) GetUsage(ctx context.Context, domain string, startTime, endTime
 		SubDomain: []string{domain},
 		Interval:  "1d",
 	}
-	// both outcomes carry the status block, so one value serves either
+	// success and error replies share the status block
 	var usage YunDunUsageResponse
 	_, err := y.client.R().SetContext(ctx).SetBodyJsonMarshal(request).SetSuccessResult(&usage).SetErrorResult(&usage).Post("https://www.yundun.com/api/V4/stati.data.get")
 	if err != nil {
@@ -162,10 +162,9 @@ func (y *YunDun) refresh(ctx context.Context, field string, urls []string) error
 	return nil
 }
 
-// login runs YunDun's console SSO on every call rather than tracking when the
-// session expires. The reply is assumed to carry the V4 status block like the
-// other endpoints; a reply without one is let through and the API call that
-// follows reports its own status.
+// login redoes the console SSO on every call instead of tracking session
+// expiry; a reply without a V4 status block passes, and the next call reports
+// its own status.
 func (y *YunDun) login(ctx context.Context) error {
 	timeStamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	callback := "jsonp_" + timeStamp + "_" + str.RandomN(16)

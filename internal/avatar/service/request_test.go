@@ -12,7 +12,6 @@ import (
 	"github.com/weavatar/weavatar/internal/shared/transport"
 )
 
-// TestCheckRules catches invalid validate tags at test time.
 func TestCheckRules(t *testing.T) {
 	v, err := validator.New(rule.Options(nil, nil, nil, true)...)
 	must.NoError(t, err)

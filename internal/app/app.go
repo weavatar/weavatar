@@ -48,9 +48,9 @@ func NewApp(
 	}
 }
 
-// Run migrates the database, then serves until ctx is cancelled; SIGHUP
-// hot-upgrades. Components stop in reverse order: HTTP first, so in-flight
-// requests can still enqueue, the queue last.
+// Run migrates the database and serves until ctx is cancelled; SIGHUP
+// hot-upgrades. HTTP stops before the queue so in-flight requests can still
+// enqueue.
 func (r *App) Run(ctx context.Context) error {
 	if err := r.migrator.Up(ctx); err != nil {
 		return err
@@ -61,7 +61,7 @@ func (r *App) Run(ctx context.Context) error {
 		graceful.WithUpgrade(),
 		graceful.WithShutdownTimeout(30*time.Second),
 	)
-	// pprof/expvar live on http.DefaultServeMux, served on a private port
+	// no Handler: serves http.DefaultServeMux, where pprof and expvar register
 	if addr := r.conf.HTTP.DebugAddress; addr != "" {
 		g.Listen("debug", addr, &http.Server{ReadHeaderTimeout: 10 * time.Second})
 	}

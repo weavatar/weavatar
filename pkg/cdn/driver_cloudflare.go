@@ -59,12 +59,9 @@ func newCloudFlare(c CloudflareConfig) *CloudFlare {
 
 func (s *CloudFlare) RefreshUrl(ctx context.Context, urls []string) error {
 	// Cloudflare wants full URLs, scheme included
-	var newUrls cache.CachePurgeParamsBodyCachePurgeSingleFile
-	newUrls.Files = cloudflare.F(urls)
-
 	resp, err := s.sdk.Cache.Purge(ctx, cache.CachePurgeParams{
 		ZoneID: cloudflare.F(s.zoneID),
-		Body:   newUrls,
+		Body:   cache.CachePurgeParamsBodyCachePurgeSingleFile{Files: cloudflare.F(urls)},
 	})
 	if err != nil {
 		return err

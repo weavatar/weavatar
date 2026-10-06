@@ -38,7 +38,7 @@ func New(config Config) (*Audit, error) {
 	}
 }
 
-// Check moderates the image at url; remark explains the verdict.
+// Check moderates the image at url, returning whether it is banned and why.
 func (c *Audit) Check(ctx context.Context, url string) (bool, string, error) {
 	return c.driver.Check(ctx, url)
 }

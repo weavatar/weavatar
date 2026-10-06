@@ -57,7 +57,6 @@ watch(
   }
 )
 
-// 极验
 let captchaInstance: any = null
 const onCaptchaInit = (instance: any) => {
   captchaInstance = instance

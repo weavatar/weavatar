@@ -20,9 +20,8 @@ var (
 	avatarDefaults = []string{"404", "mp", "mm", "mystery", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank", "color", "letter", "initials"}
 )
 
-// Avatar is the Gravatar-compatible avatar query; Prepare derives every field
-// from the path and query. Range checks and the invalid-hash fallback belong to
-// biz.Resolve.
+// Avatar is the Gravatar-compatible avatar query; range checks and the
+// invalid-hash fallback belong to biz.Resolve.
 type Avatar struct {
 	Hash     string `uri:"hash"`
 	AppID    string `query:"-"`

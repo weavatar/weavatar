@@ -29,15 +29,13 @@ func NewRouter(
 		WriteTimeout:      config.HTTP.WriteTimeout,
 		IdleTimeout:       config.HTTP.IdleTimeout,
 		ReduceMemoryUsage: config.HTTP.ReduceMemoryUsage,
-		// c.IP(), which Throttle keys on, takes the client IP from ProxyHeader
-		// whatever the peer, as the service is reached only through nginx.
-		// Fiber v3 reads the header only from trusted peers, hence trusting
-		// every address; a value that is not an IP falls back to the peer.
+		// the service is reachable only through nginx, so every peer is trusted
+		// to set ProxyHeader; a non-IP value falls back to the peer address
 		ProxyHeader:        config.HTTP.ProxyHeader,
 		TrustProxy:         config.HTTP.ProxyHeader != "",
 		TrustProxyConfig:   fiber.TrustProxyConfig{Proxies: []string{"0.0.0.0/0", "::/0"}},
 		EnableIPValidation: true,
-		// every framework-level error (404, 405, 413, panics) leaves as JSON
+		// framework-level errors (404, 405, 413, panics) also answer in JSON
 		ErrorHandler: errorHandler,
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
@@ -68,8 +66,8 @@ func NewRouter(
 	return r, nil
 }
 
-// errorHandler is the single error exit, answering in the usual envelope;
-// 5xx details are logged, not sent.
+// errorHandler answers every error in the usual envelope; 5xx details are
+// logged, not sent.
 func errorHandler(c fiber.Ctx, err error) error {
 	code := fiber.StatusInternalServerError
 	if e, ok := errors.AsType[*fiber.Error](err); ok {

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- 已选择：预览 -->
     <div v-if="blob && previewUrl" class="surface p-4 flex items-center gap-4">
       <avatar-image
         :src="previewUrl"
@@ -18,7 +17,6 @@
       </button>
     </div>
 
-    <!-- 未选择：上传 / 社交头像 -->
     <div v-else>
       <div class="flex gap-1 p-1 rounded-xl bg-muted border border-line w-fit">
         <button
@@ -33,7 +31,6 @@
         </button>
       </div>
 
-      <!-- 上传 -->
       <label
         v-if="tab === 'upload'"
         class="mt-3 block rounded-2xl border border-dashed p-8 text-center cursor-pointer transition-colors"
@@ -114,7 +111,6 @@ const qq = ref('')
 const qqLoading = ref(false)
 const cropRef = ref<InstanceType<typeof CropAvatar>>()
 
-/* 预览 URL */
 const previewUrl = ref('')
 watch(
   () => props.blob,
@@ -135,7 +131,7 @@ const sizeText = computed(() => {
     : `${Math.round(size / 1024)} KB`
 })
 
-/* 校验 + 打开裁剪 */
+// 校验后打开裁剪
 const accept = (file: File) => {
   const validType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
   const validSize = file.size / 1024 / 1024 < 5
@@ -161,7 +157,6 @@ const onDrop = (e: DragEvent) => {
 
 const onCropped = (b: Blob) => emit('update:blob', b)
 
-/* 社交头像 */
 const fetchQq = () => {
   const value = qq.value.trim()
   if (!/^\d{5,12}$/.test(value)) {

@@ -40,7 +40,7 @@ func (r *Mail) Send(ctx context.Context, to, subject, content string) error {
 		mail.WithSSL(),
 		mail.WithTLSPolicy(mail.NoTLS),
 		mail.WithTLSPortPolicy(mail.NoTLS),
-		mail.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}), //nolint:gosec // the SMTP certificate has never been verified; tightening it needs a deployment check
+		mail.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}), //nolint:gosec // verifying the SMTP certificate needs a deployment check first
 		mail.WithUsername(r.user), mail.WithPassword(r.password))
 	if err != nil {
 		return err

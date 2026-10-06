@@ -10,7 +10,7 @@ import (
 	"github.com/jdcloud-api/jdcloud-sdk-go/services/starshield/client"
 )
 
-// StarShield is JD Cloud StarShield. Its SDK takes no context, so ctx is only
+// StarShield is JD Cloud StarShield; its SDK takes no context, so ctx is only
 // checked before each call.
 type StarShield struct {
 	accessKey, secretKey string

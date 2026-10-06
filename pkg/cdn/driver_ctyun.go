@@ -58,8 +58,8 @@ func (c *CTYun) RefreshUrl(ctx context.Context, urls []string) error {
 	return c.refresh(ctx, 1, "url", urls)
 }
 
-// RefreshPath sends http:// paths, which CTYun requires; paths is copied
-// because the other drivers receive the same slice.
+// RefreshPath rewrites paths to http://, which CTYun requires, in a copy since
+// other drivers share the slice.
 func (c *CTYun) RefreshPath(ctx context.Context, paths []string) error {
 	values := make([]string, len(paths))
 	for i, path := range paths {
@@ -121,8 +121,7 @@ func (c *CTYun) refresh(ctx context.Context, taskType int, kind string, values [
 	return nil
 }
 
-// request signs for one api path; the signature embeds the current time, so
-// it goes on the request rather than the shared client.
+// request signs per request because the signature embeds the current time.
 func (c *CTYun) request(ctx context.Context, api string) (*req.Request, error) {
 	timestamp, signature, err := c.getSignature(api)
 	if err != nil {
@@ -140,12 +139,10 @@ func (c *CTYun) request(ctx context.Context, api string) (*req.Request, error) {
 func (c *CTYun) hmacSha256Byte(target, key string) []byte {
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(target))
-	hashBytes := h.Sum(nil)
-
-	return hashBytes
+	return h.Sum(nil)
 }
 
-func (c *CTYun) encrypt(content, key string) (signature string, err error) {
+func (c *CTYun) encrypt(content, key string) (string, error) {
 	// the secret is unpadded URL-safe base64, sometimes with spaces for '+'
 	key = strings.ReplaceAll(key, " ", "+")
 	key = strings.ReplaceAll(key, "-", "+")
@@ -158,11 +155,7 @@ func (c *CTYun) encrypt(content, key string) (signature string, err error) {
 		return "", err
 	}
 
-	signedByte := c.hmacSha256Byte(content, string(b64Code))
-	signedStr := base64.URLEncoding.EncodeToString(signedByte)
-	signature = strings.ReplaceAll(signedStr, "=", "")
-
-	return signature, nil
+	return base64.RawURLEncoding.EncodeToString(c.hmacSha256Byte(content, string(b64Code))), nil
 }
 
 func (c *CTYun) getSignature(url string) (string, string, error) {

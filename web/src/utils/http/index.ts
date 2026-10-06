@@ -4,10 +4,7 @@ import adapterFetch from 'alova/fetch'
 import VueHook from 'alova/vue'
 import { useUserStore } from '@/stores'
 
-/**
- * 请求失败时抛出的错误：按 HTTP 状态码分流，机器可读的业务码在 errorCode（可选）。
- * 后端错误信封为 { msg, code? }，code 为字符串形式的业务错误码，仅业务错误携带，不用于分流。
- */
+/** 请求失败的错误，按 status 分流；errorCode 是后端信封里可选的业务码，不参与分流。 */
 export class HttpError extends Error {
   status: number
   errorCode?: string

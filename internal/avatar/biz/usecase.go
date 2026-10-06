@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	// CacheTTL is how long a fetched Gravatar/QQ avatar is served from disk
-	// before it is fetched again; older files are purged hourly.
+	// CacheTTL is how long a fetched Gravatar or QQ avatar is served from disk;
+	// older files are purged hourly.
 	CacheTTL = 14 * 24 * time.Hour
 
 	// auditGuard suppresses re-enqueuing the audit of one hash for a while.
@@ -165,9 +165,8 @@ func (uc *AvatarUsecase) Delete(ctx context.Context, userID, hash string) error 
 	return nil
 }
 
-// DeleteByUser removes every avatar of userID together with its image, in
-// the caller's transaction when there is one, and purges the CDN once for
-// all of them.
+// DeleteByUser removes all of userID's avatars and images, joining the
+// caller's transaction, and purges the CDN once.
 func (uc *AvatarUsecase) DeleteByUser(ctx context.Context, userID string) error {
 	avatars, err := uc.repo.ListAllByUser(ctx, userID)
 	if err != nil {
@@ -220,9 +219,8 @@ func (uc *AvatarUsecase) PurgeExpiredCache(ctx context.Context) error {
 	return uc.store.PurgeCache(ctx, CacheTTL)
 }
 
-// Audit moderates the image currently served for hash (a WeAvatar upload,
-// else Gravatar), records the verdict by image digest, and purges the CDN
-// copy when it is banned. A verdict already on record is reused.
+// Audit moderates the image served for hash (upload, else Gravatar), reusing a
+// verdict recorded under its digest, and purges the CDN copy when banned.
 func (uc *AvatarUsecase) Audit(ctx context.Context, hash, appID string) error {
 	img, err := uc.auditSource(ctx, hash, appID)
 	if err != nil {

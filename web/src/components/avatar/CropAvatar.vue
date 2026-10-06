@@ -36,7 +36,7 @@ const containerRef = ref<HTMLElement>()
 const imgSrc = ref('')
 let cropper: Cropper | null = null
 
-// 记录图片在 canvas 中的实际区域，用于限制选区
+// 图片在 canvas 中的实际区域，选区不能超出它
 let imgBounds = { x: 0, y: 0, w: 0, h: 0 }
 
 const emit = defineEmits<{ cropAvatar: [blob: Blob] }>()
@@ -85,7 +85,6 @@ const initCropper = () => {
 
   const localCropper = cropper
 
-  // 图片加载后：计算图片区域 + 初始选区
   const cropperImage = localCropper.getCropperImage()
   if (cropperImage) {
     ;(cropperImage as any).$ready().then(() => {
@@ -104,7 +103,7 @@ const initCropper = () => {
 
       imgBounds = { x: imgX, y: imgY, w: imgW, h: imgH }
 
-      // 选区设为图片短边的正方形并居中在图片上
+      // 初始选区取图片短边的正方形并居中
       const size = Math.min(imgW, imgH)
       const sel = localCropper.getCropperSelection()
       if (sel) {
@@ -117,7 +116,6 @@ const initCropper = () => {
     })
   }
 
-  // 限制选区不超出图片实际区域
   const selection = localCropper.getCropperSelection()
   if (selection) {
     selection.addEventListener('change', (event: Event) => {

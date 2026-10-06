@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Go and caches
+      - name: Set up Go
         uses: ./.github/actions/setup-go
         with:
           scope: test

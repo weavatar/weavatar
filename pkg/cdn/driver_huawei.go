@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/cast"
 )
 
-// HuaWei is Huawei Cloud CDN. Its SDK takes no context, so ctx is only
-// checked before each call.
+// HuaWei is Huawei Cloud CDN; its SDK takes no context, so ctx is only checked
+// before each call.
 type HuaWei struct {
 	accessKey, secretKey string
 }
