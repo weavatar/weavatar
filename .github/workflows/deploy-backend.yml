@@ -13,7 +13,6 @@ run-name: Deploy the API
 #           DEPLOY_USER          SSH user: root, or a user that can write API_DIR and run
 #                                sudo -u www, sudo chown, systemctl and journalctl without a password
 #           DEPLOY_SSH_KEY       private key for DEPLOY_USER
-#           DEPLOY_KNOWN_HOSTS   output of `ssh-keyscan <host>`
 #
 # The server needs rsync, curl and sha256sum, a `www` user, $API_DIR/config/config.yml, a
 # $API_DIR/storage directory created and owned by www, and a systemd unit that runs
@@ -45,10 +44,9 @@ jobs:
       - name: Check the deployment configuration
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           missing=()
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -gt 0 ]; then
@@ -78,7 +76,6 @@ jobs:
       - name: Configure SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           # Some runner images, such as self-hosted Gitea ones, ship without rsync or an SSH client.
           if ! command -v rsync >/dev/null || ! command -v ssh >/dev/null; then
@@ -89,15 +86,16 @@ jobs:
           fi
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key"
           cat > "$HOME/.ssh/config" <<EOF
           Host deploy-target
             HostName $DEPLOY_HOST
             User $DEPLOY_USER
             IdentityFile ~/.ssh/deploy_key
             IdentitiesOnly yes
-            StrictHostKeyChecking yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            LogLevel ERROR
             BatchMode yes
             ConnectTimeout 15
             ServerAliveInterval 10

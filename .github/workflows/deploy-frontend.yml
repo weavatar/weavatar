@@ -13,7 +13,6 @@ run-name: Deploy web
 #           WEB_URL   public site URL used by the smoke test, default https://weavatar.com
 #           all three are optional overrides
 #   secrets DEPLOY_HOST, DEPLOY_USER (must be able to write WEB_ROOT), DEPLOY_SSH_KEY,
-#           DEPLOY_KNOWN_HOSTS (output of `ssh-keyscan <host>`)
 
 on:
   workflow_dispatch:
@@ -84,19 +83,19 @@ jobs:
       - name: Configure SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key"
           cat > "$HOME/.ssh/config" <<EOF
           Host deploy-target
             HostName $DEPLOY_HOST
             User $DEPLOY_USER
             IdentityFile ~/.ssh/deploy_key
             IdentitiesOnly yes
-            StrictHostKeyChecking yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            LogLevel ERROR
             BatchMode yes
             ConnectTimeout 15
             ServerAliveInterval 10
