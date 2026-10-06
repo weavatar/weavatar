@@ -40,7 +40,7 @@ func digestKeys(n int) []byte {
 	return keys
 }
 
-func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int) {
+func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int, slots []uint32) {
 	t.Helper()
 	n := len(keys) / keySize
 	require.Equal(t, uint64(n), m.KeyCount())
@@ -53,6 +53,9 @@ func assertBijection(t *testing.T, m *MPHF, keys []byte, keySize int) {
 		require.Less(t, slot, uint64(n), "key %d slot out of range", i)
 		require.False(t, seen[slot], "key %d collides at slot %d", i, slot)
 		seen[slot] = true
+		if slots != nil {
+			require.Equal(t, uint32(slot), slots[i], "key %d: Build slot differs from Find", i)
+		}
 	}
 }
 
@@ -60,9 +63,9 @@ func TestBuildFind(t *testing.T) {
 	const n, keySize = 200_000, 16
 	keys := randomKeys(t, n, keySize, 1)
 
-	m, err := Build(keys, keySize, Options{})
+	m, _, err := Build(keys, keySize, Options{})
 	require.NoError(t, err)
-	assertBijection(t, m, keys, keySize)
+	assertBijection(t, m, keys, keySize, nil)
 
 	assert.Greater(t, m.Levels(), 1)
 	assert.Less(t, m.BitsPerKey(), 4.5)
@@ -74,18 +77,18 @@ func TestDigestKeys(t *testing.T) {
 	const n = 100_000
 	keys := digestKeys(n)
 
-	m, err := Build(keys, md5.Size, Options{Gamma: 2})
+	m, _, err := Build(keys, md5.Size, Options{Gamma: 2})
 	require.NoError(t, err)
-	assertBijection(t, m, keys, md5.Size)
+	assertBijection(t, m, keys, md5.Size, nil)
 }
 
 func TestKeySizes(t *testing.T) {
 	for _, keySize := range []int{7, 8, 16, 20, 32, 33} {
 		t.Run(fmt.Sprintf("size%d", keySize), func(t *testing.T) {
 			keys := randomKeys(t, 20_000, keySize, uint64(keySize))
-			m, err := Build(keys, keySize, Options{})
+			m, _, err := Build(keys, keySize, Options{})
 			require.NoError(t, err)
-			assertBijection(t, m, keys, keySize)
+			assertBijection(t, m, keys, keySize, nil)
 		})
 	}
 
@@ -95,9 +98,9 @@ func TestKeySizes(t *testing.T) {
 		for i := range keys {
 			keys[i] = byte(i)
 		}
-		m, err := Build(keys, 1, Options{})
+		m, _, err := Build(keys, 1, Options{})
 		require.NoError(t, err)
-		assertBijection(t, m, keys, 1)
+		assertBijection(t, m, keys, 1, nil)
 	})
 }
 
@@ -105,9 +108,9 @@ func TestGamma(t *testing.T) {
 	keys := randomKeys(t, 50_000, 16, 7)
 	var prevBits float64
 	for _, gamma := range []float64{1, 1.5, 2, 3} {
-		m, err := Build(keys, 16, Options{Gamma: gamma})
+		m, _, err := Build(keys, 16, Options{Gamma: gamma})
 		require.NoError(t, err)
-		assertBijection(t, m, keys, 16)
+		assertBijection(t, m, keys, 16, nil)
 		assert.Greater(t, m.BitsPerKey(), prevBits, "gamma=%v", gamma)
 		prevBits = m.BitsPerKey()
 	}
@@ -116,25 +119,25 @@ func TestGamma(t *testing.T) {
 func TestSmall(t *testing.T) {
 	for _, n := range []int{0, 1, 2, 3, 10, 447, 448, 449} {
 		keys := randomKeys(t, n, 16, uint64(n)+100)
-		m, err := Build(keys, 16, Options{})
+		m, _, err := Build(keys, 16, Options{})
 		require.NoError(t, err, "n=%d", n)
-		assertBijection(t, m, keys, 16)
+		assertBijection(t, m, keys, 16, nil)
 
 		loaded, err := Load(m.Bytes())
 		require.NoError(t, err, "n=%d", n)
-		assertBijection(t, loaded, keys, 16)
+		assertBijection(t, loaded, keys, 16, nil)
 	}
 
-	m, err := Build(nil, 16, Options{})
+	m, _, err := Build(nil, 16, Options{})
 	require.NoError(t, err)
 	_, ok := m.Find(make([]byte, 16))
 	assert.False(t, ok)
 }
 
 func TestInvalidKeySize(t *testing.T) {
-	_, err := Build(make([]byte, 10), 0, Options{})
+	_, _, err := Build(make([]byte, 10), 0, Options{})
 	assert.Error(t, err)
-	_, err = Build(make([]byte, 10), 3, Options{})
+	_, _, err = Build(make([]byte, 10), 3, Options{})
 	assert.Error(t, err)
 }
 
@@ -142,14 +145,14 @@ func TestDuplicateKey(t *testing.T) {
 	keys := randomKeys(t, 1000, 16, 3)
 	copy(keys[500*16:], keys[7*16:8*16])
 
-	_, err := Build(keys, 16, Options{})
+	_, _, err := Build(keys, 16, Options{})
 	require.ErrorIs(t, err, ErrDuplicateKey)
 }
 
 func TestLoadRoundTrip(t *testing.T) {
 	const n, keySize = 50_000, 32
 	keys := randomKeys(t, n, keySize, 5)
-	m, err := Build(keys, keySize, Options{})
+	m, _, err := Build(keys, keySize, Options{})
 	require.NoError(t, err)
 
 	data := m.Bytes()
@@ -181,7 +184,7 @@ func TestLoadRoundTrip(t *testing.T) {
 
 func TestLoadCorrupt(t *testing.T) {
 	keys := randomKeys(t, 1000, 16, 9)
-	m, err := Build(keys, 16, Options{})
+	m, _, err := Build(keys, 16, Options{})
 	require.NoError(t, err)
 	data := m.Bytes()
 
@@ -208,7 +211,7 @@ func TestLoadCorrupt(t *testing.T) {
 func TestNonMember(t *testing.T) {
 	const n = 100_000
 	keys := randomKeys(t, n, 16, 11)
-	m, err := Build(keys, 16, Options{})
+	m, _, err := Build(keys, 16, Options{})
 	require.NoError(t, err)
 
 	others := randomKeys(t, 10_000, 16, 12)
@@ -227,18 +230,18 @@ func TestNonMember(t *testing.T) {
 func TestSeedRetry(t *testing.T) {
 	keys := randomKeys(t, 10_000, 16, 13)
 	// 只允许一层必然放不完，重试耗尽后应失败
-	_, err := Build(keys, 16, Options{MaxLevels: 1})
+	_, _, err := Build(keys, 16, Options{MaxLevels: 1})
 	require.ErrorIs(t, err, ErrBuildFailed)
 
-	m, err := Build(keys, 16, Options{MaxLevels: 64, Seed: 42})
+	m, _, err := Build(keys, 16, Options{MaxLevels: 64, Seed: 42})
 	require.NoError(t, err)
-	assertBijection(t, m, keys, 16)
+	assertBijection(t, m, keys, 16, nil)
 }
 
 func BenchmarkFind(b *testing.B) {
 	const n, keySize = 1_000_000, 16
 	keys := randomKeys(b, n, keySize, 21)
-	m, err := Build(keys, keySize, Options{})
+	m, _, err := Build(keys, keySize, Options{})
 	require.NoError(b, err)
 	b.Logf("levels=%d bits/key=%.2f", m.Levels(), m.BitsPerKey())
 
@@ -260,7 +263,7 @@ func BenchmarkBuild(b *testing.B) {
 
 	b.ReportAllocs()
 	for b.Loop() {
-		_, err := Build(keys, keySize, Options{})
+		_, _, err := Build(keys, keySize, Options{})
 		require.NoError(b, err)
 	}
 }

@@ -38,30 +38,28 @@ var (
 
 // 文件头字段偏移
 const (
-	offKeyBytes  = 0  // uint32
-	offPartBits  = 4  // uint32
-	offStart     = 8  // uint64
-	offEnd       = 16 // uint64
-	offKeyCount  = 24 // uint64
-	offGamma     = 32 // float64
-	offSeed      = 40 // uint64
-	offBuildTime = 48 // int64
-	offIdxSize   = 56 // uint64
-	offValSize   = 64 // uint64
-	offCRC       = 72 // uint32，覆盖文件头前 72 字节与整张分区表
+	offKeyBytes = 0  // uint32
+	offPartBits = 4  // uint32
+	offStart    = 8  // uint64
+	offEnd      = 16 // uint64
+	offKeyCount = 24 // uint64
+	offGamma    = 32 // float64
+	offSeed     = 40 // uint64
+	offIdxSize  = 48 // uint64
+	offValSize  = 56 // uint64
+	offCRC      = 64 // uint32，覆盖文件头前 64 字节与整张分区表
 )
 
 type header struct {
-	keyBytes  uint32
-	start     uint64
-	end       uint64
-	keyCount  uint64
-	partBits  uint32
-	gamma     float64
-	seed      uint64
-	buildTime int64
-	idxSize   uint64
-	valSize   uint64
+	keyBytes uint32
+	start    uint64
+	end      uint64
+	keyCount uint64
+	partBits uint32
+	gamma    float64
+	seed     uint64
+	idxSize  uint64
+	valSize  uint64
 }
 
 type partition struct {
@@ -93,7 +91,6 @@ func encodeIndexHead(h *header, parts []partition) []byte {
 	binary.LittleEndian.PutUint32(b[offPartBits:], h.partBits)
 	binary.LittleEndian.PutUint64(b[offGamma:], math.Float64bits(h.gamma))
 	binary.LittleEndian.PutUint64(b[offSeed:], h.seed)
-	binary.LittleEndian.PutUint64(b[offBuildTime:], uint64(h.buildTime))
 	binary.LittleEndian.PutUint64(b[offIdxSize:], h.idxSize)
 	binary.LittleEndian.PutUint64(b[offValSize:], h.valSize)
 
@@ -122,16 +119,15 @@ func decodeIndexHead(b []byte) (*header, []partition, error) {
 	}
 
 	h := &header{
-		keyBytes:  binary.LittleEndian.Uint32(b[offKeyBytes:]),
-		start:     binary.LittleEndian.Uint64(b[offStart:]),
-		end:       binary.LittleEndian.Uint64(b[offEnd:]),
-		keyCount:  binary.LittleEndian.Uint64(b[offKeyCount:]),
-		partBits:  binary.LittleEndian.Uint32(b[offPartBits:]),
-		gamma:     math.Float64frombits(binary.LittleEndian.Uint64(b[offGamma:])),
-		seed:      binary.LittleEndian.Uint64(b[offSeed:]),
-		buildTime: int64(binary.LittleEndian.Uint64(b[offBuildTime:])),
-		idxSize:   binary.LittleEndian.Uint64(b[offIdxSize:]),
-		valSize:   binary.LittleEndian.Uint64(b[offValSize:]),
+		keyBytes: binary.LittleEndian.Uint32(b[offKeyBytes:]),
+		start:    binary.LittleEndian.Uint64(b[offStart:]),
+		end:      binary.LittleEndian.Uint64(b[offEnd:]),
+		keyCount: binary.LittleEndian.Uint64(b[offKeyCount:]),
+		partBits: binary.LittleEndian.Uint32(b[offPartBits:]),
+		gamma:    math.Float64frombits(binary.LittleEndian.Uint64(b[offGamma:])),
+		seed:     binary.LittleEndian.Uint64(b[offSeed:]),
+		idxSize:  binary.LittleEndian.Uint64(b[offIdxSize:]),
+		valSize:  binary.LittleEndian.Uint64(b[offValSize:]),
 	}
 	if h.keyBytes != md5.Size && h.keyBytes != sha256.Size {
 		return nil, nil, fmt.Errorf("%w: bad key size %d", ErrCorrupt, h.keyBytes)

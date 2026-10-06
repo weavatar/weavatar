@@ -31,7 +31,6 @@ func NewQqHash(conf *koanf.Koanf, log *slog.Logger) (*qqhash.Tables, error) {
 			slog.Uint64("end", s.End),
 			slog.Int("partitions", s.Partitions),
 			slog.Float64("bits_per_key", s.BitsPerKey),
-			slog.Time("build_time", s.BuildTime),
 		)
 	}
 

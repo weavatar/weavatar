@@ -14,7 +14,6 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"time"
 	"unsafe"
 
 	"golang.org/x/sync/errgroup"
@@ -51,7 +50,6 @@ type Stats struct {
 	ValSize    uint64
 	BitsPerKey float64 // 仅 MPHF 部分
 	MaxLevels  int
-	BuildTime  time.Time
 }
 
 func OpenTable(dir, typ string) (*Table, error) {
@@ -168,7 +166,6 @@ func (t *Table) Stats() Stats {
 		Partitions: len(t.parts),
 		IdxSize:    t.hdr.idxSize,
 		ValSize:    t.hdr.valSize,
-		BuildTime:  time.Unix(t.hdr.buildTime, 0),
 	}
 	var mphBytes uint64
 	for _, p := range t.parts {

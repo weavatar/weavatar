@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc32"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -102,6 +104,8 @@ func Build(ctx context.Context, o BuildOptions) error {
 	defer func() {
 		_ = os.RemoveAll(tmp)
 	}()
+	// 堆几乎全是无指针的大块缓冲，GC 标记极便宜，调低阈值能用几次额外 GC 换掉三成峰值内存
+	defer debug.SetGCPercent(debug.SetGCPercent(20))
 
 	o.Logf("QQ 号范围 %d ~ %d（%d 个），哈希类型 %v，分区 %d，并行 %d", o.Start, o.End, o.End-o.Start+1, o.Types, 1<<o.PartBits, o.Workers)
 
@@ -275,15 +279,14 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 	parts := len(counts)
 	n := o.End - o.Start + 1
 	h := &header{
-		keyBytes:  uint32(keyBytes),
-		start:     o.Start,
-		end:       o.End,
-		keyCount:  n,
-		partBits:  o.PartBits,
-		gamma:     o.Gamma,
-		seed:      buildSeed(typ, o.Start, o.End),
-		buildTime: time.Now().Unix(),
-		valSize:   n * 4,
+		keyBytes: uint32(keyBytes),
+		start:    o.Start,
+		end:      o.End,
+		keyCount: n,
+		partBits: o.PartBits,
+		gamma:    o.Gamma,
+		seed:     buildSeed(typ, o.Start, o.End),
+		valSize:  n * 4,
 	}
 	table := make([]partition, parts)
 	var slots uint64
@@ -318,12 +321,12 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 	}
 
 	start := time.Now()
-	var mu sync.Mutex
-	blobNext := h.blobBase()
+	w := &blobWriter{f: idx, table: table, pending: make(map[int][]byte), off: h.blobBase()}
 	var next, done atomic.Uint64
 	g, ctx := errgroup.WithContext(ctx)
 	for range o.Workers {
 		g.Go(func() error {
+			var pb partitionBuilder
 			for {
 				p := int(next.Add(1) - 1)
 				if p >= parts {
@@ -333,7 +336,7 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 					return err
 				}
 
-				m, vals, err := buildPartition(tmp, typ, p, keyBytes, counts[p], o.Gamma, h.seed)
+				m, vals, err := pb.build(tmp, typ, p, keyBytes, counts[p], o.Gamma, h.seed)
 				if err != nil {
 					return fmt.Errorf("qqhash: %s partition %d: %w", typ, p, err)
 				}
@@ -341,17 +344,9 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 					return err
 				}
 
-				blob := m.Bytes()
-				mu.Lock()
-				off := blobNext
-				blobNext = alignUp(off+int64(len(blob)), blobAlign)
-				mu.Unlock()
-				if _, err = idx.WriteAt(blob, off); err != nil {
+				if err = w.put(p, m.Bytes()); err != nil {
 					return err
 				}
-				table[p].mphOffset = uint64(off)
-				table[p].mphLen = uint64(len(blob))
-				table[p].crc = crc32.ChecksumIEEE(blob)
 				_ = os.Remove(bucketPath(tmp, typ, p))
 
 				o.Logf("[%s] 分区 %d/%d 完成：%d 键，%d 层，%.2f bit/键", typ, done.Add(1), parts, counts[p], m.Levels(), m.BitsPerKey())
@@ -361,8 +356,11 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 	if err = g.Wait(); err != nil {
 		return err
 	}
+	if w.next != parts {
+		return fmt.Errorf("qqhash: %s: %d partitions not written", typ, parts-w.next)
+	}
 
-	h.idxSize = uint64(blobNext)
+	h.idxSize = uint64(w.off)
 	if _, err = idx.WriteAt(encodeIndexHead(h, table), 0); err != nil {
 		return err
 	}
@@ -389,45 +387,103 @@ func buildType(ctx context.Context, o BuildOptions, tmp, typ string, counts []ui
 	return nil
 }
 
-func buildPartition(tmp, typ string, p, keyBytes int, count uint64, gamma float64, seed uint64) (*mphf.MPHF, []byte, error) {
-	raw, err := os.ReadFile(bucketPath(tmp, typ, p))
-	if err != nil {
-		return nil, nil, err
+type blobWriter struct {
+	mu      sync.Mutex
+	f       *os.File
+	table   []partition
+	pending map[int][]byte
+	next    int
+	off     int64
+}
+
+func (w *blobWriter) put(p int, blob []byte) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.pending[p] = blob
+	for {
+		b, ok := w.pending[w.next]
+		if !ok {
+			return nil
+		}
+		delete(w.pending, w.next)
+		if _, err := w.f.WriteAt(b, w.off); err != nil {
+			return err
+		}
+		w.table[w.next].mphOffset = uint64(w.off)
+		w.table[w.next].mphLen = uint64(len(b))
+		w.table[w.next].crc = crc32.ChecksumIEEE(b)
+		w.off = alignUp(w.off+int64(len(b)), blobAlign)
+		w.next++
 	}
-	if uint64(len(raw)) != count*4 {
-		return nil, nil, fmt.Errorf("bucket size %d, want %d", len(raw), count*4)
+}
+
+type partitionBuilder struct {
+	raw, keys, vals []byte
+	seen            []uint64
+}
+
+func (b *partitionBuilder) build(tmp, typ string, p, keyBytes int, count uint64, gamma float64, seed uint64) (*mphf.MPHF, []byte, error) {
+	b.raw = grow(b.raw, int(count*4))
+	if err := readFull(bucketPath(tmp, typ, p), b.raw); err != nil {
+		return nil, nil, err
 	}
 
 	kb := uint64(keyBytes)
-	keys := make([]byte, count*kb)
+	b.keys = grow(b.keys, int(count*kb))
 	var email [32]byte
 	var out [sha256.Size]byte
 	for i := range count {
-		qq := binary.LittleEndian.Uint32(raw[i*4:])
-		copy(keys[i*kb:], digestOf(typ, appendEmail(email[:0], uint64(qq)), &out))
+		qq := binary.LittleEndian.Uint32(b.raw[i*4:])
+		copy(b.keys[i*kb:], digestOf(typ, appendEmail(email[:0], uint64(qq)), &out))
 	}
 
-	m, err := mphf.Build(keys, keyBytes, mphf.Options{Gamma: gamma, Seed: seed + uint64(p)})
+	m, slots, err := mphf.Build(b.keys, keyBytes, mphf.Options{Gamma: gamma, Seed: seed + uint64(p)})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	vals := make([]byte, count*4)
-	seen := make([]uint64, (count+63)/64)
+	b.vals = grow(b.vals, int(count*4))
+	b.seen = grow(b.seen, int((count+63)/64))
+	clear(b.seen)
 	for i := range count {
-		slot, ok := m.Find(keys[i*kb : (i+1)*kb])
-		if !ok || slot >= count {
+		slot := uint64(slots[i])
+		if slot >= count {
 			return nil, nil, fmt.Errorf("key %d maps to slot %d out of %d", i, slot, count)
 		}
-		w, b := slot>>6, uint64(1)<<(slot&63)
-		if seen[w]&b != 0 {
+		w, bit := slot>>6, uint64(1)<<(slot&63)
+		if b.seen[w]&bit != 0 {
 			return nil, nil, fmt.Errorf("slot %d assigned twice", slot)
 		}
-		seen[w] |= b
-		copy(vals[slot*4:], raw[i*4:i*4+4])
+		b.seen[w] |= bit
+		copy(b.vals[slot*4:], b.raw[i*4:i*4+4])
 	}
 
-	return m, vals, nil
+	return m, b.vals, nil
+}
+
+func grow[T any](s []T, n int) []T {
+	return slices.Grow(s[:0], n)[:n]
+}
+
+// 文件大小必须正好等于 len(buf)
+func readFull(path string, buf []byte) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	st, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if st.Size() != int64(len(buf)) {
+		return fmt.Errorf("bucket size %d, want %d", st.Size(), len(buf))
+	}
+	_, err = io.ReadFull(f, buf)
+	return err
 }
 
 // 让构建可复现

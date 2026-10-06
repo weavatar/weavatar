@@ -153,7 +153,6 @@ func printStats(s qqhash.Stats) {
 	fmt.Printf("  QQ 号范围: %d ~ %d（%d 个）\n", s.Start, s.End, s.KeyCount)
 	fmt.Printf("  分区数: %d，最大层数: %d，MPHF %.2f bit/键\n", s.Partitions, s.MaxLevels, s.BitsPerKey)
 	fmt.Printf("  idx: %s，val: %s\n", qqhash.FormatSize(s.IdxSize), qqhash.FormatSize(s.ValSize))
-	fmt.Printf("  构建时间: %s\n", s.BuildTime.Format(time.DateTime))
 }
 
 func logf(format string, args ...any) {

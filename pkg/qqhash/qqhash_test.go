@@ -1,6 +1,7 @@
 package qqhash
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
@@ -63,7 +64,6 @@ func TestBuildOpenLookup(t *testing.T) {
 		assert.Equal(t, end-start+1, s.KeyCount)
 		assert.Equal(t, 256, s.Partitions)
 		assert.Equal(t, s.KeyCount*4, s.ValSize)
-		assert.False(t, s.BuildTime.IsZero())
 		// 每区只有几百个键，固定开销摊不薄，bits/key 见 TestBitsPerKey
 		t.Logf("%s: idx=%d val=%d bits/key=%.2f levels=%d", typ, s.IdxSize, s.ValSize, s.BitsPerKey, s.MaxLevels)
 	}
@@ -110,6 +110,22 @@ func TestBuildOpenLookup(t *testing.T) {
 	for _, tb := range ts.All() {
 		require.NoError(t, tb.Verify(t.Context(), VerifyOptions{Workers: 4, Coverage: true, Logf: t.Logf}))
 		require.NoError(t, tb.Sample(t.Context(), 1000, 1))
+	}
+}
+
+func TestReproducible(t *testing.T) {
+	a := buildTestTables(t, MinQq, MinQq+199_999, DefaultPartBits)
+	b := buildTestTables(t, MinQq, MinQq+199_999, DefaultPartBits)
+	for _, typ := range Types {
+		idxA, valA := fileNames(a, typ)
+		idxB, valB := fileNames(b, typ)
+		for _, pair := range [][2]string{{idxA, idxB}, {valA, valB}} {
+			x, err := os.ReadFile(pair[0])
+			require.NoError(t, err)
+			y, err := os.ReadFile(pair[1])
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(x, y), "%s 与 %s 不一致", pair[0], pair[1])
+		}
 	}
 }
 

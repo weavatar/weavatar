@@ -61,13 +61,14 @@ type level struct {
 	seed       uint64
 }
 
-func Build(keys []byte, keySize int, opts Options) (*MPHF, error) {
+// Build 同时返回每个键的槽位，与 keys 同序
+func Build(keys []byte, keySize int, opts Options) (*MPHF, []uint32, error) {
 	if keySize <= 0 || len(keys)%keySize != 0 {
-		return nil, fmt.Errorf("mphf: invalid key size %d for %d bytes", keySize, len(keys))
+		return nil, nil, fmt.Errorf("mphf: invalid key size %d for %d bytes", keySize, len(keys))
 	}
 	n := len(keys) / keySize
 	if uint64(n) >= math.MaxUint32 {
-		return nil, ErrTooManyKeys
+		return nil, nil, ErrTooManyKeys
 	}
 
 	gamma := opts.Gamma
@@ -82,19 +83,20 @@ func Build(keys []byte, keySize int, opts Options) (*MPHF, error) {
 		maxLevels = DefaultMaxLevels
 	}
 
+	slots := make([]uint32, n)
 	for attempt := range uint64(maxAttempts) {
 		seed := mix64(opts.Seed*golden + (attempt+1)*0xD6E8FEB86659FD93)
-		levels, leftover := buildLevels(keys, keySize, n, gamma, maxLevels, seed)
+		levels, leftover := buildLevels(keys, keySize, slots, gamma, maxLevels, seed)
 		if len(leftover) == 0 {
-			return assemble(uint64(n), seed, levels), nil
+			return assemble(uint64(n), seed, levels), slots, nil
 		}
 		// 相同的键永远分不开，先排除再换种子重试
 		if hasDuplicate(keys, keySize, leftover) {
-			return nil, ErrDuplicateKey
+			return nil, nil, ErrDuplicateKey
 		}
 	}
 
-	return nil, ErrBuildFailed
+	return nil, nil, ErrBuildFailed
 }
 
 type builtLevel struct {
@@ -103,8 +105,8 @@ type builtLevel struct {
 	seed       uint64
 }
 
-func buildLevels(keys []byte, keySize, n int, gamma float64, maxLevels int, seed uint64) ([]builtLevel, []uint32) {
-	cur := make([]uint32, n)
+func buildLevels(keys []byte, keySize int, slots []uint32, gamma float64, maxLevels int, seed uint64) ([]builtLevel, []uint32) {
+	cur := make([]uint32, len(slots))
 	for i := range cur {
 		cur[i] = uint32(i)
 	}
@@ -133,29 +135,31 @@ func buildLevels(keys []byte, keySize, n int, gamma float64, maxLevels int, seed
 			}
 		}
 
-		// 撞车的键进入下一层，原地复用 cur
+		// 只命中一次的位即本层放置的键，按块交错写入并累计 rank
+		data := make([]uint64, blocks*blockWords)
+		var placed uint64
+		for b := range blocks {
+			data[b*blockWords] = placed
+			for k := range uint64(blockWords - 1) {
+				w := seen[b*(blockWords-1)+k] &^ coll[b*(blockWords-1)+k]
+				data[b*blockWords+1+k] = w
+				placed += uint64(bits.OnesCount64(w))
+			}
+		}
+
+		// 撞车的键进入下一层，原地复用 cur；其余键的槽位就此确定，省掉构建后再逐键 Find
 		next := cur[:0]
 		for _, idx := range cur {
 			pos := position(hash64(keyAt(keys, keySize, idx), lseed), nbits)
 			if coll[pos>>6]&(uint64(1)<<(pos&63)) != 0 {
 				next = append(next, idx)
+				continue
 			}
-		}
-
-		// 只命中一次的位即本层放置的键，按块交错写入并累计 rank
-		data := make([]uint64, blocks*blockWords)
-		var rank uint64
-		for b := range blocks {
-			data[b*blockWords] = rank
-			for k := range uint64(blockWords - 1) {
-				w := seen[b*(blockWords-1)+k] &^ coll[b*(blockWords-1)+k]
-				data[b*blockWords+1+k] = w
-				rank += uint64(bits.OnesCount64(w))
-			}
+			slots[idx] = uint32(keysBefore + rank(data, pos))
 		}
 
 		levels = append(levels, builtLevel{data: data, keysBefore: keysBefore, seed: lseed})
-		keysBefore += rank
+		keysBefore += placed
 		cur = next
 	}
 
@@ -248,20 +252,10 @@ func (m *MPHF) Find(key []byte) (uint64, bool) {
 		pos := position(hash64(key, l.seed), l.bits)
 		blk := pos / blockBits
 		off := pos - blk*blockBits
-		wi := off >> 6
-		base := blk * blockWords
-		word := l.data[base+1+wi]
-		mask := uint64(1) << (off & 63)
-		if word&mask == 0 {
+		if l.data[blk*blockWords+1+(off>>6)]&(uint64(1)<<(off&63)) == 0 {
 			continue
 		}
-
-		rank := l.data[base]
-		for k := range wi {
-			rank += uint64(bits.OnesCount64(l.data[base+1+k]))
-		}
-		rank += uint64(bits.OnesCount64(word & (mask - 1)))
-		return l.keysBefore + rank, true
+		return l.keysBefore + rank(l.data, pos), true
 	}
 
 	return 0, false
@@ -352,4 +346,17 @@ func asWords(b []byte) []uint64 {
 		w[i] = binary.LittleEndian.Uint64(b[i*8:])
 	}
 	return w
+}
+
+// pos 之前的置位数
+func rank(data []uint64, pos uint64) uint64 {
+	blk := pos / blockBits
+	off := pos - blk*blockBits
+	wi := off >> 6
+	base := blk * blockWords
+	r := data[base]
+	for k := range wi {
+		r += uint64(bits.OnesCount64(data[base+1+k]))
+	}
+	return r + uint64(bits.OnesCount64(data[base+1+wi]&(uint64(1)<<(off&63)-1)))
 }
