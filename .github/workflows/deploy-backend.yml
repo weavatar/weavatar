@@ -2,8 +2,9 @@ name: Deploy Backend
 run-name: Deploy the API
 
 # Builds bin/app and bin/cli, uploads them over SSH, runs the database migrations, swaps the
-# binaries, restarts the systemd unit and probes /healthz and /readyz. A failed restart or probe
-# rolls the binaries back (migrations are not reverted, so they must stay backward compatible).
+# binaries, reloads the systemd unit (Type=notify-reload: a zero-downtime handoff) and probes
+# /healthz and /readyz. A failed reload or probe rolls the binaries back (migrations are not
+# reverted, so they must stay backward compatible).
 #
 # Repository secrets (Settings -> Secrets):
 #   vars    API_DIR       install directory, default /opt/ace/projects/weavatar
@@ -122,7 +123,7 @@ jobs:
             sleep $((attempt * 3))
           done
 
-      - name: Migrate, restart and probe
+      - name: Migrate, reload and probe
         run: |
           remote_env="$(printf 'APP_VERSION=%q API_DIR=%q API_PORT=%q SERVICE_NAME=%q APP_SHA256=%q CLI_SHA256=%q' \
             "$APP_VERSION" "$API_DIR" "$API_PORT" "$SERVICE_NAME" "$APP_SHA256" "$CLI_SHA256")"
@@ -165,7 +166,13 @@ jobs:
           sudo chown -h www:www "${owned[@]}"
           sudo chown -R www:www scripts
 
-          if ! sudo systemctl restart "$SERVICE_NAME" || ! scripts/probe.sh "http://127.0.0.1:$API_PORT"; then
+          # A Type=notify-reload unit hands the listeners to the new binary on reload and only
+          # returns once it reports ready, so the main PID must have moved; a stopped unit is
+          # started instead.
+          old_pid="$(systemctl show -p MainPID --value "$SERVICE_NAME")"
+          if ! sudo systemctl reload-or-restart "$SERVICE_NAME" ||
+             [ "$(systemctl show -p MainPID --value "$SERVICE_NAME")" = "$old_pid" ] ||
+             ! scripts/probe.sh "http://127.0.0.1:$API_PORT"; then
             sudo systemctl status "$SERVICE_NAME" --no-pager || true
             sudo journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
             if scripts/rollback.sh "$API_DIR" "$SERVICE_NAME"; then
