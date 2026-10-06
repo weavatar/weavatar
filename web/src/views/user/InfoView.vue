@@ -51,9 +51,9 @@
         <n-spin :show="pageLoading">
           <div class="mt-6 space-y-5">
             <label class="block">
-              <span class="block text-sm font-600 text-fg mb-2">昵称</span>
+              <span class="field-label">昵称</span>
               <n-input
-                v-model:value="model.nickname"
+                v-model:value="form.nickname"
                 size="large"
                 placeholder="输入一个昵称"
                 maxlength="30"
@@ -62,9 +62,9 @@
               />
             </label>
             <label class="block">
-              <span class="block text-sm font-600 text-fg mb-2">头像地址</span>
+              <span class="field-label">头像地址</span>
               <n-input
-                v-model:value="model.avatar"
+                v-model:value="form.avatar"
                 size="large"
                 placeholder="输入一个图片地址（https://…）"
                 :input-props="{ spellcheck: false }"
@@ -77,8 +77,8 @@
               <span class="mt-1.5 block text-xs text-fg3">仅用于控制台显示。</span>
             </label>
             <div class="pt-2 flex items-center gap-3">
-              <button type="button" class="btn-primary" :disabled="saveLoading" @click="handleSave">
-                <span v-if="saveLoading" class="i-lucide-loader-circle animate-spin text-base" />
+              <button type="button" class="btn-primary" :disabled="saving" @click="handleSave">
+                <span v-if="saving" class="i-lucide-loader-circle animate-spin text-base" />
                 保存修改
               </button>
               <router-link :to="{ name: 'user-avatar' }" class="btn-ghost"
@@ -97,7 +97,7 @@
               注销后将删除你上传的全部头像，且不可恢复。
             </p>
           </div>
-          <button type="button" class="btn-danger shrink-0" @click="showDeletion = true">
+          <button type="button" class="btn-danger shrink-0" @click="deletionModal = true">
             <span class="i-lucide-user-x text-base" />
             注销账号
           </button>
@@ -106,34 +106,24 @@
     </div>
 
     <n-modal
-      v-model:show="showDeletion"
+      v-model:show="deletionModal"
       preset="card"
       title="注销账号"
-      :style="{ width: '460px', maxWidth: '94vw' }"
+      :style="{ width: '440px', maxWidth: '94vw' }"
       :bordered="false"
-      :mask-closable="!deletionLoading"
+      :mask-closable="false"
       :auto-focus="false"
     >
       <p class="text-sm text-fg2 leading-relaxed">
         注销后将删除你上传的全部头像，且不可恢复。为确认身份，需要重新通过树新峰通行证授权，授权完成后账号即被注销。
       </p>
       <div class="mt-6 flex items-center justify-end gap-3">
-        <button
-          type="button"
-          class="btn-ghost"
-          :disabled="deletionLoading"
-          @click="showDeletion = false"
-        >
+        <button type="button" class="btn-ghost" :disabled="deleting" @click="deletionModal = false">
           取消
         </button>
-        <button
-          type="button"
-          class="btn-danger"
-          :disabled="deletionLoading"
-          @click="handleDeletion"
-        >
-          <span v-if="deletionLoading" class="i-lucide-loader-circle animate-spin text-base" />
-          {{ deletionLoading ? '正在跳转…' : '前往确认身份' }}
+        <button type="button" class="btn-danger" :disabled="deleting" @click="handleDeletion">
+          <span v-if="deleting" class="i-lucide-loader-circle animate-spin text-base" />
+          {{ deleting ? '正在跳转…' : '前往确认身份' }}
         </button>
       </div>
     </n-modal>
@@ -141,56 +131,65 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { NInput, NModal, NSpin } from 'naive-ui'
-import { useRequest } from 'alova/client'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 import CopyButton from '@/components/ui/CopyButton.vue'
+import { fetchDeletionUrl, fetchUserInfo, updateUserInfo } from '@/api/user'
 import { useUserStore } from '@/stores'
-import userApi from '@/api/user'
 import { formatDate } from '@/utils/format'
+import { isHttpUrl } from '@/utils/validate'
 
 const userStore = useUserStore()
 
 const pageLoading = ref(true)
-const saveLoading = ref(false)
-const model = ref({ nickname: '', avatar: '' })
-const showDeletion = ref(false)
-const deletionLoading = ref(false)
+const saving = ref(false)
+const form = reactive({ nickname: '', avatar: '' })
+const preview = computed(() => (isHttpUrl(form.avatar) ? form.avatar : ''))
 
-const preview = computed(() => (/^https?:\/\//.test(model.value.avatar) ? model.value.avatar : ''))
-
-useRequest(userApi.info())
-  .onSuccess(({ data }: any) => {
-    model.value = { nickname: data.nickname, avatar: data.avatar }
-  })
-  .onComplete(() => {
+const load = async () => {
+  try {
+    const data = await fetchUserInfo()
+    form.nickname = data.nickname
+    form.avatar = data.avatar
+  } catch {
+    // 错误已提示
+  } finally {
     pageLoading.value = false
-  })
+  }
+}
+load()
 
-const handleSave = () => {
-  saveLoading.value = true
-  useRequest(userApi.update(model.value))
-    .onSuccess(() => {
-      userStore.freshUserInfo()
-      window.$message.success('保存成功')
-    })
-    .onComplete(() => {
-      saveLoading.value = false
-    })
+const handleSave = async () => {
+  const nickname = form.nickname.trim()
+  const avatar = form.avatar.trim()
+  if (!nickname) return window.$message.error('请输入昵称')
+  if (!isHttpUrl(avatar)) return window.$message.error('请输入正确的图片地址')
+  saving.value = true
+  try {
+    await updateUserInfo({ nickname, avatar })
+    window.$message.success('保存成功')
+    userStore.freshUserInfo()
+  } catch {
+    // 错误已提示
+  } finally {
+    saving.value = false
+  }
 }
 
-// 回调页凭此意图完成注销而不是登录
-const handleDeletion = () => {
-  deletionLoading.value = true
-  useRequest(userApi.deletionLogin())
-    .onSuccess(({ data }: any) => {
-      sessionStorage.setItem('oauth_intent', 'delete')
-      window.location.href = data.url
-    })
-    .onError(() => {
-      deletionLoading.value = false
-    })
+const deletionModal = ref(false)
+const deleting = ref(false)
+
+const handleDeletion = async () => {
+  deleting.value = true
+  try {
+    const { url } = await fetchDeletionUrl()
+    // 回调页凭此意图完成注销而不是登录
+    sessionStorage.setItem('oauth_intent', 'delete')
+    window.location.href = url
+  } catch {
+    deleting.value = false
+  }
 }
 </script>

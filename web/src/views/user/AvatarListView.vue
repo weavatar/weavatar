@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div v-if="loading && !data.length" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-if="loading && !items.length" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div v-for="i in 6" :key="i" class="surface p-5 flex gap-4 animate-pulse">
           <div class="w-[4.5rem] h-[4.5rem] rounded-2xl bg-muted shrink-0" />
           <div class="flex-1 space-y-3 pt-1">
@@ -34,7 +34,7 @@
       </div>
 
       <div
-        v-else-if="!loading && !data.length"
+        v-else-if="!loading && !items.length"
         class="mt-8 rounded-3xl border border-dashed border-line-strong wa-dots py-20 px-6 text-center"
       >
         <div
@@ -58,7 +58,7 @@
         :class="loading ? 'opacity-60 pointer-events-none' : ''"
       >
         <article
-          v-for="row in data"
+          v-for="row in items"
           :key="row.sha256"
           class="group surface p-5 flex flex-col gap-4 transition-all duration-300 hover:shadow-card hover:-translate-y-0.5"
         >
@@ -129,25 +129,17 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { NPagination, NPopconfirm } from 'naive-ui'
-import { useRequest } from 'alova/client'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 import CopyButton from '@/components/ui/CopyButton.vue'
-import AvatarAddModal from './AvatarAddModal.vue'
-import AvatarEditModal from './AvatarEditModal.vue'
-import avatarApi from '@/api/avatar'
+import AvatarAddModal from '@/components/avatar/AvatarAddModal.vue'
+import AvatarEditModal from '@/components/avatar/AvatarEditModal.vue'
+import { deleteAvatar, fetchAvatars, type Avatar } from '@/api/avatar'
 import { API_AVATAR_BASE } from '@/constants/links'
 import { formatDate, shortHash } from '@/utils/format'
 
-interface AvatarRow {
-  sha256: string
-  md5: string
-  raw: string
-  created_at?: string
-}
-
 const loading = ref(true)
-const data = ref<AvatarRow[]>([])
+const items = ref<Avatar[]>([])
 const addModal = ref(false)
 const editModal = ref(false)
 const editHash = ref('')
@@ -161,19 +153,21 @@ const pagination = reactive({
 
 const avatarUrl = (hash: string) => `${API_AVATAR_BASE}/${hash}?s=144&t=${cacheKey.value}`
 
-const load = (page = pagination.page) => {
+const load = async (page = pagination.page) => {
   loading.value = true
-  useRequest(avatarApi.list(page, pagination.pageSize))
-    .onSuccess(({ data: res }: any) => {
-      data.value = res.items ?? []
-      pagination.page = page
-      pagination.itemCount = res.total ?? 0
-      cacheKey.value = Date.now()
-    })
-    .onComplete(() => {
-      loading.value = false
-    })
+  try {
+    const res = await fetchAvatars(page, pagination.pageSize)
+    items.value = res.items
+    pagination.page = page
+    pagination.itemCount = res.total
+    cacheKey.value = Date.now()
+  } catch {
+    // 错误已提示
+  } finally {
+    loading.value = false
+  }
 }
+load(1)
 
 const onPageSize = (size: number) => {
   pagination.pageSize = size
@@ -185,18 +179,17 @@ const openEdit = (hash: string) => {
   editModal.value = true
 }
 
-const handleDelete = (hash: string) => {
+const handleDelete = async (hash: string) => {
   loading.value = true
-  useRequest(avatarApi.delete(hash))
-    .onSuccess(() => {
-      window.$message.success('删除成功，3 小时内全网生效')
-      const lastPage = Math.max(1, Math.ceil((pagination.itemCount - 1) / pagination.pageSize))
-      load(Math.min(pagination.page, lastPage))
-    })
-    .onError(() => {
-      loading.value = false
-    })
+  try {
+    await deleteAvatar(hash)
+    window.$message.success('删除成功，3 小时内全网生效')
+    const lastPage = Math.max(1, Math.ceil((pagination.itemCount - 1) / pagination.pageSize))
+    await load(Math.min(pagination.page, lastPage))
+  } catch {
+    // 错误已提示
+  } finally {
+    loading.value = false
+  }
 }
-
-load(1)
 </script>

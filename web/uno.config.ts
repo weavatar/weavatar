@@ -26,9 +26,8 @@ export default defineConfig({
   ],
   transformers: [transformerDirectives()],
   shortcuts: {
-    // 布局：全宽区块内的居中容器
+    // 布局
     wrap: 'mx-auto w-full max-w-7xl px-6 sm:px-10',
-    'wrap-sm': 'mx-auto w-full max-w-3xl px-6 sm:px-10',
     section: 'py-20 sm:py-28',
     // 表面
     surface: 'bg-elev border border-line rounded-2xl',
@@ -54,7 +53,9 @@ export default defineConfig({
     // 小标签
     chip: 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-500 bg-muted border border-line text-fg2',
     'chip-brand': 'chip bg-brand/10 border-brand/20 text-brand',
-    kbd: 'inline-block px-1.5 py-0.5 rounded-md bg-muted border border-line text-[0.85em] font-mono text-fg'
+    kbd: 'inline-block px-1.5 py-0.5 rounded-md bg-muted border border-line text-[0.85em] font-mono text-fg',
+    // 表单
+    'field-label': 'block text-sm font-600 text-fg mb-2'
   },
   theme: {
     colors: {

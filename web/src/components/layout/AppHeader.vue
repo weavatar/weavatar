@@ -28,7 +28,6 @@
         </router-link>
       </nav>
 
-      <!-- 操作区 -->
       <div class="flex items-center gap-1.5">
         <a
           :href="GITHUB_URL"
@@ -42,7 +41,7 @@
         </a>
         <theme-toggle />
 
-        <template v-if="userStore.auth.login">
+        <template v-if="userStore.isLogin">
           <n-dropdown
             trigger="click"
             :options="userOptions"
@@ -52,6 +51,7 @@
             <button
               type="button"
               class="ml-1 flex items-center gap-2 pl-1 pr-2.5 h-10 rounded-full hover:bg-fg/6 transition-colors"
+              aria-label="账号菜单"
             >
               <avatar-image :src="userStore.info.avatar" :size="28" alt="" />
               <span class="hidden sm:block text-sm font-500 max-w-28 truncate">
@@ -74,7 +74,7 @@
           type="button"
           class="btn-ghost btn-icon md:hidden"
           :aria-expanded="mobileOpen"
-          aria-label="打开菜单"
+          :aria-label="mobileOpen ? '关闭菜单' : '打开菜单'"
           @click="mobileOpen = !mobileOpen"
         >
           <span class="text-xl" :class="mobileOpen ? 'i-lucide-x' : 'i-lucide-menu'" />
@@ -97,7 +97,7 @@
           >
             {{ item.label }}
           </router-link>
-          <template v-if="userStore.auth.login">
+          <template v-if="userStore.isLogin">
             <div class="my-2 border-t border-line" />
             <router-link :to="{ name: 'user-info' }" class="nav-link py-3 text-base"
               >我的资料</router-link
@@ -149,7 +149,7 @@ const navItems = computed(() => {
     { label: '帮助', name: 'help' },
     { label: '关于', name: 'about' }
   ]
-  if (userStore.auth.login) items.splice(1, 0, { label: '头像管理', name: 'user-avatar' })
+  if (userStore.isLogin) items.splice(1, 0, { label: '头像管理', name: 'user-avatar' })
   return items
 })
 

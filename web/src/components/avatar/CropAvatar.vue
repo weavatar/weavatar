@@ -26,9 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { NModal } from 'naive-ui'
 import Cropper from 'cropperjs'
+
+const emit = defineEmits<{ cropAvatar: [blob: Blob] }>()
 
 const showModal = ref(false)
 const loading = ref(false)
@@ -38,8 +40,6 @@ let cropper: Cropper | null = null
 
 // 图片在 canvas 中的实际区域，选区不能超出它
 let imgBounds = { x: 0, y: 0, w: 0, h: 0 }
-
-const emit = defineEmits<{ cropAvatar: [blob: Blob] }>()
 
 const destroyCropper = () => {
   if (cropper) {
@@ -87,7 +87,7 @@ const initCropper = () => {
 
   const cropperImage = localCropper.getCropperImage()
   if (cropperImage) {
-    ;(cropperImage as any).$ready().then(() => {
+    cropperImage.$ready().then(() => {
       if (!localCropper || localCropper !== cropper) return
 
       const canvasEl = localCropper.getCropperCanvas()
@@ -111,7 +111,7 @@ const initCropper = () => {
         sel.y = imgY + (imgH - size) / 2
         sel.width = size
         sel.height = size
-        ;(sel as any).$render()
+        sel.$render()
       }
     })
   }
@@ -137,7 +137,7 @@ const initCropper = () => {
         selection.y = clampedY
         selection.width = clampedW
         selection.height = clampedH
-        ;(selection as any).$render()
+        selection.$render()
       }
     })
   }
@@ -152,8 +152,8 @@ const handleConfirm = async () => {
       loading.value = false
       return
     }
-    const canvas = await (selection as any).$toCanvas({ width: 800, height: 800 })
-    canvas.toBlob((blob: Blob | null) => {
+    const canvas = await selection.$toCanvas({ width: 800, height: 800 })
+    canvas.toBlob((blob) => {
       if (blob) {
         emit('cropAvatar', blob)
         showModal.value = false

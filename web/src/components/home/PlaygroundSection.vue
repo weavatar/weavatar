@@ -4,7 +4,6 @@
       <section-title title="在线体验" desc="输入邮箱或手机号，即可生成头像地址。" />
 
       <div v-reveal class="mt-12 surface overflow-hidden grid lg:grid-cols-[1fr_22rem]">
-        <!-- 参数 -->
         <div class="p-6 sm:p-8 flex flex-col gap-7">
           <label class="block">
             <span class="block text-sm font-600 text-fg mb-2">邮箱 / 手机号</span>
@@ -114,7 +113,6 @@
           </div>
         </div>
 
-        <!-- 预览 -->
         <div
           class="relative border-t lg:border-t-0 lg:border-l border-line wa-dots p-8 flex flex-col items-center justify-center gap-5 min-h-72"
         >

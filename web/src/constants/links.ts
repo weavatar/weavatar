@@ -1,7 +1,10 @@
+export const SITE_NAME = 'WeAvatar'
 export const SITE_DOMAIN = 'weavatar.com'
 export const AVATAR_BASE = `https://${SITE_DOMAIN}/avatar`
 export const API_AVATAR_BASE = `https://${SITE_DOMAIN}/api/avatar`
+export const DEFAULT_AVATAR = `${AVATAR_BASE}/?d=mp`
 
+export const ACCOUNT_URL = 'https://account.haozi.net'
 export const QQ_GROUP_URL = 'https://jq.qq.com/?_wv=1027&k=I1oJKSTH'
 export const QQ_GROUP_ID = '12370907'
 export const STATUS_URL = 'https://status.haozi.net'

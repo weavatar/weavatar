@@ -1,4 +1,4 @@
-/* 设计 Token：前缀 --wa- 以免与 UnoCSS 的主题变量冲突 */
+/* --wa- 前缀避免与 UnoCSS 生成的主题变量冲突 */
 :root {
   --wa-font-sans:
     'Manrope Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
@@ -37,7 +37,6 @@
   color-scheme: dark;
 }
 
-/* 基础：UnoCSS 已提供 reset，这里只补品牌层 */
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
@@ -82,7 +81,6 @@ pre {
   font-variant-numeric: tabular-nums;
 }
 
-/* 网格纹理、渐隐遮罩、流动虚线 */
 .wa-grid {
   background-image:
     linear-gradient(var(--wa-grid) 1px, transparent 1px),
@@ -107,19 +105,6 @@ pre {
   mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
 }
 
-/* 流动虚线（SVG path 上使用） */
-.flow-line {
-  stroke-dasharray: 6 6;
-  animation: dash 1.2s linear infinite;
-}
-
-@keyframes dash {
-  to {
-    stroke-dashoffset: -24;
-  }
-}
-
-/* 流动虚线（div 上使用，水平） */
 .dash-line {
   height: 1px;
   background-image: linear-gradient(90deg, var(--wa-fg3) 50%, transparent 50%);
@@ -146,7 +131,6 @@ pre {
   }
 }
 
-/* 滚动入场（v-reveal） */
 .reveal {
   opacity: 0;
   transform: translateY(18px);
@@ -160,7 +144,6 @@ pre {
   transform: none;
 }
 
-/* 页面切换与主题切换 */
 .page-enter-active,
 .page-leave-active {
   transition:
@@ -207,118 +190,116 @@ pre {
   }
 }
 
-/* 长文排版 */
 .prose {
   font-size: 15.5px;
   line-height: 1.85;
   color: color-mix(in srgb, var(--wa-fg) 86%, transparent);
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    color: var(--wa-fg);
-    letter-spacing: -0.015em;
-    font-weight: 700;
-    scroll-margin-top: 6rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-    line-height: 1.3;
-    margin: 2.75rem 0 1rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--wa-line);
-  }
-
-  h2:first-child {
-    margin-top: 0;
-  }
-
-  h3 {
-    font-size: 1.125rem;
-    margin: 2rem 0 0.6rem;
-  }
-
-  h4 {
-    font-size: 1rem;
-    margin: 1.4rem 0 0.4rem;
-  }
-
-  p {
-    margin: 0.75rem 0;
-  }
-
-  ul,
-  ol {
-    margin: 0.75rem 0;
-    padding-left: 1.4rem;
-  }
-
-  ul {
-    list-style: disc;
-  }
-
-  ol {
-    list-style: decimal;
-  }
-
-  li {
-    margin: 0.3rem 0;
-  }
-
-  li::marker {
-    color: var(--wa-fg3);
-  }
-
-  a {
-    color: var(--wa-brand);
-    text-decoration: underline;
-    text-decoration-color: rgba(10, 122, 255, 0.35);
-    text-underline-offset: 4px;
-  }
-
-  a:hover {
-    text-decoration-color: var(--wa-brand);
-  }
-
-  b,
-  strong {
-    font-weight: 650;
-    color: var(--wa-fg);
-  }
-
-  u {
-    text-decoration-color: var(--wa-fg3);
-    text-underline-offset: 3px;
-  }
-
-  code:not(pre code) {
-    font-size: 0.86em;
-    padding: 0.15em 0.45em;
-    border-radius: 6px;
-    background: var(--wa-muted);
-    border: 1px solid var(--wa-line);
-    color: var(--wa-fg);
-    word-break: break-all;
-  }
-
-  hr {
-    border: 0;
-    border-top: 1px solid var(--wa-line);
-    margin: 2rem 0;
-  }
-
-  blockquote {
-    margin: 1rem 0;
-    padding: 0.6rem 1rem;
-    border-left: 3px solid var(--wa-brand);
-    background: var(--wa-muted);
-    border-radius: 0 10px 10px 0;
-  }
 }
 
-/* highlight.js 代码高亮 */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--wa-fg);
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  scroll-margin-top: 6rem;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin: 2.75rem 0 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--wa-line);
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  margin: 2rem 0 0.6rem;
+}
+
+.prose h4 {
+  font-size: 1rem;
+  margin: 1.4rem 0 0.4rem;
+}
+
+.prose p {
+  margin: 0.75rem 0;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+}
+
+.prose ul {
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li {
+  margin: 0.3rem 0;
+}
+
+.prose li::marker {
+  color: var(--wa-fg3);
+}
+
+.prose a {
+  color: var(--wa-brand);
+  text-decoration: underline;
+  text-decoration-color: rgba(10, 122, 255, 0.35);
+  text-underline-offset: 4px;
+}
+
+.prose a:hover {
+  text-decoration-color: var(--wa-brand);
+}
+
+.prose b,
+.prose strong {
+  font-weight: 650;
+  color: var(--wa-fg);
+}
+
+.prose u {
+  text-decoration-color: var(--wa-fg3);
+  text-underline-offset: 3px;
+}
+
+.prose code:not(pre code) {
+  font-size: 0.86em;
+  padding: 0.15em 0.45em;
+  border-radius: 6px;
+  background: var(--wa-muted);
+  border: 1px solid var(--wa-line);
+  color: var(--wa-fg);
+  word-break: break-all;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--wa-line);
+  margin: 2rem 0;
+}
+
+.prose blockquote {
+  margin: 1rem 0;
+  padding: 0.6rem 1rem;
+  border-left: 3px solid var(--wa-brand);
+  background: var(--wa-muted);
+  border-radius: 0 10px 10px 0;
+}
+
 .hljs {
   color: color-mix(in srgb, var(--wa-fg) 90%, transparent);
 }
@@ -377,7 +358,6 @@ pre {
   color: #ff7b72;
 }
 
-/* Naive UI 微调 */
 .n-modal-mask {
   backdrop-filter: blur(6px);
 }

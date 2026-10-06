@@ -1,6 +1,7 @@
-import { http } from '@/utils/http'
+import { get } from '@/utils/http'
 
-export default {
-  count: (): any => http.Get('/system/count'),
-  randomAvatars: (): any => http.Get('/system/random_avatars')
-}
+export const fetchUsage = () =>
+  get<{ usage: number }>('/system/count', undefined, { noAlert: true })
+
+export const fetchRandomAvatars = () =>
+  get<{ avatars: string[] }>('/system/random_avatars', undefined, { noAlert: true })

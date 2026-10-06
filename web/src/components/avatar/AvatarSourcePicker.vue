@@ -59,7 +59,6 @@
         <div class="mt-3 text-xs text-fg3">上传的图片需符合中华人民共和国相关法律法规要求</div>
       </label>
 
-      <!-- 社交头像 -->
       <div v-else class="mt-3 surface p-4">
         <div class="flex gap-2">
           <n-input
@@ -76,10 +75,10 @@
           <button
             type="button"
             class="btn-primary h-11 shrink-0"
-            :disabled="qqLoading"
+            :disabled="fetching"
             @click="fetchQq"
           >
-            <span v-if="qqLoading" class="i-lucide-loader-circle animate-spin text-base" />
+            <span v-if="fetching" class="i-lucide-loader-circle animate-spin text-base" />
             一键获取
           </button>
         </div>
@@ -93,10 +92,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { NInput } from 'naive-ui'
-import { useRequest } from 'alova/client'
 import AvatarImage from '@/components/ui/AvatarImage.vue'
 import CropAvatar from './CropAvatar.vue'
-import avatarApi from '@/api/avatar'
+import { fetchQqAvatar } from '@/api/avatar'
 
 const props = defineProps<{ blob: Blob | null }>()
 const emit = defineEmits<{ 'update:blob': [value: Blob | null] }>()
@@ -108,7 +106,7 @@ const tabs = [
 const tab = ref<'upload' | 'qq'>('upload')
 const dragging = ref(false)
 const qq = ref('')
-const qqLoading = ref(false)
+const fetching = ref(false)
 const cropRef = ref<InstanceType<typeof CropAvatar>>()
 
 const previewUrl = ref('')
@@ -131,15 +129,16 @@ const sizeText = computed(() => {
     : `${Math.round(size / 1024)} KB`
 })
 
-// 校验后打开裁剪
-const accept = (file: File) => {
-  const validType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-  const validSize = file.size / 1024 / 1024 < 5
-  if (!validType) window.$message.error('只能上传 JPG / PNG / GIF / WebP 格式')
-  else if (!validSize) window.$message.error('图片大小不能超过 5 MB')
-  if (!validType || !validSize) return
-  cropRef.value?.setImage(file)
+const openCrop = (image: Blob) => {
+  cropRef.value?.setImage(image)
   cropRef.value?.setShow(true)
+}
+
+const accept = (file: File) => {
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type))
+    return window.$message.error('只能上传 JPG / PNG / GIF / WebP 格式')
+  if (file.size >= 5 * 1024 * 1024) return window.$message.error('图片大小不能超过 5 MB')
+  openCrop(file)
 }
 
 const onFileChange = (e: Event) => {
@@ -157,23 +156,18 @@ const onDrop = (e: DragEvent) => {
 
 const onCropped = (b: Blob) => emit('update:blob', b)
 
-const fetchQq = () => {
+const fetchQq = async () => {
   const value = qq.value.trim()
-  if (!/^\d{5,12}$/.test(value)) {
-    window.$message.error('请输入正确的社交账号')
-    return
+  if (!/^\d{5,12}$/.test(value)) return window.$message.error('请输入正确的社交账号')
+  fetching.value = true
+  try {
+    const binary = atob(await fetchQqAvatar(value))
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+    openCrop(new Blob([bytes], { type: 'image/png' }))
+  } catch {
+    // 错误已提示
+  } finally {
+    fetching.value = false
   }
-  qqLoading.value = true
-  useRequest(avatarApi.qq(value))
-    .onSuccess(({ data }: any) => {
-      const binary = atob(data)
-      const bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      cropRef.value?.setImage(new Blob([bytes], { type: 'image/png' }))
-      cropRef.value?.setShow(true)
-    })
-    .onComplete(() => {
-      qqLoading.value = false
-    })
 }
 </script>

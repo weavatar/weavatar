@@ -81,6 +81,7 @@ import type { RouteLocationRaw } from 'vue-router'
 import BrandLogo from '@/components/ui/BrandLogo.vue'
 import beianGongan from '@/assets/beian-gongan.png'
 import {
+  ACCOUNT_URL,
   GITHUB_URL,
   GONGAN_NUMBER,
   GONGAN_URL,
@@ -111,7 +112,7 @@ const columns: { title: string; items: FooterItem[] }[] = [
   {
     title: '相关项目',
     items: [
-      { label: '树新峰通行证', href: 'https://account.haozi.net/' },
+      { label: '树新峰通行证', href: ACCOUNT_URL },
       { label: 'Moe Tom', href: 'https://tom.moe/' },
       { label: 'Twikoo', href: 'https://twikoo.js.org/' },
       { label: 'Artalk', href: 'https://artalk.js.org/' }

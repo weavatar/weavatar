@@ -8,7 +8,7 @@ type DocWithVT = Document & {
   startViewTransition?: (cb: () => Promise<void> | void) => { ready: Promise<void> }
 }
 
-/** 支持 View Transitions 的浏览器从点击位置圆形扩散切换主题。 */
+/** 支持 View Transitions 时从点击位置圆形扩散切换主题 */
 export function useTheme() {
   const toggle = (event?: MouseEvent) => {
     const next = !isDark.value

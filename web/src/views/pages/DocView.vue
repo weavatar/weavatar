@@ -1,7 +1,6 @@
 <template>
   <div class="wrap">
     <div class="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
-      <!-- 目录 -->
       <aside class="hidden lg:block">
         <nav
           class="sticky top-24 py-16 max-h-[calc(100vh-6rem)] overflow-y-auto"
@@ -42,7 +41,6 @@
           接口完全兼容 Gravatar，已接入 Gravatar 的站点只需替换域名。
         </p>
 
-        <!-- 移动端目录 -->
         <div
           class="lg:hidden sticky top-16 z-30 -mx-6 sm:-mx-10 mt-8 bg-bg/90 backdrop-blur border-y border-line"
         >
@@ -315,7 +313,6 @@
           </section>
         </article>
 
-        <!-- 底部导航 -->
         <div
           class="mt-16 pt-8 border-t border-line flex flex-wrap items-center justify-between gap-4 text-sm"
         >

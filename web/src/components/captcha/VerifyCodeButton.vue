@@ -9,32 +9,25 @@
       <span v-if="loading" class="i-lucide-loader-circle animate-spin text-sm" />
       {{ isActive ? `${remaining} s 后重发` : '发送验证码' }}
     </button>
-    <geetest-captcha :config="{ product: 'bind' }" @initialized="onCaptchaInit" />
+    <geetest-captcha :config="{ product: 'bind' }" @initialized="onInit" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { GeetestCaptcha } from 'vue3-geetest'
-import { useRequest } from 'alova/client'
-import captchaApi from '@/api/captcha'
+import { sendEmail, sendSms, type VerifyCodeUse } from '@/api/verifyCode'
+import { useGeetest } from '@/composables/useGeetest'
 import { isEmail, isPhone } from '@/utils/validate'
 
 const props = defineProps<{
   to: string
-  useFor: string
+  useFor: VerifyCodeUse
+  /** 限定只能发送到手机或邮箱 */
+  only?: 'phone' | 'email'
 }>()
 
-let captchaInstance: any = null
-const onCaptchaInit = (instance: any) => {
-  captchaInstance = instance
-  captchaInstance.onError((e: any) => {
-    window.$message.error(e.msg)
-  })
-  captchaInstance.onSuccess(() => {
-    doSend(captchaInstance.getValidate())
-  })
-}
+const { onInit, verify } = useGeetest()
 
 const remaining = ref(0)
 const isActive = computed(() => remaining.value > 0)
@@ -57,27 +50,32 @@ onUnmounted(() => {
 
 const loading = ref(false)
 
-const handleSend = () => {
-  if (!isPhone(props.to) && !isEmail(props.to)) {
-    window.$message.error('请输入正确的手机号或邮箱')
+const handleSend = async () => {
+  const to = props.to.trim()
+  const phoneOk = props.only !== 'email' && isPhone(to)
+  const emailOk = props.only !== 'phone' && isEmail(to)
+  if (!phoneOk && !emailOk) {
+    window.$message.error(
+      props.only === 'phone'
+        ? '请输入正确的手机号'
+        : props.only === 'email'
+          ? '请输入正确的邮箱'
+          : '请输入正确的手机号或邮箱'
+    )
     return
   }
-  captchaInstance?.showCaptcha()
-}
 
-const doSend = (validation: any) => {
-  loading.value = true
-  const api = isPhone(props.to)
-    ? captchaApi.sms(props.to, props.useFor, validation)
-    : captchaApi.email(props.to, props.useFor, validation)
-
-  useRequest(api)
-    .onSuccess(() => {
-      window.$message.success('验证码已发送')
-      startCountdown()
-    })
-    .onComplete(() => {
-      loading.value = false
-    })
+  try {
+    const captcha = await verify()
+    loading.value = true
+    if (phoneOk) await sendSms(to, props.useFor, captcha)
+    else await sendEmail(to, props.useFor, captcha)
+    window.$message.success('验证码已发送')
+    startCountdown()
+  } catch {
+    // 取消验证或发送失败，错误已提示
+  } finally {
+    loading.value = false
+  }
 }
 </script>

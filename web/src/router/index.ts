@@ -11,12 +11,12 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: () => import('@/views/DefaultLayout.vue'),
+      component: () => import('@/views/SiteLayout.vue'),
       children: [
         {
           path: '',
           name: 'home',
-          component: () => import('@/views/home/HomeView.vue'),
+          component: () => import('@/views/pages/HomeView.vue'),
           meta: { title: '首页' }
         },
         {
@@ -29,7 +29,7 @@ const router = createRouter({
           path: 'logout',
           name: 'logout',
           component: () => import('@/views/auth/LogoutView.vue'),
-          meta: { title: '退出' }
+          meta: { title: '退出登录' }
         },
         {
           path: 'oauth/callback',

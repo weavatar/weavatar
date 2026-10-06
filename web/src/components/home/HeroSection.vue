@@ -1,6 +1,5 @@
 <template>
   <section class="relative overflow-x-clip">
-    <!-- 背景：坐标纸网格 + 品牌光晕 -->
     <div
       class="absolute inset-0 -top-16 wa-grid wa-mask-radial pointer-events-none"
       aria-hidden="true"

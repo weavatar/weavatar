@@ -31,9 +31,7 @@
         登录即表示你同意我们的
         <router-link :to="{ name: 'privacy' }" class="link">隐私政策</router-link>
         。树新峰通行证由
-        <a href="https://account.haozi.net/" target="_blank" rel="noreferrer" class="link">
-          account.haozi.net
-        </a>
+        <a :href="ACCOUNT_URL" target="_blank" rel="noreferrer" class="link"> account.haozi.net </a>
         提供。
       </p>
     </div>
@@ -42,21 +40,27 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRequest } from 'alova/client'
+import { useRoute } from 'vue-router'
 import BrandLogo from '@/components/ui/BrandLogo.vue'
-import auth from '@/api/auth'
+import { fetchLoginUrl } from '@/api/auth'
+import { ACCOUNT_URL } from '@/constants/links'
+import { safeRedirect } from '@/utils/redirect'
 
+const route = useRoute()
 const loading = ref(false)
 
-const handleLogin = () => {
+const handleLogin = async () => {
   loading.value = true
-  sessionStorage.removeItem('oauth_intent') // 放弃的注销不能劫持本次登录
-  useRequest(auth.login())
-    .onSuccess(({ data }: any) => {
-      window.location.href = data.url
-    })
-    .onError(() => {
-      loading.value = false
-    })
+  try {
+    const { url } = await fetchLoginUrl()
+    // 放弃的注销不能劫持本次登录
+    sessionStorage.removeItem('oauth_intent')
+    const redirect = safeRedirect(route.query.redirect)
+    if (redirect) sessionStorage.setItem('login_redirect', redirect)
+    else sessionStorage.removeItem('login_redirect')
+    window.location.href = url
+  } catch {
+    loading.value = false
+  }
 }
 </script>

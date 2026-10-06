@@ -18,7 +18,7 @@ function getObserver() {
   return observer
 }
 
-// 进入视口时加 .is-visible 触发 main.scss 的 .reveal 动画，绑定值为延迟毫秒数
+/** 进入视口时添加 .is-visible 触发 main.css 的 .reveal 入场动画，绑定值为延迟毫秒数 */
 export const vReveal: Directive<HTMLElement, number | undefined> = {
   mounted(el, binding) {
     el.classList.add('reveal')

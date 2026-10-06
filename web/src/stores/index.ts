@@ -10,3 +10,4 @@ export function setupStore(app: App) {
 }
 
 export { useUserStore } from './user'
+export type { UserInfo } from './user'

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@12.9.1+sha512.06b055fff5cd20dc12781de173ced3310ce0951bf2ec620211a16045d5444d5c93a663210764ef29a653a610459ba0368f0e74f84d80c54723cf95aae7bc0d6d",
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
@@ -15,7 +16,6 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",
-    "@vue/devtools-api": "^8.2.1",
     "@vueuse/core": "^15.0.0",
     "alova": "^3.5.1",
     "cropperjs": "^2.1.1",
@@ -28,7 +28,6 @@
     "vue3-geetest": "^1.0.21"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@iconify-json/lucide": "^1.2.139",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^30.0.0",
@@ -44,12 +43,10 @@
     "naive-ui": "^2.44.1",
     "npm-run-all2": "^9.0.0",
     "prettier": "^3.8.1",
-    "sass-embedded": "^1.99.0",
     "typescript": "^6.0.0",
     "unocss": "^66.6.7",
     "vite": "^8.0.0",
     "vitest": "^5.0.0",
     "vue-tsc": "^3.2.6"
-  },
-  "packageManager": "pnpm@12.9.1+sha512.06b055fff5cd20dc12781de173ced3310ce0951bf2ec620211a16045d5444d5c93a663210764ef29a653a610459ba0368f0e74f84d80c54723cf95aae7bc0d6d"
+  }
 }

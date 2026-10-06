@@ -8,7 +8,7 @@ import { setupStore } from './stores'
 import { vReveal } from './directives/reveal'
 
 import '@fontsource-variable/manrope'
-import '@/styles/main.scss'
+import '@/styles/main.css'
 import 'virtual:uno.css'
 
 const app = createApp(App)

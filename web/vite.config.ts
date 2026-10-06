@@ -5,6 +5,7 @@ import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
 
+/** 构建时输出 dist/version.json，部署流水线用它确认线上已切换到新版本 */
 function versionFile(): Plugin {
   return {
     name: 'weavatar:version-file',
