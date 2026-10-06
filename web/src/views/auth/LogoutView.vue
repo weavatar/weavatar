@@ -29,7 +29,9 @@ const userStore = useUserStore()
 const router = useRouter()
 const done = ref(false)
 
-useRequest(auth.logout(), { meta: { noAlert: true } }).onComplete(() => {
+const logoutMethod = auth.logout()
+logoutMethod.meta = { noAlert: true }
+useRequest(logoutMethod).onComplete(() => {
   userStore.clearToken()
   done.value = true
   setTimeout(() => router.replace({ name: 'login' }), 1000)

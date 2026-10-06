@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import user from '@/api/user'
-import { useRequest } from 'alova/client'
+import { HttpError } from '@/utils/http'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -17,10 +17,17 @@ export const useUserStore = defineStore('user', {
     }
   }),
   actions: {
-    freshUserInfo() {
-      useRequest(user.info()).onSuccess(({ data }: any) => {
+    async freshUserInfo() {
+      // meta 要设在 Method 上才会传到响应拦截器，useRequest 的第二个参数不会转交
+      const method = user.info()
+      method.meta = { noAlert: true }
+      try {
+        const data = await method
         this.info = { ...this.info, ...data }
-      })
+      } catch (error) {
+        // 401 已在 http 层清理；404 表示账号已不存在，同样清理登录态
+        if (error instanceof HttpError && error.status === 404) this.clearToken()
+      }
     },
     resetUserInfo() {
       this.info = {

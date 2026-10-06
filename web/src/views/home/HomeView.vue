@@ -25,11 +25,15 @@ import CtaSection from './CtaSection.vue'
 const usage = ref(0)
 const avatars = ref<string[]>([])
 
-useRequest(systemApi.count(), { meta: { noAlert: true } }).onSuccess(({ data }: any) => {
+const countMethod = systemApi.count()
+countMethod.meta = { noAlert: true }
+useRequest(countMethod).onSuccess(({ data }: any) => {
   usage.value = Number(data?.usage) || 0
 })
 
-useRequest(systemApi.randomAvatars(), { meta: { noAlert: true } }).onSuccess(({ data }: any) => {
+const avatarsMethod = systemApi.randomAvatars()
+avatarsMethod.meta = { noAlert: true }
+useRequest(avatarsMethod).onSuccess(({ data }: any) => {
   avatars.value = Array.isArray(data?.avatars) ? data.avatars : []
 })
 </script>
