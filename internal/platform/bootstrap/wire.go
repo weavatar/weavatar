@@ -42,6 +42,7 @@ var Module = wire.New().
 	Provide(NewGeetest).
 	Provide(NewDomain).
 	Provide(NewHashDir).
+	Provide(NewGravatarURL).
 	Provide(NewCodeExpire).
 	Provide(NewOAuthClient).
 	Multibind[registry.HealthChecks]().
@@ -64,6 +65,7 @@ var Module = wire.New().
 	Export[*geetest.Geetest]().
 	Export[appinfo.Domain]().
 	Export[appinfo.HashDir]().
+	Export[appinfo.GravatarURL]().
 	Export[appinfo.CodeExpire]().
 	Export[appinfo.OAuthClient]().
 	Export[registry.HealthChecks]().

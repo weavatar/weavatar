@@ -44,8 +44,18 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	must.Equal(t, c.Log.Output, "file")
 	must.Equal(t, c.Log.Path, "storage/logs/app.log")
 	must.Equal(t, c.Hash.Dir, "storage/hash")
+	must.Equal(t, c.Gravatar.URL, "https://gravatar.com")
 	must.Equal(t, c.Code.Expire, 5*time.Minute)
 	must.Equal(t, c.Audit.Driver, "aliyun")
+}
+
+func TestLoadTrimsGravatarURL(t *testing.T) {
+	writeConfig(t, minimal+"gravatar:\n  url: https://g.rat.dev/\n")
+
+	c, err := conf.Load()
+	must.NoError(t, err)
+
+	must.Equal(t, c.Gravatar.URL, "https://g.rat.dev")
 }
 
 func TestLoadDecodesNestedValues(t *testing.T) {
@@ -138,6 +148,7 @@ func TestLoadRejectsBadValues(t *testing.T) {
 		"stdout log output":  {to: "log:\n  output: stdout\n", wantErr: "log.output"},
 		"short code expire":  {to: "code:\n  expire: 30s\n", wantErr: "code.expire"},
 		"bad audit driver":   {to: "audit:\n  driver: baidu\n", wantErr: "audit.driver"},
+		"bad gravatar url":   {to: "gravatar:\n  url: g.rat.dev\n", wantErr: "gravatar.url"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			yaml := minimal + tc.to

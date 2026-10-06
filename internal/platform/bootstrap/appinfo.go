@@ -13,6 +13,10 @@ func NewHashDir(config *conf.Config) appinfo.HashDir {
 	return appinfo.HashDir(config.Hash.Dir)
 }
 
+func NewGravatarURL(config *conf.Config) appinfo.GravatarURL {
+	return appinfo.GravatarURL(config.Gravatar.URL)
+}
+
 func NewCodeExpire(config *conf.Config) appinfo.CodeExpire {
 	return appinfo.CodeExpire(config.Code.Expire)
 }

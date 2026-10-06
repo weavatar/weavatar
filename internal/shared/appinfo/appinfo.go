@@ -11,6 +11,9 @@ type Domain string
 // HashDir is the QQ hash table directory (hash.dir).
 type HashDir string
 
+// GravatarURL is the Gravatar origin or mirror (gravatar.url), without a trailing slash.
+type GravatarURL string
+
 // CodeExpire is how long a verification code stays valid (code.expire).
 type CodeExpire time.Duration
 

@@ -33,6 +33,9 @@ database:
   conn_max_lifetime: "0s"
 hash:
   dir: "storage/hash"
+# Gravatar 源站或其镜像，需服务器可达
+gravatar:
+  url: "https://gravatar.com"
 mail:
   host: "smtp.example.com"
   port: 587

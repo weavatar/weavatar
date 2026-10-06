@@ -33,14 +33,14 @@ func InitializeApp(wireInput0 string) (*App, func() error, error) {
 	wireCommitted := false
 	defer wireRollbackOnPanic(&wireCommitted, wireCleanup.close)
 
-	wireValue67_0, wireErr67 := conf.Load()
-	if wireErr67 != nil {
+	wireValue68_0, wireErr68 := conf.Load()
+	if wireErr68 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
-		return wireZero0, nil, errors.Join(wireErr67, cleanupErr)
+		return wireZero0, nil, errors.Join(wireErr68, cleanupErr)
 	}
 
-	wireValue4_0, wireResourceCleanup4, wireErr4 := bootstrap.NewLogger(wireValue67_0)
+	wireValue4_0, wireResourceCleanup4, wireErr4 := bootstrap.NewLogger(wireValue68_0)
 	if wireErr4 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
@@ -48,7 +48,7 @@ func InitializeApp(wireInput0 string) (*App, func() error, error) {
 	}
 	wireCleanup.arm(wireResourceCleanup4)
 
-	wireValue5_0, wireResourceCleanup5, wireErr5 := bootstrap.NewData(wireValue67_0, wireValue4_0)
+	wireValue5_0, wireResourceCleanup5, wireErr5 := bootstrap.NewData(wireValue68_0, wireValue4_0)
 	if wireErr5 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
@@ -60,59 +60,61 @@ func InitializeApp(wireInput0 string) (*App, func() error, error) {
 
 	wireValue7_0 := bootstrap.NewCache()
 
-	wireValue18_0 := bootstrap.NewGeetest(wireValue67_0)
+	wireValue18_0 := bootstrap.NewGeetest(wireValue68_0)
 
-	wireValue8_0, wireErr8 := bootstrap.NewValidator(wireValue67_0, wireValue6_0, wireValue7_0, wireValue18_0)
+	wireValue8_0, wireErr8 := bootstrap.NewValidator(wireValue68_0, wireValue6_0, wireValue7_0, wireValue18_0)
 	if wireErr8 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
 		return wireZero0, nil, errors.Join(wireErr8, cleanupErr)
 	}
 
-	wireValue69_0 := server.NewVersion(wireInput0)
+	wireValue70_0 := server.NewVersion(wireInput0)
 
-	wireValue24_0 := bootstrap.DatabaseHealthCheck(wireValue5_0)
+	wireValue25_0 := bootstrap.DatabaseHealthCheck(wireValue5_0)
 
-	wireValue76_0 := make(registry.HealthChecks, 0, 1)
-	wireValue76_0 = append(wireValue76_0, wireValue24_0)
+	wireValue77_0 := make(registry.HealthChecks, 0, 1)
+	wireValue77_0 = append(wireValue77_0, wireValue25_0)
 
-	wireValue28_0 := server.HealthRoutes(wireValue76_0)
+	wireValue29_0 := server.HealthRoutes(wireValue77_0)
 
-	wireValue29_0 := server.RootRoutes(wireValue67_0)
+	wireValue30_0 := server.RootRoutes(wireValue68_0)
 
-	wireValue30_0 := data.NewUserRepo(wireValue6_0)
+	wireValue31_0 := data.NewUserRepo(wireValue6_0)
 
-	wireValue17_0 := bootstrap.NewOAuth(wireValue67_0)
+	wireValue17_0 := bootstrap.NewOAuth(wireValue68_0)
 
-	wireValue31_0 := data.NewOAuthProvider(wireValue17_0)
+	wireValue32_0 := data.NewOAuthProvider(wireValue17_0)
 
-	wireValue12_0 := bootstrap.NewJWT(wireValue67_0)
+	wireValue12_0 := bootstrap.NewJWT(wireValue68_0)
 
-	wireValue19_0 := bootstrap.NewDomain(wireValue67_0)
+	wireValue19_0 := bootstrap.NewDomain(wireValue68_0)
 
-	wireValue32_0 := data.NewTokens(wireValue12_0, wireValue19_0)
+	wireValue33_0 := data.NewTokens(wireValue12_0, wireValue19_0)
 
-	wireValue22_0 := bootstrap.NewOAuthClient(wireValue67_0)
+	wireValue23_0 := bootstrap.NewOAuthClient(wireValue68_0)
 
-	wireValue33_0 := biz.NewUserUsecase(wireValue30_0, wireValue31_0, wireValue32_0, wireValue7_0, wireValue19_0, wireValue22_0)
+	wireValue34_0 := biz.NewUserUsecase(wireValue31_0, wireValue32_0, wireValue33_0, wireValue7_0, wireValue19_0, wireValue23_0)
 
-	wireValue34_0 := service.NewUserService(wireValue33_0, wireValue8_0)
+	wireValue35_0 := service.NewUserService(wireValue34_0, wireValue8_0)
 
-	wireValue36_0 := service.UserRoutes(wireValue34_0, wireValue12_0)
+	wireValue37_0 := service.UserRoutes(wireValue35_0, wireValue12_0)
 
-	wireValue37_0 := data2.NewAvatarRepo(wireValue6_0)
+	wireValue38_0 := data2.NewAvatarRepo(wireValue6_0)
 
-	wireValue38_0 := data2.NewImageRepo(wireValue6_0)
+	wireValue39_0 := data2.NewImageRepo(wireValue6_0)
 
-	wireValue39_0 := data2.NewTxRunner(wireValue6_0)
+	wireValue40_0 := data2.NewTxRunner(wireValue6_0)
 
-	wireValue40_0 := data2.NewUsers(wireValue33_0)
+	wireValue41_0 := data2.NewUsers(wireValue34_0)
 
-	wireValue41_0 := data2.NewStore()
+	wireValue42_0 := data2.NewStore()
 
-	wireValue42_0 := data2.NewFetcher()
+	wireValue21_0 := bootstrap.NewGravatarURL(wireValue68_0)
 
-	wireValue11_0, wireResourceCleanup11, wireErr11 := bootstrap.NewQqHash(wireValue67_0, wireValue4_0)
+	wireValue43_0 := data2.NewFetcher(wireValue21_0)
+
+	wireValue11_0, wireResourceCleanup11, wireErr11 := bootstrap.NewQqHash(wireValue68_0, wireValue4_0)
 	if wireErr11 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
@@ -120,108 +122,108 @@ func InitializeApp(wireInput0 string) (*App, func() error, error) {
 	}
 	wireCleanup.arm(wireResourceCleanup11)
 
-	wireValue43_0 := data2.NewQQHashes(wireValue11_0)
+	wireValue44_0 := data2.NewQQHashes(wireValue11_0)
 
-	wireValue44_0, wireErr44 := data2.NewGenerator()
-	if wireErr44 != nil {
+	wireValue45_0, wireErr45 := data2.NewGenerator()
+	if wireErr45 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
-		return wireZero0, nil, errors.Join(wireErr44, cleanupErr)
+		return wireZero0, nil, errors.Join(wireErr45, cleanupErr)
 	}
 
-	wireValue13_0, wireErr13 := bootstrap.NewCDN(wireValue67_0)
+	wireValue13_0, wireErr13 := bootstrap.NewCDN(wireValue68_0)
 	if wireErr13 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
 		return wireZero0, nil, errors.Join(wireErr13, cleanupErr)
 	}
 
-	wireValue45_0 := data2.NewPurger(wireValue13_0)
+	wireValue46_0 := data2.NewPurger(wireValue13_0)
 
-	wireValue14_0, wireErr14 := bootstrap.NewAudit(wireValue67_0)
+	wireValue14_0, wireErr14 := bootstrap.NewAudit(wireValue68_0)
 	if wireErr14 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
 		return wireZero0, nil, errors.Join(wireErr14, cleanupErr)
 	}
 
-	wireValue46_0 := data2.NewAuditor(wireValue14_0)
+	wireValue47_0 := data2.NewAuditor(wireValue14_0)
 
 	wireValue10_0 := bootstrap.NewQueue(wireValue4_0)
 
-	wireValue47_0 := biz2.NewAvatarUsecase(wireValue37_0, wireValue38_0, wireValue39_0, wireValue40_0, wireValue41_0, wireValue42_0, wireValue43_0, wireValue44_0, wireValue45_0, wireValue46_0, wireValue10_0, wireValue7_0, wireValue19_0, wireValue4_0)
+	wireValue48_0 := biz2.NewAvatarUsecase(wireValue38_0, wireValue39_0, wireValue40_0, wireValue41_0, wireValue42_0, wireValue43_0, wireValue44_0, wireValue45_0, wireValue46_0, wireValue47_0, wireValue10_0, wireValue7_0, wireValue19_0, wireValue4_0)
 
-	wireValue48_0 := service2.NewAvatarService(wireValue47_0, wireValue8_0)
+	wireValue49_0 := service2.NewAvatarService(wireValue48_0, wireValue8_0)
 
-	wireValue50_0 := service2.AvatarRoutes(wireValue48_0, wireValue12_0)
+	wireValue51_0 := service2.AvatarRoutes(wireValue49_0, wireValue12_0)
 
-	wireValue15_0 := bootstrap.NewSMS(wireValue67_0)
+	wireValue15_0 := bootstrap.NewSMS(wireValue68_0)
 
-	wireValue55_0 := data3.NewSMSSender(wireValue15_0)
+	wireValue56_0 := data3.NewSMSSender(wireValue15_0)
 
-	wireValue16_0 := bootstrap.NewMail(wireValue67_0)
+	wireValue16_0 := bootstrap.NewMail(wireValue68_0)
 
-	wireValue56_0 := data3.NewMailSender(wireValue16_0)
+	wireValue57_0 := data3.NewMailSender(wireValue16_0)
 
-	wireValue21_0 := bootstrap.NewCodeExpire(wireValue67_0)
+	wireValue22_0 := bootstrap.NewCodeExpire(wireValue68_0)
 
-	wireValue57_0 := biz3.NewCodeUsecase(wireValue7_0, wireValue55_0, wireValue56_0, wireValue21_0)
+	wireValue58_0 := biz3.NewCodeUsecase(wireValue7_0, wireValue56_0, wireValue57_0, wireValue22_0)
 
-	wireValue58_0 := service3.NewVerifyCodeService(wireValue57_0, wireValue8_0)
+	wireValue59_0 := service3.NewVerifyCodeService(wireValue58_0, wireValue8_0)
 
-	wireValue60_0 := service3.VerifyCodeRoutes(wireValue58_0)
+	wireValue61_0 := service3.VerifyCodeRoutes(wireValue59_0)
 
-	wireValue61_0 := data4.NewUsage(wireValue13_0)
+	wireValue62_0 := data4.NewUsage(wireValue13_0)
 
-	wireValue62_0 := data4.NewAvatars(wireValue47_0)
+	wireValue63_0 := data4.NewAvatars(wireValue48_0)
 
-	wireValue63_0 := biz4.NewSystemUsecase(wireValue61_0, wireValue62_0, wireValue7_0, wireValue19_0, wireValue4_0)
+	wireValue64_0 := biz4.NewSystemUsecase(wireValue62_0, wireValue63_0, wireValue7_0, wireValue19_0, wireValue4_0)
 
-	wireValue64_0 := service4.NewSystemService(wireValue63_0)
+	wireValue65_0 := service4.NewSystemService(wireValue64_0)
 
-	wireValue66_0 := service4.SystemRoutes(wireValue64_0)
+	wireValue67_0 := service4.SystemRoutes(wireValue65_0)
 
-	wireValue77_0 := make(registry.Routes, 0, 6)
-	wireValue77_0 = append(wireValue77_0, wireValue28_0)
-	wireValue77_0 = append(wireValue77_0, wireValue29_0)
-	wireValue77_0 = append(wireValue77_0, wireValue36_0)
-	wireValue77_0 = append(wireValue77_0, wireValue50_0)
-	wireValue77_0 = append(wireValue77_0, wireValue60_0)
-	wireValue77_0 = append(wireValue77_0, wireValue66_0)
+	wireValue78_0 := make(registry.Routes, 0, 6)
+	wireValue78_0 = append(wireValue78_0, wireValue29_0)
+	wireValue78_0 = append(wireValue78_0, wireValue30_0)
+	wireValue78_0 = append(wireValue78_0, wireValue37_0)
+	wireValue78_0 = append(wireValue78_0, wireValue51_0)
+	wireValue78_0 = append(wireValue78_0, wireValue61_0)
+	wireValue78_0 = append(wireValue78_0, wireValue67_0)
 
-	wireValue71_0, wireErr71 := server.NewRouter(wireValue67_0, wireValue8_0, wireValue69_0, wireValue77_0)
-	if wireErr71 != nil {
+	wireValue72_0, wireErr72 := server.NewRouter(wireValue68_0, wireValue8_0, wireValue70_0, wireValue78_0)
+	if wireErr72 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
-		return wireZero0, nil, errors.Join(wireErr71, cleanupErr)
+		return wireZero0, nil, errors.Join(wireErr72, cleanupErr)
 	}
 
-	wireValue68_0 := migrations.Collection()
+	wireValue69_0 := migrations.Collection()
 
-	wireValue9_0, wireErr9 := bootstrap.NewMigrate(wireValue6_0, wireValue68_0, wireValue4_0)
+	wireValue9_0, wireErr9 := bootstrap.NewMigrate(wireValue6_0, wireValue69_0, wireValue4_0)
 	if wireErr9 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
 		return wireZero0, nil, errors.Join(wireErr9, cleanupErr)
 	}
 
-	wireValue54_0 := service2.PurgeExpiredCacheJob(wireValue47_0)
+	wireValue55_0 := service2.PurgeExpiredCacheJob(wireValue48_0)
 
-	wireValue78_0 := make(registry.Jobs, 0, 1)
-	wireValue78_0 = append(wireValue78_0, wireValue54_0)
+	wireValue79_0 := make(registry.Jobs, 0, 1)
+	wireValue79_0 = append(wireValue79_0, wireValue55_0)
 
-	wireValue70_0, wireErr70 := bootstrap.NewCron(wireValue4_0, wireValue78_0)
-	if wireErr70 != nil {
+	wireValue71_0, wireErr71 := bootstrap.NewCron(wireValue4_0, wireValue79_0)
+	if wireErr71 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
-		return wireZero0, nil, errors.Join(wireErr70, cleanupErr)
+		return wireZero0, nil, errors.Join(wireErr71, cleanupErr)
 	}
 
-	wireValue73_0 := NewApp(wireValue67_0, wireValue71_0, wireValue9_0, wireValue70_0, wireValue10_0)
+	wireValue74_0 := NewApp(wireValue68_0, wireValue72_0, wireValue9_0, wireValue71_0, wireValue10_0)
 
 	wireCommitted = true
 
-	return wireValue73_0, wireCleanup.close, nil
+	return wireValue74_0, wireCleanup.close, nil
 }
 
 func InitializeCLI() (*Cli, func() error, error) {
@@ -231,14 +233,14 @@ func InitializeCLI() (*Cli, func() error, error) {
 	wireCommitted := false
 	defer wireRollbackOnPanic(&wireCommitted, wireCleanup.close)
 
-	wireValue67_0, wireErr67 := conf.Load()
-	if wireErr67 != nil {
+	wireValue68_0, wireErr68 := conf.Load()
+	if wireErr68 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
-		return wireZero0, nil, errors.Join(wireErr67, cleanupErr)
+		return wireZero0, nil, errors.Join(wireErr68, cleanupErr)
 	}
 
-	wireValue4_0, wireResourceCleanup4, wireErr4 := bootstrap.NewLogger(wireValue67_0)
+	wireValue4_0, wireResourceCleanup4, wireErr4 := bootstrap.NewLogger(wireValue68_0)
 	if wireErr4 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
@@ -246,7 +248,7 @@ func InitializeCLI() (*Cli, func() error, error) {
 	}
 	wireCleanup.arm(wireResourceCleanup4)
 
-	wireValue5_0, wireResourceCleanup5, wireErr5 := bootstrap.NewData(wireValue67_0, wireValue4_0)
+	wireValue5_0, wireResourceCleanup5, wireErr5 := bootstrap.NewData(wireValue68_0, wireValue4_0)
 	if wireErr5 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
@@ -256,32 +258,32 @@ func InitializeCLI() (*Cli, func() error, error) {
 
 	wireValue6_0 := bootstrap.ProvideDB(wireValue5_0)
 
-	wireValue68_0 := migrations.Collection()
+	wireValue69_0 := migrations.Collection()
 
-	wireValue9_0, wireErr9 := bootstrap.NewMigrate(wireValue6_0, wireValue68_0, wireValue4_0)
+	wireValue9_0, wireErr9 := bootstrap.NewMigrate(wireValue6_0, wireValue69_0, wireValue4_0)
 	if wireErr9 != nil {
 		wireCommitted = true
 		cleanupErr := wireCleanup.close()
 		return wireZero0, nil, errors.Join(wireErr9, cleanupErr)
 	}
 
-	wireValue26_0 := bootstrap.MigrateCommand(wireValue9_0)
+	wireValue27_0 := bootstrap.MigrateCommand(wireValue9_0)
 
-	wireValue20_0 := bootstrap.NewHashDir(wireValue67_0)
+	wireValue20_0 := bootstrap.NewHashDir(wireValue68_0)
 
-	wireValue52_0 := service2.HashCommand(wireValue20_0)
+	wireValue53_0 := service2.HashCommand(wireValue20_0)
 
-	wireValue75_0 := make(registry.Commands, 0, 2)
-	wireValue75_0 = append(wireValue75_0, wireValue26_0)
-	wireValue75_0 = append(wireValue75_0, wireValue52_0)
+	wireValue76_0 := make(registry.Commands, 0, 2)
+	wireValue76_0 = append(wireValue76_0, wireValue27_0)
+	wireValue76_0 = append(wireValue76_0, wireValue53_0)
 
-	wireValue72_0 := newRootCommand(wireValue75_0)
+	wireValue73_0 := newRootCommand(wireValue76_0)
 
-	wireValue74_0 := NewCli(wireValue72_0)
+	wireValue75_0 := NewCli(wireValue73_0)
 
 	wireCommitted = true
 
-	return wireValue74_0, wireCleanup.close, nil
+	return wireValue75_0, wireCleanup.close, nil
 }
 
 func wireRunCleanup(cleanup func() error) (err error, panicValue any) {

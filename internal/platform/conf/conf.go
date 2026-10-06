@@ -28,6 +28,7 @@ type Config struct {
 	Log      Log          `koanf:"log"`
 	Database Database     `koanf:"database"`
 	Hash     Hash         `koanf:"hash"`
+	Gravatar Gravatar     `koanf:"gravatar"`
 	Mail     Mail         `koanf:"mail"`
 	Geetest  Geetest      `koanf:"geetest"`
 	Code     Code         `koanf:"code"`
@@ -94,6 +95,12 @@ type Database struct {
 type Hash struct {
 	// Dir holds the QQ hash tables; missing tables only disable the QQ fallback.
 	Dir string `koanf:"dir"`
+}
+
+type Gravatar struct {
+	// URL is the Gravatar origin or a mirror of it, reachable from the server;
+	// avatars are fetched from <url>/avatar/<hash>.
+	URL string `koanf:"url"`
 }
 
 type Mail struct {
@@ -174,6 +181,10 @@ func (c *Config) fillDefaults() {
 	if c.Hash.Dir == "" {
 		c.Hash.Dir = "storage/hash"
 	}
+	if c.Gravatar.URL == "" {
+		c.Gravatar.URL = "https://gravatar.com"
+	}
+	c.Gravatar.URL = strings.TrimRight(c.Gravatar.URL, "/")
 	if c.Code.Expire <= 0 {
 		c.Code.Expire = 5 * time.Minute
 	}
@@ -198,6 +209,9 @@ func (c *Config) check() error {
 	}
 	if strings.Contains(c.HTTP.Domain, "/") {
 		return fmt.Errorf("http.domain must be a bare host such as weavatar.com, got %q", c.HTTP.Domain)
+	}
+	if !strings.HasPrefix(c.Gravatar.URL, "http://") && !strings.HasPrefix(c.Gravatar.URL, "https://") {
+		return fmt.Errorf("gravatar.url must start with http:// or https://, got %q", c.Gravatar.URL)
 	}
 	if c.Database.DSN == "" {
 		return errors.New("database.dsn must not be empty")

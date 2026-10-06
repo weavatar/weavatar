@@ -13,7 +13,7 @@ import (
 )
 
 func TestGravatar(t *testing.T) {
-	useGravatar(t, func(w http.ResponseWriter, r *http.Request) {
+	base := useGravatar(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/avatar/image":
 			w.Header().Set("Content-Type", "image/png")
@@ -26,37 +26,33 @@ func TestGravatar(t *testing.T) {
 		}
 	})
 
-	img, err := Gravatar(t.Context(), "image")
+	img, err := Gravatar(t.Context(), base+"/", "image")
 	must.NoError(t, err)
 	check.Equal(t, string(img), "png")
 
-	_, err = Gravatar(t.Context(), "page")
+	_, err = Gravatar(t.Context(), base, "page")
 	check.ErrorContains(t, err, "content type")
 
-	_, err = Gravatar(t.Context(), "missing")
+	_, err = Gravatar(t.Context(), base, "missing")
 	check.ErrorContains(t, err, "status 404")
 }
 
 func TestGravatar_RejectsOversizedBody(t *testing.T) {
 	body := bytes.Repeat([]byte{0}, maxResponseSize+1)
-	useGravatar(t, func(w http.ResponseWriter, _ *http.Request) {
+	base := useGravatar(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 		_, _ = w.Write(body)
 	})
 
-	_, err := Gravatar(t.Context(), "huge")
+	_, err := Gravatar(t.Context(), base, "huge")
 
 	check.ErrorIs(t, err, req.ErrResponseBodyTooLarge)
 }
 
-func useGravatar(t *testing.T, handler http.HandlerFunc) {
+func useGravatar(t *testing.T, handler http.HandlerFunc) string {
 	t.Helper()
 	srv := httptest.NewServer(handler)
-	prev := gravatarBaseURL
-	gravatarBaseURL = srv.URL
-	t.Cleanup(func() {
-		gravatarBaseURL = prev
-		srv.Close()
-	})
+	t.Cleanup(srv.Close)
+	return srv.URL
 }
