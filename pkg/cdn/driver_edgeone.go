@@ -1,11 +1,12 @@
 package cdn
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/spf13/cast"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	sdkerror "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
@@ -14,110 +15,87 @@ import (
 )
 
 type EdgeOne struct {
-	secretId, secretKey string // 密钥
+	secretId, secretKey string
 }
 
-// RefreshUrl 刷新URL
-func (r *EdgeOne) RefreshUrl(urls []string) error {
+func (r *EdgeOne) RefreshUrl(ctx context.Context, urls []string) error {
+	// copied: the other drivers receive the same slice
+	targets := make([]string, len(urls))
 	for i, url := range urls {
-		urls[i] = strings.TrimSuffix(url, "*")
+		targets[i] = strings.TrimSuffix(url, "*")
 	}
 
-	credential := common.NewCredential(
-		r.secretId,
-		r.secretKey,
-	)
-	cpf := profile.NewClientProfile()
-	cpf.HttpProfile.Endpoint = "teo.tencentcloudapi.com"
-
-	client, err := teo.NewClient(credential, "ap-chongqing", cpf)
-	if err != nil {
-		return fmt.Errorf("cdn: failed to create edgeone client: %w", err)
-	}
-
-	request := teo.NewCreatePurgeTaskRequest()
-	request.ZoneId = common.StringPtr("*")
-	request.Type = common.StringPtr("purge_url")
-	request.Targets = common.StringPtrs(urls)
-
-	_, err = client.CreatePurgeTask(request)
-
-	var sdkError *sdkerror.TencentCloudSDKError
-	if errors.As(err, &sdkError) {
-		return fmt.Errorf("cdn: failed to refresh edgeone url, code: %s, message: %s, requestId: %s", sdkError.Code, sdkError.Message, sdkError.RequestId)
-	}
-	if err != nil {
-		return fmt.Errorf("cdn: failed to refresh edgeone url, err: %x", err)
-	}
-
-	return nil
+	return r.purge(ctx, "purge_url", "url", targets)
 }
 
-// RefreshPath 刷新路径
-func (r *EdgeOne) RefreshPath(paths []string) error {
-	credential := common.NewCredential(
-		r.secretId,
-		r.secretKey,
-	)
-	cpf := profile.NewClientProfile()
-	cpf.HttpProfile.Endpoint = "teo.tencentcloudapi.com"
-
-	client, err := teo.NewClient(credential, "ap-chongqing", cpf)
-	if err != nil {
-		return fmt.Errorf("cdn: failed to create edgeone client: %w", err)
-	}
-
-	request := teo.NewCreatePurgeTaskRequest()
-	request.ZoneId = common.StringPtr("*")
-	request.Type = common.StringPtr("purge_prefix")
-	request.Targets = common.StringPtrs(paths)
-
-	_, err = client.CreatePurgeTask(request)
-
-	var sdkError *sdkerror.TencentCloudSDKError
-	if errors.As(err, &sdkError) {
-		return fmt.Errorf("cdn: failed to refresh edgeone path, code: %s, message: %s, requestId: %s", sdkError.Code, sdkError.Message, sdkError.RequestId)
-	}
-	if err != nil {
-		return fmt.Errorf("cdn: failed to refresh edgeone path, err: %x", err)
-	}
-
-	return nil
+func (r *EdgeOne) RefreshPath(ctx context.Context, paths []string) error {
+	return r.purge(ctx, "purge_prefix", "path", paths)
 }
 
-// GetUsage 获取用量
-func (r *EdgeOne) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
-	credential := common.NewCredential(
-		r.secretId,
-		r.secretKey,
-	)
-	cpf := profile.NewClientProfile()
-	cpf.HttpProfile.Endpoint = "teo.tencentcloudapi.com"
-
-	client, err := teo.NewClient(credential, "ap-chongqing", cpf)
+func (r *EdgeOne) GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error) {
+	client, err := r.client()
 	if err != nil {
-		return 0, fmt.Errorf("cdn: failed to create edgeone client: %w", err)
+		return 0, err
 	}
 
 	request := teo.NewDescribeTimingL7AnalysisDataRequest()
-	request.StartTime = common.StringPtr(startTime.ToIso8601String())
-	request.EndTime = common.StringPtr(endTime.ToIso8601String())
+	request.StartTime = common.StringPtr(startTime.Format(iso8601Layout))
+	request.EndTime = common.StringPtr(endTime.Format(iso8601Layout))
 	request.MetricNames = common.StringPtrs([]string{"l7Flow_request"})
 	request.ZoneIds = common.StringPtrs([]string{"*"})
 	request.Interval = common.StringPtr("day")
 
-	response, err := client.DescribeTimingL7AnalysisData(request)
+	response, err := client.DescribeTimingL7AnalysisDataWithContext(ctx, request)
 	var sdkError *sdkerror.TencentCloudSDKError
 	if errors.As(err, &sdkError) {
 		return 0, fmt.Errorf("cdn: failed to get edgeone usage, code: %s, message: %s, requestId: %s", sdkError.Code, sdkError.Message, sdkError.RequestId)
 	}
 	if err != nil {
-		return 0, fmt.Errorf("cdn: failed to get edgeone usage, err: %x", err)
+		return 0, fmt.Errorf("cdn: failed to get edgeone usage: %w", err)
 	}
 
-	if *response.Response.TotalCount == uint64(0) || len(response.Response.Data) == 0 || len(response.Response.Data[0].TypeValue) == 0 {
+	// no traffic in the window comes back as an empty data set
+	res := response.Response
+	if res == nil || res.TotalCount == nil || *res.TotalCount == 0 || len(res.Data) == 0 || res.Data[0] == nil ||
+		len(res.Data[0].TypeValue) == 0 || res.Data[0].TypeValue[0] == nil || res.Data[0].TypeValue[0].Sum == nil {
 		return 0, nil
 	}
 
-	return cast.ToUint(*response.Response.Data[0].TypeValue[0].Sum), nil
+	return cast.ToUint(*res.Data[0].TypeValue[0].Sum), nil
+}
+
+func (r *EdgeOne) purge(ctx context.Context, purgeType, kind string, targets []string) error {
+	client, err := r.client()
+	if err != nil {
+		return err
+	}
+
+	request := teo.NewCreatePurgeTaskRequest()
+	request.ZoneId = common.StringPtr("*")
+	request.Type = common.StringPtr(purgeType)
+	request.Targets = common.StringPtrs(targets)
+
+	_, err = client.CreatePurgeTaskWithContext(ctx, request)
+	var sdkError *sdkerror.TencentCloudSDKError
+	if errors.As(err, &sdkError) {
+		return fmt.Errorf("cdn: failed to refresh edgeone %s, code: %s, message: %s, requestId: %s", kind, sdkError.Code, sdkError.Message, sdkError.RequestId)
+	}
+	if err != nil {
+		return fmt.Errorf("cdn: failed to refresh edgeone %s: %w", kind, err)
+	}
+
+	return nil
+}
+
+func (r *EdgeOne) client() (*teo.Client, error) {
+	credential := common.NewCredential(r.secretId, r.secretKey)
+	cpf := profile.NewClientProfile()
+	cpf.HttpProfile.Endpoint = "teo.tencentcloudapi.com"
+
+	client, err := teo.NewClient(credential, "ap-chongqing", cpf)
+	if err != nil {
+		return nil, fmt.Errorf("cdn: failed to create edgeone client: %w", err)
+	}
+
+	return client, nil
 }

@@ -1,6 +1,7 @@
 package geetest
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -17,7 +18,7 @@ type Geetest struct {
 	CaptchaKey string
 }
 
-func NewGeetest(CaptchaID, CaptchaKey string) *Geetest {
+func NewGeetest(captchaID, captchaKey string) *Geetest {
 	client := resty.New()
 	client.SetBaseURL("https://gcaptcha4.geetest.com")
 	client.SetTimeout(5 * time.Second)
@@ -26,13 +27,16 @@ func NewGeetest(CaptchaID, CaptchaKey string) *Geetest {
 
 	return &Geetest{
 		client:     client,
-		CaptchaID:  CaptchaID,
-		CaptchaKey: CaptchaKey,
+		CaptchaID:  captchaID,
+		CaptchaKey: captchaKey,
 	}
 }
 
-func (r *Geetest) Verify(ticket Ticket) (bool, error) {
+// Verify reports true only with a nil error; a rejected ticket is an error too.
+func (r *Geetest) Verify(ctx context.Context, ticket Ticket) (bool, error) {
+	var res Response
 	resp, err := r.client.R().
+		SetContext(ctx).
 		SetFormData(map[string]string{
 			"lot_number":     ticket.LotNumber,
 			"captcha_output": ticket.CaptchaOutput,
@@ -42,7 +46,7 @@ func (r *Geetest) Verify(ticket Ticket) (bool, error) {
 		}).
 		SetQueryParam("captcha_id", r.CaptchaID).
 		ForceContentType("application/json").
-		SetResult(&Response{}).
+		SetResult(&res).
 		Post("/validate")
 
 	if err != nil {
@@ -52,7 +56,6 @@ func (r *Geetest) Verify(ticket Ticket) (bool, error) {
 		return false, fmt.Errorf("%s %s", resp.Status(), resp.String())
 	}
 
-	res := resp.Result().(*Response)
 	if res.Status != "success" {
 		return false, fmt.Errorf("%s %s", res.Code, res.Msg)
 	}

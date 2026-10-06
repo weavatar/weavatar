@@ -1,4 +1,4 @@
-// Package qqhash 提供 QQ 邮箱哈希到 QQ 号的映射表
+// Package qqhash maps QQ mailbox digests to QQ numbers.
 package qqhash
 
 import (
@@ -19,7 +19,7 @@ const (
 	TypeSHA256 = "sha256"
 
 	MinQq = 10000
-	MaxQq = math.MaxUint32 // 值数组是 uint32
+	MaxQq = math.MaxUint32 // values are stored as uint32
 
 	headerSize         = 4096
 	partitionEntrySize = 40
@@ -36,7 +36,7 @@ var (
 	ErrBigEndian = errors.New("qqhash: big-endian hosts are not supported")
 )
 
-// 文件头字段偏移
+// Byte offsets of the header fields.
 const (
 	offKeyBytes = 0  // uint32
 	offPartBits = 4  // uint32
@@ -47,7 +47,7 @@ const (
 	offSeed     = 40 // uint64
 	offIdxSize  = 48 // uint64
 	offValSize  = 56 // uint64
-	offCRC      = 64 // uint32，覆盖文件头前 64 字节与整张分区表
+	offCRC      = 64 // uint32 over the first 64 header bytes and the whole partition table
 )
 
 type header struct {
@@ -228,7 +228,7 @@ func partitionOf(d []byte, partBits uint32) uint32 {
 	return uint32(binary.BigEndian.Uint16(d[:2]) >> (16 - partBits))
 }
 
-// 不用 encoding/hex 是为了避免分配
+// decodeHex avoids encoding/hex to stay allocation-free.
 func decodeHex(dst []byte, src string) bool {
 	if len(src) != len(dst)*2 {
 		return false

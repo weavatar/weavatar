@@ -1,7 +1,9 @@
 package sms
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
@@ -11,10 +13,10 @@ import (
 )
 
 type Aliyun struct {
-	accessKeyId, accessKeySecret, signName, templateCode, expireTime string
+	accessKeyId, accessKeySecret, signName, templateCode string
 }
 
-func (r *Aliyun) Send(phone string, message Message) error {
+func (r *Aliyun) Send(ctx context.Context, phone string, message Message) error {
 	client, err := r.createClient()
 	if err != nil {
 		return err
@@ -32,16 +34,19 @@ func (r *Aliyun) Send(phone string, message Message) error {
 		TemplateParam: tea.String(string(param)),
 	}
 
-	result, err := client.SendSmsWithOptions(sendSmsRequest, &util.RuntimeOptions{
+	result, err := client.SendSmsWithContext(ctx, sendSmsRequest, &util.RuntimeOptions{
 		Autoretry:   tea.Bool(true),
 		MaxAttempts: tea.Int(3),
 	})
 	if err != nil {
 		return err
 	}
+	if result == nil || result.Body == nil {
+		return errors.New("sms: aliyun returned empty response")
+	}
 
-	if tea.StringValue(result.Body.Message) != "OK" {
-		return fmt.Errorf("sms send failed: %s, code: %s, request id: %s", tea.StringValue(result.Body.Message), tea.StringValue(result.Body.Code), tea.StringValue(result.Body.RequestId))
+	if tea.StringValue(result.Body.Code) != "OK" {
+		return fmt.Errorf("sms: aliyun send failed: %s, code: %s, request id: %s", tea.StringValue(result.Body.Message), tea.StringValue(result.Body.Code), tea.StringValue(result.Body.RequestId))
 	}
 
 	return nil

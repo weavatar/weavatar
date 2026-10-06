@@ -1,0 +1,42 @@
+name: Setup Go with separate caches
+description: Share downloaded modules and refresh compiled packages for each commit.
+inputs:
+  scope:
+    description: Build mode and package set, such as unit-internal or build.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Locate Go caches
+      id: paths
+      shell: bash
+      run: |
+        echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+        echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "version=$(go env GOVERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore module cache
+      id: modules
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.paths.outputs.modules }}
+        key: go-modules-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.mod', 'go.sum') }}
+        restore-keys: go-modules-v2-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Complete module cache
+      if: steps.modules.outputs.cache-hit != 'true'
+      shell: bash
+      run: go mod download
+
+    - name: Restore build cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.paths.outputs.build }}
+        key: go-build-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.paths.outputs.version }}-${{ inputs.scope }}-${{ github.sha }}
+        restore-keys: go-build-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.paths.outputs.version }}-${{ inputs.scope }}-

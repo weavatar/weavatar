@@ -6,23 +6,7 @@ import (
 	"time"
 )
 
-func CodeTmpl(company, code string) string {
-	tmpl, _ := template.New("code").Parse(codeTmpl)
-
-	var buf bytes.Buffer
-	err := tmpl.Execute(&buf, map[string]any{
-		"Company": company,
-		"Code":    code,
-		"Year":    time.Now().Year(),
-	})
-	if err != nil {
-		return ""
-	}
-
-	return buf.String()
-}
-
-var codeTmpl = `
+const codeHTML = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -123,3 +107,20 @@ var codeTmpl = `
 </html>
 
 `
+
+var codeTemplate = template.Must(template.New("code").Parse(codeHTML))
+
+// CodeTmpl renders the verification code email, or "" if rendering fails.
+func CodeTmpl(company, code string) string {
+	var buf bytes.Buffer
+	err := codeTemplate.Execute(&buf, map[string]any{
+		"Company": company,
+		"Code":    code,
+		"Year":    time.Now().Year(),
+	})
+	if err != nil {
+		return ""
+	}
+
+	return buf.String()
+}

@@ -10,8 +10,8 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/libtnb/assert/check"
+	"github.com/libtnb/assert/must"
 	xdraw "golang.org/x/image/draw"
 )
 
@@ -39,24 +39,24 @@ func TestEncodeDecode(t *testing.T) {
 	} {
 		t.Run(format, func(t *testing.T) {
 			data, err := Encode(src, format)
-			require.NoError(t, err)
+			must.NoError(t, err)
 
 			img, got, err := Decode(data)
-			require.NoError(t, err)
-			assert.Equal(t, want, got)
-			assert.Equal(t, src.Bounds().Size(), img.Bounds().Size())
+			must.NoError(t, err)
+			check.Equal(t, got, want)
+			check.Equal(t, img.Bounds().Size(), src.Bounds().Size())
 		})
 	}
 }
 
 func TestEncodeUnsupported(t *testing.T) {
 	_, err := Encode(testImage(8, 8), "bmp")
-	assert.ErrorIs(t, err, ErrUnsupported)
+	check.ErrorIs(t, err, ErrUnsupported)
 }
 
 func TestDecodeUnsupported(t *testing.T) {
 	_, _, err := Decode([]byte("not an image"))
-	assert.ErrorIs(t, err, ErrUnsupported)
+	check.ErrorIs(t, err, ErrUnsupported)
 }
 
 func TestDecodeTooLarge(t *testing.T) {
@@ -73,14 +73,14 @@ func TestDecodeTooLarge(t *testing.T) {
 	data = append(data, chunk("IEND", nil)...)
 
 	_, _, err := Decode(data)
-	assert.ErrorIs(t, err, ErrTooLarge)
+	check.ErrorIs(t, err, ErrTooLarge)
 }
 
 func TestResize(t *testing.T) {
 	src := testImage(100, 50)
-	assert.Equal(t, image.Pt(40, 40), Resize(src, 40, 40).Bounds().Size())
-	assert.Equal(t, image.Pt(200, 200), Resize(src, 200, 200).Bounds().Size())
-	assert.Same(t, src, Resize(src, 100, 50))
+	check.Equal(t, Resize(src, 40, 40).Bounds().Size(), image.Pt(40, 40))
+	check.Equal(t, Resize(src, 200, 200).Bounds().Size(), image.Pt(200, 200))
+	check.Equal(t, Resize(src, 100, 50), image.Image(src))
 }
 
 func TestResizeMatchesBiLinear(t *testing.T) {
@@ -104,7 +104,8 @@ func TestResizeMatchesBiLinear(t *testing.T) {
 	for name, src := range map[string]image.Image{"nrgba": nrgba, "ycbcr": ycbcr, "gray": gray, "offset": offset} {
 		for _, size := range []image.Point{{80, 80}, {7, 3}, {150, 150}, {640, 480}, {1, 1}} {
 			t.Run(fmt.Sprintf("%s-%dx%d", name, size.X, size.Y), func(t *testing.T) {
-				got := Resize(src, size.X, size.Y).(*image.RGBA)
+				got, ok := Resize(src, size.X, size.Y).(*image.RGBA)
+				must.True(t, ok, "Resize should return *image.RGBA")
 				want := image.NewRGBA(got.Rect)
 				xdraw.BiLinear.Scale(want, want.Rect, src, src.Bounds(), xdraw.Src, nil)
 
@@ -112,7 +113,7 @@ func TestResizeMatchesBiLinear(t *testing.T) {
 				for i := range got.Pix {
 					maxDiff = max(maxDiff, int(got.Pix[i])-int(want.Pix[i]), int(want.Pix[i])-int(got.Pix[i]))
 				}
-				assert.LessOrEqual(t, maxDiff, 2)
+				check.LessOrEqual(t, maxDiff, 2)
 			})
 		}
 	}
@@ -128,10 +129,10 @@ func TestDetectISOBMFF(t *testing.T) {
 		return append(b, make([]byte, 16)...)
 	}
 
-	assert.Equal(t, "avif", detect(ftyp("avif", "mif1", "miaf")))
-	assert.Equal(t, "avif", detect(ftyp("mif1", "avif", "miaf")))
-	assert.Equal(t, "heic", detect(ftyp("heic", "mif1", "heic")))
-	assert.Equal(t, "heic", detect(ftyp("mif1", "heic")))
-	assert.Equal(t, "", detect(ftyp("isom", "mp41")))
-	assert.Equal(t, "", detect(bytes.Repeat([]byte{0}, 4)))
+	check.Equal(t, detect(ftyp("avif", "mif1", "miaf")), "avif")
+	check.Equal(t, detect(ftyp("mif1", "avif", "miaf")), "avif")
+	check.Equal(t, detect(ftyp("heic", "mif1", "heic")), "heic")
+	check.Equal(t, detect(ftyp("mif1", "heic")), "heic")
+	check.Equal(t, detect(ftyp("isom", "mp41")), "")
+	check.Equal(t, detect(bytes.Repeat([]byte{0}, 4)), "")
 }

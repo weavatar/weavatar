@@ -6,7 +6,8 @@ import (
 	"math"
 )
 
-// Resize 使用双线性插值缩放到指定宽高，缩小时按比例放宽插值核
+// Resize scales bilinearly, widening the kernel by the scale when shrinking so
+// every source pixel contributes.
 func Resize(img image.Image, width, height int) image.Image {
 	b := img.Bounds()
 	if b.Dx() == width && b.Dy() == height {
@@ -17,15 +18,16 @@ func Resize(img image.Image, width, height int) image.Image {
 	yw := newWeights(b.Dy(), height)
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	// 源图逐行转为预乘 alpha 的 RGBA，在预乘空间插值
+	// rows are converted to premultiplied RGBA so interpolation does not bleed
+	// color from transparent pixels
 	row := image.NewRGBA(image.Rect(0, 0, b.Dx(), 1))
-	// 横向缩放后的行，按源行号对窗口大小取模复用
+	// horizontally scaled rows, reused modulo the vertical window size
 	ring := make([][]float32, yw.span)
 	for i := range ring {
 		ring[i] = make([]float32, width*4)
 	}
 	acc := make([]float32, width*4)
-	next := 0 // 下一个待横向缩放的源行
+	next := 0 // next source row to scale horizontally
 
 	for y := range height {
 		lo, ws := yw.start[y], yw.at(y)
@@ -52,14 +54,14 @@ func Resize(img image.Image, width, height int) image.Image {
 	return dst
 }
 
-// weights 一个方向上每个目标像素的插值权重
-// 第 i 个目标像素的权重为 w[i*stride : i*stride+n[i]]，对应从 start[i] 开始的源像素
+// weights holds the kernel along one axis: destination pixel i takes weights
+// w[i*stride : i*stride+n[i]] over source pixels from start[i].
 type weights struct {
 	start  []int
 	n      []int
-	w      []float32 // 已归一化
+	w      []float32 // normalized
 	stride int
-	span   int // 最大窗口大小
+	span   int // widest window
 }
 
 func newWeights(src, dst int) weights {
@@ -86,7 +88,7 @@ func newWeights(src, dst int) weights {
 			tmp[j-lo] = v
 			sum += v
 		}
-		// 去掉首尾权重为 0 的像素
+		// trim zero weights at both ends
 		for len(tmp) > 0 && tmp[0] == 0 {
 			tmp, lo = tmp[1:], lo+1
 		}
@@ -104,12 +106,10 @@ func newWeights(src, dst int) weights {
 	return ws
 }
 
-// at 返回第 i 个目标像素的权重
 func (ws weights) at(i int) []float32 {
 	return ws.w[i*ws.stride : i*ws.stride+ws.n[i]]
 }
 
-// apply 对一行 RGBA 像素做横向插值
 func (ws weights) apply(dst []float32, src []uint8) {
 	for i := range ws.start {
 		var r, g, b, a float32

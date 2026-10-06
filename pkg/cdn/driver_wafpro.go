@@ -1,15 +1,20 @@
 package cdn
 
 import (
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
 	"github.com/spf13/cast"
 )
 
+// WafPro drives the SCDN console API, which WafPro and WjDun both run under
+// their own hosts.
 type WafPro struct {
-	apiKey, apiSecret string
+	name     string
+	endpoint string
+	client   *req.Client
 }
 
 type WafProClean struct {
@@ -28,90 +33,69 @@ type WafProUsageResponse struct {
 	Message string    `json:"msg"`
 }
 
-// RefreshUrl 刷新URL
-func (d *WafPro) RefreshUrl(urls []string) error {
-	client := req.C()
+func newWafPro(name, endpoint, apiKey, apiSecret string) *WafPro {
+	return &WafPro{
+		name:     name,
+		endpoint: endpoint,
+		client: newClient().SetCommonHeaders(map[string]string{
+			"api-key":    apiKey,
+			"api-secret": apiSecret,
+		}),
+	}
+}
 
-	data := make([]WafProClean, len(urls))
+// RefreshUrl appends "*" so query-string variants are purged too.
+func (d *WafPro) RefreshUrl(ctx context.Context, urls []string) error {
+	jobs := make([]WafProClean, len(urls))
 	for i, url := range urls {
-		data[i] = WafProClean{
-			Type: "clean_url",
-			Data: map[string]string{"url": url + "*"},
-		}
+		jobs[i] = WafProClean{Type: "clean_url", Data: map[string]string{"url": url + "*"}}
 	}
-
-	var resp WafProRefreshResponse
-	_, err := client.R().SetBody(data).SetSuccessResult(&resp).SetErrorResult(&resp).SetHeaders(map[string]string{
-		"api-key":    d.apiKey,
-		"api-secret": d.apiSecret,
-	}).Post("https://scdn.console.waf.pro/v1/jobs")
-	if err != nil {
-		return err
-	}
-
-	if cast.ToString(resp.Code) != "0" {
-		return fmt.Errorf("cdn: failed to refresh wafpro url, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
-	}
-
-	return nil
+	return d.clean(ctx, "url", jobs)
 }
 
-// RefreshPath 刷新路径
-func (d *WafPro) RefreshPath(paths []string) error {
-	client := req.C()
-
-	data := make([]WafProClean, len(paths))
-	for i, url := range paths {
-		data[i] = WafProClean{
-			Type: "clean_dir",
-			Data: map[string]string{"url": url},
-		}
+func (d *WafPro) RefreshPath(ctx context.Context, paths []string) error {
+	jobs := make([]WafProClean, len(paths))
+	for i, path := range paths {
+		jobs[i] = WafProClean{Type: "clean_dir", Data: map[string]string{"url": path}}
 	}
-
-	var resp WafProRefreshResponse
-	_, err := client.R().SetBody(data).SetSuccessResult(&resp).SetErrorResult(&resp).SetHeaders(map[string]string{
-		"api-key":    d.apiKey,
-		"api-secret": d.apiSecret,
-	}).Post("https://scdn.console.waf.pro/v1/jobs")
-	if err != nil {
-		return err
-	}
-
-	if cast.ToString(resp.Code) != "0" {
-		return fmt.Errorf("cdn: failed to refresh wafpro path, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
-	}
-
-	return nil
+	return d.clean(ctx, "path", jobs)
 }
 
-// GetUsage 获取用量
-func (d *WafPro) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
-	client := req.C()
-
+func (d *WafPro) GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error) {
 	var resp WafProUsageResponse
-	_, err := client.R().SetSuccessResult(&resp).SetErrorResult(&resp).SetHeaders(map[string]string{
-		"api-key":    d.apiKey,
-		"api-secret": d.apiSecret,
-	}).SetQueryParams(map[string]string{
+	_, err := d.client.R().SetContext(ctx).SetSuccessResult(&resp).SetErrorResult(&resp).SetQueryParams(map[string]string{
 		"type":        "req",
-		"start":       startTime.ToDateTimeString(),
-		"end":         endTime.ToDateTimeString(),
+		"start":       startTime.Format(time.DateTime),
+		"end":         endTime.Format(time.DateTime),
 		"domain":      domain,
 		"server_post": "",
-	}).Get("https://scdn.console.waf.pro/v1/monitor/site/realtime")
-
+	}).Get(d.endpoint + "/v1/monitor/site/realtime")
 	if err != nil {
 		return 0, err
 	}
 
-	if cast.ToString(resp.Code) != "0" {
-		return 0, fmt.Errorf("cdn: failed to get wafpro usage, code: %s, message: %s", cast.ToString(resp.Code), resp.Message)
+	if code := cast.ToString(resp.Code); code != "0" {
+		return 0, fmt.Errorf("cdn: failed to get %s usage, code: %s, message: %s", d.name, code, resp.Message)
 	}
 
-	sum := uint(0)
-	for _, data := range resp.Data {
-		sum += data[1]
+	var sum uint
+	for _, point := range resp.Data {
+		sum += point[1]
 	}
 
 	return sum, nil
+}
+
+func (d *WafPro) clean(ctx context.Context, kind string, jobs []WafProClean) error {
+	var resp WafProRefreshResponse
+	_, err := d.client.R().SetContext(ctx).SetBody(jobs).SetSuccessResult(&resp).SetErrorResult(&resp).Post(d.endpoint + "/v1/jobs")
+	if err != nil {
+		return err
+	}
+
+	if code := cast.ToString(resp.Code); code != "0" {
+		return fmt.Errorf("cdn: failed to refresh %s %s, code: %s, message: %s", d.name, kind, code, resp.Message)
+	}
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"context"
 	"crypto/tls"
 
 	"github.com/wneessen/go-mail"
@@ -21,7 +22,7 @@ func New(host string, port int, user, password string) *Mail {
 	}
 }
 
-func (r *Mail) Send(to, subject, content string) error {
+func (r *Mail) Send(ctx context.Context, to, subject, content string) error {
 	message := mail.NewMsg()
 	if err := message.From(r.user); err != nil {
 		return err
@@ -39,10 +40,10 @@ func (r *Mail) Send(to, subject, content string) error {
 		mail.WithSSL(),
 		mail.WithTLSPolicy(mail.NoTLS),
 		mail.WithTLSPortPolicy(mail.NoTLS),
-		mail.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+		mail.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}), //nolint:gosec // the SMTP certificate has never been verified; tightening it needs a deployment check
 		mail.WithUsername(r.user), mail.WithPassword(r.password))
 	if err != nil {
 		return err
 	}
-	return client.DialAndSend(message)
+	return client.DialAndSendWithContext(ctx, message)
 }

@@ -1,18 +1,19 @@
 package cdn
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
 	"github.com/libtnb/utils/str"
 )
 
 type YunDun struct {
 	username, password string
+	client             *req.Client // its cookie jar holds the console session
 }
 
 type YunDunRefreshResponse struct {
@@ -97,119 +98,107 @@ type YunDunErrorResponse struct {
 	} `json:"status"`
 }
 
-// RefreshUrl 刷新URL
-func (y *YunDun) RefreshUrl(urls []string) error {
-	client, err := y.login()
-	if err != nil {
-		return err
-	}
-
-	// 提交刷新请求
-	refreshURL := "https://www.yundun.com/api/V4/Web.Domain.DashBoard.saveCache"
-	data := map[string][]string{
-		"specialurl": urls,
-	}
-
-	var refreshResponse YunDunRefreshResponse
-	var errorResponse YunDunErrorResponse
-	_, err = client.R().SetBody(data).SetSuccessResult(&refreshResponse).SetErrorResult(&errorResponse).Put(refreshURL)
-	if err != nil {
-		return err
-	}
-
-	if refreshResponse.Status.Code != 1 {
-		return fmt.Errorf("cdn: failed to refresh yundun url, code: %d, message: %s", errorResponse.Status.Code, errorResponse.Status.Message)
-	}
-
-	return nil
+func newYunDun(c YunDunConfig) *YunDun {
+	client := newClient()
+	client.ImpersonateSafari()
+	return &YunDun{username: c.Username, password: c.Password, client: client}
 }
 
-// RefreshPath 刷新路径
-func (y *YunDun) RefreshPath(paths []string) error {
-	client, err := y.login()
-	if err != nil {
-		return err
-	}
-
-	// 提交刷新请求
-	refreshURL := "https://www.yundun.com/api/V4/Web.Domain.DashBoard.saveCache"
-	data := map[string][]string{
-		"specialdir": paths,
-	}
-
-	var refreshResponse YunDunRefreshResponse
-	var errorResponse YunDunErrorResponse
-	_, err = client.R().SetBody(data).SetSuccessResult(&refreshResponse).SetErrorResult(&errorResponse).Put(refreshURL)
-	if err != nil {
-		return err
-	}
-
-	if refreshResponse.Status.Code != 1 {
-		return fmt.Errorf("cdn: failed to refresh yundun path, code: %d, message: %s", errorResponse.Status.Code, errorResponse.Status.Message)
-	}
-
-	return nil
+func (y *YunDun) RefreshUrl(ctx context.Context, urls []string) error {
+	return y.refresh(ctx, "specialurl", urls)
 }
 
-// GetUsage 获取使用量
-func (y *YunDun) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
+func (y *YunDun) RefreshPath(ctx context.Context, paths []string) error {
+	return y.refresh(ctx, "specialdir", paths)
+}
 
-	client, err := y.login()
-	if err != nil {
+func (y *YunDun) GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error) {
+	if err := y.login(ctx); err != nil {
 		return 0, err
 	}
 
-	var request = YunDunUsageRequest{
+	request := YunDunUsageRequest{
 		Router:    "cdn.domain.times",
-		StartTime: startTime.ToDateTimeString(),
-		EndTime:   endTime.ToDateTimeString(),
+		StartTime: startTime.Format(time.DateTime),
+		EndTime:   endTime.Format(time.DateTime),
 		Nodes:     []string{},
 		GroupId:   []string{},
 		SubDomain: []string{domain},
 		Interval:  "1d",
 	}
-	var usageResponse YunDunUsageResponse
-	var errorResponse YunDunErrorResponse
-
-	_, err = client.R().SetBodyJsonMarshal(request).SetSuccessResult(&usageResponse).SetErrorResult(&errorResponse).Post("https://www.yundun.com/api/V4/stati.data.get")
+	// both outcomes carry the status block, so one value serves either
+	var usage YunDunUsageResponse
+	_, err := y.client.R().SetContext(ctx).SetBodyJsonMarshal(request).SetSuccessResult(&usage).SetErrorResult(&usage).Post("https://www.yundun.com/api/V4/stati.data.get")
 	if err != nil {
 		return 0, err
 	}
 
-	if usageResponse.Status.Code != 1 {
-		return 0, fmt.Errorf("cdn: failed to get yundun usage, code: %d, message: %s", errorResponse.Status.Code, errorResponse.Status.Message)
+	if usage.Status.Code != 1 {
+		return 0, fmt.Errorf("cdn: failed to get yundun usage, code: %d, message: %s", usage.Status.Code, usage.Status.Message)
 	}
 
-	return uint(usageResponse.Data.TotalTimes.Total.Total), nil
+	return uint(usage.Data.TotalTimes.Total.Total), nil
 }
 
-// login 登录平台
-func (y *YunDun) login() (*req.Client, error) {
-	timeStamp := strconv.Itoa(int(carbon.Now(carbon.PRC).TimestampMilli()))
-	rand.NewSource(time.Now().UnixNano())
-	random := str.RandomN(16)
-	callback := "jsonp_" + timeStamp + "_" + random
+func (y *YunDun) refresh(ctx context.Context, field string, urls []string) error {
+	if err := y.login(ctx); err != nil {
+		return err
+	}
+
+	var result YunDunRefreshResponse
+	_, err := y.client.R().SetContext(ctx).
+		SetBody(map[string][]string{field: urls}).
+		SetSuccessResult(&result).
+		SetErrorResult(&result).
+		Put("https://www.yundun.com/api/V4/Web.Domain.DashBoard.saveCache")
+	if err != nil {
+		return err
+	}
+
+	if result.Status.Code != 1 {
+		return fmt.Errorf("cdn: failed to refresh yundun %s, code: %d, message: %s", field, result.Status.Code, result.Status.Message)
+	}
+
+	return nil
+}
+
+// login runs YunDun's console SSO on every call rather than tracking when the
+// session expires. The reply is assumed to carry the V4 status block like the
+// other endpoints; a reply without one is let through and the API call that
+// follows reports its own status.
+func (y *YunDun) login(ctx context.Context) error {
+	timeStamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
+	callback := "jsonp_" + timeStamp + "_" + str.RandomN(16)
 	attachURL := fmt.Sprintf("https://www.yundun.com/api/sso/V4/attach?callback=%s&_time=%s", callback, timeStamp)
 
-	client := req.C()
-	client.ImpersonateSafari()
-
-	// 先获取登录 Token
-	_, err := client.R().Get(attachURL)
+	resp, err := y.client.R().SetContext(ctx).Get(attachURL)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if resp.IsErrorState() {
+		return fmt.Errorf("cdn: yundun sso attach failed, status: %d", resp.StatusCode)
 	}
 
-	// 提交登录请求
-	loginURL := "https://www.yundun.com/api/sso/V4/login?sso_version=2"
-	loginParams := map[string]string{
+	resp, err = y.client.R().SetContext(ctx).SetFormData(map[string]string{
 		"username": y.username,
 		"password": y.password,
-	}
-	_, err = client.R().SetFormData(loginParams).Post(loginURL)
+	}).Post("https://www.yundun.com/api/sso/V4/login?sso_version=2")
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if resp.IsErrorState() {
+		return fmt.Errorf("cdn: yundun login failed, status: %d", resp.StatusCode)
 	}
 
-	return client, nil
+	var result struct {
+		Status *struct {
+			Code    *int   `json:"code"`
+			Message string `json:"message"`
+		} `json:"status"`
+	}
+	if json.Unmarshal(resp.Bytes(), &result) == nil && result.Status != nil && result.Status.Code != nil && *result.Status.Code != 1 {
+		return fmt.Errorf("cdn: yundun login failed, code: %d, message: %s", *result.Status.Code, result.Status.Message)
+	}
+
+	return nil
 }

@@ -1,0 +1,83 @@
+name: Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - web/**
+      - .github/workflows/web.yml
+  pull_request:
+    paths:
+      - web/**
+      - .github/workflows/web.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  lint:
+    name: lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        # The lint script runs eslint --fix; fail when it had to rewrite committed files.
+        run: |
+          pnpm lint
+          git diff --exit-code -- .
+
+      - name: Type-check
+        run: pnpm type-check
+
+  build:
+    name: production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build-only
+
+      - name: Check version.json
+        run: jq -e --arg hash "$(git rev-parse --short HEAD)" '.hash == $hash' dist/version.json

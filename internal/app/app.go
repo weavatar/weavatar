@@ -2,69 +2,84 @@ package app
 
 import (
 	"context"
+	_ "expvar" // registers /debug/vars on the default mux
 	"fmt"
+	"net"
+	"net/http"
+	_ "net/http/pprof" //nolint:gosec // private debug listener only
+	"time"
 
-	"github.com/go-gormigrate/gormigrate/v2"
+	"github.com/go-rio/migrate"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gookit/validate/v2"
-	"github.com/knadh/koanf/v2"
-	"github.com/robfig/cron/v3"
+	"github.com/libtnb/cron"
+	"github.com/libtnb/graceful"
 
+	"github.com/weavatar/weavatar/internal/platform/conf"
 	"github.com/weavatar/weavatar/pkg/queue"
 )
 
 type App struct {
-	conf     *koanf.Koanf
+	conf     *conf.Config
 	router   *fiber.App
-	migrator *gormigrate.Gormigrate
+	migrator *migrate.Migrator
 	cron     *cron.Cron
 	queue    *queue.Queue
 }
 
-func NewApp(conf *koanf.Koanf, router *fiber.App, migrator *gormigrate.Gormigrate, cron *cron.Cron, queue *queue.Queue, _ *validate.Validation) *App {
+// fiberServer adapts *fiber.App to graceful.Server.
+type fiberServer struct {
+	app  *fiber.App
+	conf *conf.Config
+}
+
+func NewApp(
+	config *conf.Config,
+	router *fiber.App,
+	migrator *migrate.Migrator,
+	scheduler *cron.Cron,
+	jobs *queue.Queue,
+) *App {
 	return &App{
-		conf:     conf,
+		conf:     config,
 		router:   router,
 		migrator: migrator,
-		cron:     cron,
-		queue:    queue,
+		cron:     scheduler,
+		queue:    jobs,
 	}
 }
 
-func (r *App) Run() error {
-	// migrate database
-	if err := r.migrator.Migrate(); err != nil {
+// Run migrates the database, then serves until ctx is cancelled; SIGHUP
+// hot-upgrades. Components stop in reverse order: HTTP first, so in-flight
+// requests can still enqueue, the queue last.
+func (r *App) Run(ctx context.Context) error {
+	if err := r.migrator.Up(ctx); err != nil {
 		return err
 	}
 	fmt.Println("[DB] database migrated")
 
-	// start cron scheduler
-	r.cron.Start()
-	fmt.Println("[CRON] cron scheduler started")
+	g := graceful.New(
+		graceful.WithUpgrade(),
+		graceful.WithShutdownTimeout(30*time.Second),
+	)
+	// pprof/expvar live on http.DefaultServeMux, served on a private port
+	if addr := r.conf.HTTP.DebugAddress; addr != "" {
+		g.Listen("debug", addr, &http.Server{ReadHeaderTimeout: 10 * time.Second})
+	}
+	g.Add("queue", r.queue.Start, r.queue.Stop)
+	g.Add("cron", r.cron.Start, r.cron.Stop)
+	g.Listen("http", r.conf.HTTP.Address, fiberServer{app: r.router, conf: r.conf})
 
-	// start queue
-	r.queue.Run(context.TODO())
-
-	// run http server
-	return r.runServer()
+	fmt.Println("[HTTP] listening and serving on", r.conf.HTTP.Address)
+	return g.Run(ctx)
 }
 
-// runServer run server
-func (r *App) runServer() error {
-	fmt.Println("[HTTP] listening and serving on", r.conf.MustString("http.address"))
-	return r.router.Listen(r.conf.MustString("http.address"), r.listenConfig())
+func (s fiberServer) Serve(ln net.Listener) error {
+	return s.app.Listener(ln, fiber.ListenConfig{
+		EnablePrintRoutes:     s.conf.HTTP.Debug,
+		DisableStartupMessage: !s.conf.HTTP.Debug,
+	})
 }
 
-func (r *App) listenConfig() fiber.ListenConfig {
-	// prefork not support dual stack
-	network := fiber.NetworkTCP
-	if r.conf.Bool("http.prefork") {
-		network = fiber.NetworkTCP4
-	}
-	return fiber.ListenConfig{
-		ListenerNetwork:       network,
-		EnablePrefork:         r.conf.Bool("http.prefork"),
-		EnablePrintRoutes:     r.conf.Bool("http.debug"),
-		DisableStartupMessage: !r.conf.Bool("http.debug"),
-	}
+func (s fiberServer) Shutdown(ctx context.Context) error {
+	return s.app.ShutdownWithContext(ctx)
 }

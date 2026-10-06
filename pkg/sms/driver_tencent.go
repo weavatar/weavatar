@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -14,14 +15,14 @@ type Tencent struct {
 	secretId, secretKey, signName, templateId, sdkAppId, expireTime string
 }
 
-func (r *Tencent) Send(phone string, message Message) error {
-	credential := common.NewCredential(
-		r.secretId,
-		r.secretKey,
-	)
+func (r *Tencent) Send(ctx context.Context, phone string, message Message) error {
+	credential := common.NewCredential(r.secretId, r.secretKey)
 	cpf := profile.NewClientProfile()
 	cpf.HttpProfile.Endpoint = "sms.tencentcloudapi.com"
-	client, _ := tencentsms.NewClient(credential, "ap-beijing", cpf)
+	client, err := tencentsms.NewClient(credential, "ap-beijing", cpf)
+	if err != nil {
+		return fmt.Errorf("sms: failed to create tencent client: %w", err)
+	}
 
 	request := tencentsms.NewSendSmsRequest()
 	request.PhoneNumberSet = common.StringPtrs([]string{phone})
@@ -30,7 +31,7 @@ func (r *Tencent) Send(phone string, message Message) error {
 	request.TemplateParamSet = common.StringPtrs([]string{message.Data["code"], r.expireTime})
 	request.SmsSdkAppId = common.StringPtr(r.sdkAppId)
 
-	response, err := client.SendSms(request)
+	response, err := client.SendSmsWithContext(ctx, request)
 
 	var sdkError *sdkerror.TencentCloudSDKError
 	if errors.As(err, &sdkError) {
@@ -40,11 +41,21 @@ func (r *Tencent) Send(phone string, message Message) error {
 		return err
 	}
 
-	statusSet := response.Response.SendStatusSet
-	code := *statusSet[0].Code
-	if code != "Ok" {
-		return fmt.Errorf("sms: failed to send sms, code: %s, sn: %s, message: %s", *statusSet[0].Code, *statusSet[0].SerialNo, *statusSet[0].Message)
+	if response.Response == nil || len(response.Response.SendStatusSet) == 0 || response.Response.SendStatusSet[0] == nil {
+		return errors.New("sms: tencent returned empty send status")
+	}
+
+	status := response.Response.SendStatusSet[0]
+	if code := deref(status.Code); code != "Ok" {
+		return fmt.Errorf("sms: failed to send sms, code: %s, sn: %s, message: %s", code, deref(status.SerialNo), deref(status.Message))
 	}
 
 	return nil
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

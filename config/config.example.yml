@@ -1,22 +1,36 @@
 app:
   name: "weavatar"
+  # 32 字节：openssl rand -base64 24 | head -c 32
   key: "a-long-string-with-32-characters"
+  locale: "zh_Hans"
+  # 调试模式跳过极验校验，生产必须关闭
   debug: true
 http:
   debug: true
-  prefork: false
   address: ":3000"
   domain: "weavatar.com"
-  bodyLimit: 4096
-  headerLimit: 4096
-  reduceMemoryUsage: false
+  # pprof/expvar 私有端口，如 "127.0.0.1:6060"
+  debug_address: ""
+  cors_origins: ["*"]
+  # 经 nginx 时填 "X-Real-IP"，限流按客户端 IP 计数
+  proxy_header: ""
+  docs: true
+  body_limit: 4096 # KB
+  header_limit: 4096 # bytes
+  read_timeout: "10s"
+  write_timeout: "10s"
+  idle_timeout: "60s"
+  reduce_memory_usage: false
+log:
+  level: "debug" # debug | info | warn | error
+  output: "both" # file | stderr | both
+  path: "storage/logs/app.log"
 database:
   debug: true
-  import: true
-  socket: "/tmp/mysql.sock"
-  user: "root"
-  password: ""
-  name: "weavatar"
+  dsn: "postgres://postgres:postgres@127.0.0.1:5432/weavatar?sslmode=disable"
+  max_open_conns: 0
+  max_idle_conns: 0
+  conn_max_lifetime: "0s"
 hash:
   dir: "storage/hash"
 mail:
@@ -25,67 +39,65 @@ mail:
   user: "noreply@example.com"
   password: ""
 geetest:
-  id: "your-geetest-id"
-  key: "your-geetest-key"
+  id: ""
+  key: ""
 code:
-  expireTime: 5
+  expire: "5m"
 sms:
-  driver: "aliyun"
   aliyun:
-    accessKeyId: "your-access-key-id"
-    accessKeySecret: "your-access-key-secret"
-    signName: ""
-    templateCode: 123456
+    access_key_id: ""
+    access_key_secret: ""
+    sign_name: ""
+    template_code: ""
   tencent:
-    secretId: "your-secret-id"
-    secretKey: "your-secret-key"
-    signName: ""
-    templateId: 123456
-    sdkAppId: 123456
+    secret_id: ""
+    secret_key: ""
+    sign_name: ""
+    template_id: ""
+    sdk_app_id: ""
 oauth:
-  baseUrl: "https://account.haozi.net"
-  clientID: "1234567890"
-  clientSecret: "abcdef1234567890abcdef1234567890"
+  base_url: "https://account.haozi.net"
+  client_id: ""
+  client_secret: ""
 audit:
-  driver: "aliyun"
+  driver: "aliyun" # aliyun | cos
   aliyun:
-    accessKeyId: "your-access-key-id"
-    accessKeySecret: "your-access-key-secret"
+    access_key_id: ""
+    access_key_secret: ""
   cos:
-    secretId: "your-secret-id"
-    secretKey: "your-secret-key"
-    bucket: "your-bucket.cos.ap-xx.myqcloud.com"
+    secret_id: ""
+    secret_key: ""
+    bucket: ""
 cdn:
-  driver:
-    - "baishan"
+  drivers: ["baishan"]
   baishan:
-    token: "your-token"
+    token: ""
   cloudflare:
-    apiKey: "your-api-key"
-    apiEmail: "your-email"
-    zoneID: "your-zone-id"
+    api_key: ""
+    api_email: ""
+    zone_id: ""
   ctyun:
-    appID: "your-app-id"
-    appSecret: "your-app-secret"
+    app_id: ""
+    app_secret: ""
   huawei:
-    accessKey: "your-access-key"
-    secretKey: "your-secret-key"
+    access_key: ""
+    secret_key: ""
   edgeone:
-    secretId: "your-secret-id"
-    secretKey: "your-secret-key"
+    secret_id: ""
+    secret_key: ""
   starshield:
-    accessKey: "your-access-key"
-    secretKey: "your-secret-key"
-    instanceID: "your-instance-id"
-    zoneID: "your-zone-id"
+    access_key: ""
+    secret_key: ""
+    instance_id: ""
+    zone_id: ""
   upyun:
-    token: "your-token"
+    token: ""
   wafpro:
-    apiKey: "your-api-key"
-    apiSecret: "your-api-secret"
+    api_key: ""
+    api_secret: ""
   wjdun:
-    apiKey: "your-api-key"
-    apiSecret: "your-api-secret"
+    api_key: ""
+    api_secret: ""
   yundun:
-    username: "your-username"
-    password: "your-password"
+    username: ""
+    password: ""

@@ -1,29 +1,30 @@
 package avatars
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"sync"
+	"strings"
 )
 
-var gravatarBase = sync.OnceValue(func() string {
-	if v, ok := os.LookupEnv("GRAVATAR_URL"); ok {
-		return v
-	}
-	return "https://gravatar.com"
-})
+// gravatarBaseURL is a variable so tests can point it at a local server.
+var gravatarBaseURL = "https://gravatar.com"
 
-func Gravatar(hash string) ([]byte, error) {
-	resp, err := client().R().SetQueryParams(map[string]string{
+// Gravatar rejects non-image replies: callers cache the bytes for days, so a
+// proxy's error page must not pass for an avatar.
+func Gravatar(ctx context.Context, hash string) ([]byte, error) {
+	resp, err := client().R().SetContext(ctx).SetQueryParams(map[string]string{
 		"r": "g",
 		"d": "404",
 		"s": "1000",
-	}).Get(gravatarBase() + "/avatar/" + hash)
+	}).Get(gravatarBaseURL + "/avatar/" + hash)
 	if err != nil {
 		return nil, err
 	}
 	if !resp.IsSuccessState() {
-		return nil, fmt.Errorf("failed to get Gravatar avatar: %s", resp.String())
+		return nil, fmt.Errorf("gravatar: unexpected status %d", resp.StatusCode)
+	}
+	if ct := resp.GetContentType(); !strings.HasPrefix(ct, "image/") {
+		return nil, fmt.Errorf("gravatar: unexpected content type %q", ct)
 	}
 
 	return resp.Bytes(), nil

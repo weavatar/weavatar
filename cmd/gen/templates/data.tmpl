@@ -1,0 +1,90 @@
+package data
+
+import (
+	"context"
+
+	"github.com/go-rio/rio"
+	"github.com/samber/oops"
+
+	"{{.Module}}/internal/{{.Snake}}/biz"
+)
+
+type {{.Camel}}Repo struct {
+	db *rio.DB
+}
+
+var (
+	{{.Camel}}sQuery        = rio.From[biz.{{.Pascal}}]().Must()
+	ordered{{.Pascal}}sQuery = rio.From[biz.{{.Pascal}}]().OrderBy("id").Must()
+	{{.Camel}}ByIDQuery     = rio.From[biz.{{.Pascal}}]().Where("id = ?").Must()
+)
+
+func New{{.Pascal}}Repo(db *rio.DB) biz.{{.Pascal}}Repo {
+	return &{{.Camel}}Repo{db: db}
+}
+
+func (r *{{.Camel}}Repo) List(ctx context.Context, page, limit int) ([]*biz.{{.Pascal}}, int64, error) {
+	total, err := {{.Camel}}sQuery.Count(ctx, r.db)
+	if err != nil {
+		return nil, 0, oops.In("{{.Snake}}").Wrapf(err, "count {{.Table}}")
+	}
+
+	list, err := ordered{{.Pascal}}sQuery.
+		Offset((page - 1) * limit).
+		Limit(limit).
+		All(ctx, r.db)
+	if err != nil {
+		return nil, 0, oops.In("{{.Snake}}").Wrapf(err, "list {{.Table}}")
+	}
+
+	{{.Camel}}s := make([]*biz.{{.Pascal}}, len(list))
+	for i := range list {
+		{{.Camel}}s[i] = &list[i]
+	}
+
+	return {{.Camel}}s, total, nil
+}
+
+func (r *{{.Camel}}Repo) Get(ctx context.Context, id uint) (*biz.{{.Pascal}}, error) {
+	{{.Camel}}, err := rio.Find[biz.{{.Pascal}}](ctx, r.db, id)
+	if err != nil {
+		return nil, oops.In("{{.Snake}}").Wrapf(err, "get {{.Snake}} %d", id)
+	}
+
+	return {{.Camel}}, nil
+}
+
+func (r *{{.Camel}}Repo) Create(ctx context.Context, {{.Camel}} *biz.{{.Pascal}}) error {
+	if err := rio.Insert(ctx, r.db, {{.Camel}}); err != nil {
+		return oops.In("{{.Snake}}").Wrapf(err, "create {{.Snake}}")
+	}
+
+	return nil
+}
+
+// Update is read-modify-write: keeps CreatedAt, reports missing rows.
+func (r *{{.Camel}}Repo) Update(ctx context.Context, {{.Camel}} *biz.{{.Pascal}}) (*biz.{{.Pascal}}, error) {
+	existing, err := rio.Find[biz.{{.Pascal}}](ctx, r.db, {{.Camel}}.ID)
+	if err != nil {
+		return nil, oops.In("{{.Snake}}").Wrapf(err, "get {{.Snake}} %d", {{.Camel}}.ID)
+	}
+
+	existing.Name = {{.Camel}}.Name
+	if err := rio.Update(ctx, r.db, existing); err != nil {
+		return nil, oops.In("{{.Snake}}").Wrapf(err, "update {{.Snake}} %d", {{.Camel}}.ID)
+	}
+
+	return existing, nil
+}
+
+func (r *{{.Camel}}Repo) Delete(ctx context.Context, id uint) error {
+	n, err := {{.Camel}}ByIDQuery.DeleteAll(ctx, r.db, id)
+	if err != nil {
+		return oops.In("{{.Snake}}").Wrapf(err, "delete {{.Snake}} %d", id)
+	}
+	if n == 0 {
+		return oops.In("{{.Snake}}").Wrap(rio.ErrNotFound)
+	}
+
+	return nil
+}

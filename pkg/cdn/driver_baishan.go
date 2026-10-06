@@ -1,15 +1,16 @@
 package cdn
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
 )
 
 type BaiShan struct {
-	token string
+	token  string
+	client *req.Client
 }
 
 type BaiShanRefreshResponse struct {
@@ -25,87 +26,66 @@ type BaiShanUsageResponse struct {
 	} `json:"data"`
 }
 
-// RefreshUrl 刷新URL
-func (b *BaiShan) RefreshUrl(urls []string) error {
-	client := req.C()
-	client.SetTimeout(60 * time.Second)
-
-	var resp BaiShanRefreshResponse
-	_, err := client.R().
-		SetBody(map[string]any{
-			"urls": urls,
-			"type": "url",
-		}).
-		SetSuccessResult(&resp).
-		SetErrorResult(&resp).
-		SetQueryParam("token", b.token).
-		Post("https://cdn.api.baishan.com/v2/cache/refresh")
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return fmt.Errorf("cdn: fail to refresh baishan url: %d", resp.Code)
-	}
-
-	return nil
+func newBaiShan(c BaiShanConfig) *BaiShan {
+	return &BaiShan{token: c.Token, client: newClient()}
 }
 
-// RefreshPath 刷新路径
-func (b *BaiShan) RefreshPath(paths []string) error {
-	client := req.C()
-	client.SetTimeout(60 * time.Second)
-
-	var resp BaiShanRefreshResponse
-	_, err := client.R().
-		SetBody(map[string]any{
-			"urls": paths,
-			"type": "dir",
-		}).
-		SetSuccessResult(&resp).
-		SetErrorResult(&resp).
-		SetQueryParam("token", b.token).
-		Post("https://cdn.api.baishan.com/v2/cache/refresh")
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return fmt.Errorf("cdn: fail to refresh baishan path: %d", resp.Code)
-	}
-
-	return nil
+func (b *BaiShan) RefreshUrl(ctx context.Context, urls []string) error {
+	return b.refresh(ctx, "url", urls)
 }
 
-// GetUsage 获取使用量
-func (b *BaiShan) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
-	client := req.C()
-	client.SetTimeout(60 * time.Second)
+func (b *BaiShan) RefreshPath(ctx context.Context, paths []string) error {
+	return b.refresh(ctx, "dir", paths)
+}
 
+func (b *BaiShan) GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error) {
 	var usage BaiShanUsageResponse
-	_, err := client.R().
+	resp, err := b.client.R().SetContext(ctx).
 		SetQueryParams(map[string]string{
 			"token":      b.token,
 			"domains":    domain,
-			"start_time": startTime.ToDateString(),
-			"end_time":   endTime.ToDateString(),
+			"start_time": startTime.Format(time.DateOnly),
+			"end_time":   endTime.Format(time.DateOnly),
 		}).
 		SetSuccessResult(&usage).
 		Get("https://cdn.api.baishan.com/v2/stat/request/eachDomain")
 	if err != nil {
 		return 0, err
 	}
-
-	if usage.Code != 0 {
-		return 0, fmt.Errorf("cdn: fail to get baishan usage: %d", usage.Code)
+	if resp.IsErrorState() || usage.Code != 0 {
+		return 0, fmt.Errorf("cdn: fail to get baishan usage, status: %d, code: %d", resp.StatusCode, usage.Code)
 	}
 
-	sum := uint(0)
+	// each point is [timestamp, requests]
+	var sum uint
 	for _, item := range usage.Data {
-		for _, data := range item.Data {
-			sum += data[1]
+		for _, point := range item.Data {
+			if len(point) > 1 {
+				sum += point[1]
+			}
 		}
 	}
 
 	return sum, nil
+}
+
+func (b *BaiShan) refresh(ctx context.Context, typ string, urls []string) error {
+	var result BaiShanRefreshResponse
+	resp, err := b.client.R().SetContext(ctx).
+		SetBody(map[string]any{
+			"urls": urls,
+			"type": typ,
+		}).
+		SetSuccessResult(&result).
+		SetErrorResult(&result).
+		SetQueryParam("token", b.token).
+		Post("https://cdn.api.baishan.com/v2/cache/refresh")
+	if err != nil {
+		return err
+	}
+	if resp.IsErrorState() || result.Code != 0 {
+		return fmt.Errorf("cdn: fail to refresh baishan %s, status: %d, code: %d", typ, resp.StatusCode, result.Code)
+	}
+
+	return nil
 }

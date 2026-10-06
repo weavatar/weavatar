@@ -1,5 +1,7 @@
 package sms
 
+import "context"
+
 type Driver interface {
-	Send(phone string, message Message) error
+	Send(ctx context.Context, phone string, message Message) error
 }

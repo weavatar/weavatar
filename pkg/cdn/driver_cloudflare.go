@@ -8,22 +8,20 @@ import (
 	"github.com/cloudflare/cloudflare-go/v7"
 	"github.com/cloudflare/cloudflare-go/v7/cache"
 	"github.com/cloudflare/cloudflare-go/v7/option"
-	"github.com/dromara/carbon/v2"
 	"github.com/imroc/req/v3"
 )
 
 type CloudFlare struct {
-	apiKey, apiEmail string // 密钥
-	zoneID           string // 域名标识
+	zoneID string
+	sdk    *cloudflare.Client // purges
+	client *req.Client        // GraphQL analytics, which the SDK lacks
 }
 
-// CloudFlareGraphQLQuery 结构体用于构造 GraphQL 查询
 type CloudFlareGraphQLQuery struct {
 	Query     string         `json:"query"`
 	Variables map[string]any `json:"variables"`
 }
 
-// CloudFlareHttpRequests 结构体用于解析 GraphQL 查询结果
 type CloudFlareHttpRequests struct {
 	Data struct {
 		Viewer struct {
@@ -41,18 +39,30 @@ type CloudFlareHttpRequests struct {
 	} `json:"errors"`
 }
 
-// RefreshUrl 刷新URL
-func (s *CloudFlare) RefreshUrl(urls []string) error {
-	client := cloudflare.NewClient(
-		option.WithAPIKey(s.apiKey),
-		option.WithAPIEmail(s.apiEmail),
-	)
+func newCloudFlare(c CloudflareConfig) *CloudFlare {
+	return &CloudFlare{
+		zoneID: c.ZoneID,
+		sdk: cloudflare.NewClient(
+			option.WithAPIKey(c.APIKey),
+			option.WithAPIEmail(c.APIEmail),
+			option.WithRequestTimeout(requestTimeout),
+		),
+		client: newClient().
+			SetBaseURL("https://api.cloudflare.com/client/v4").
+			SetCommonRetryCount(2).
+			SetCommonHeaders(map[string]string{
+				"X-Auth-Email": c.APIEmail,
+				"X-Auth-Key":   c.APIKey,
+			}),
+	}
+}
 
-	// CloudFlare 要求传入带协议的完整 URL
+func (s *CloudFlare) RefreshUrl(ctx context.Context, urls []string) error {
+	// Cloudflare wants full URLs, scheme included
 	var newUrls cache.CachePurgeParamsBodyCachePurgeSingleFile
 	newUrls.Files = cloudflare.F(urls)
 
-	resp, err := client.Cache.Purge(context.Background(), cache.CachePurgeParams{
+	resp, err := s.sdk.Cache.Purge(ctx, cache.CachePurgeParams{
 		ZoneID: cloudflare.F(s.zoneID),
 		Body:   newUrls,
 	})
@@ -66,22 +76,11 @@ func (s *CloudFlare) RefreshUrl(urls []string) error {
 	return nil
 }
 
-// RefreshPath 刷新路径
-func (s *CloudFlare) RefreshPath(paths []string) error {
-	return s.RefreshUrl(paths)
+func (s *CloudFlare) RefreshPath(ctx context.Context, paths []string) error {
+	return s.RefreshUrl(ctx, paths)
 }
 
-// GetUsage 获取用量
-func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) (uint, error) {
-	client := req.C()
-	client.SetBaseURL("https://api.cloudflare.com/client/v4")
-	client.SetTimeout(10 * time.Second)
-	client.SetCommonRetryCount(2)
-	client.SetCommonHeaders(map[string]string{
-		"X-Auth-Email": s.apiEmail,
-		"X-Auth-Key":   s.apiKey,
-	})
-
+func (s *CloudFlare) GetUsage(ctx context.Context, domain string, startTime, endTime time.Time) (uint, error) {
 	query := CloudFlareGraphQLQuery{
 		Query: `
 		{
@@ -98,19 +97,18 @@ func (s *CloudFlare) GetUsage(domain string, startTime, endTime *carbon.Carbon) 
         `,
 		Variables: map[string]any{
 			"zoneTag": s.zoneID,
-			// CloudFlare 不这样写的话取不到数据
-			"start": startTime.SubDay().ToDateString(),
-			"end":   endTime.ToDateString(),
+			// date_gt excludes the start day, so widen it by one
+			"start": startTime.AddDate(0, 0, -1).Format(time.DateOnly),
+			"end":   endTime.Format(time.DateOnly),
 		},
 	}
 
 	var resp CloudFlareHttpRequests
-	_, err := client.R().SetBodyJsonMarshal(query).SetSuccessResult(&resp).SetErrorResult(&resp).Post("/graphql")
+	_, err := s.client.R().SetContext(ctx).SetBodyJsonMarshal(query).SetSuccessResult(&resp).SetErrorResult(&resp).Post("/graphql")
 	if err != nil {
 		return 0, err
 	}
 
-	// 数据可能为空，需要判断
 	if len(resp.Data.Viewer.Zones) == 0 || len(resp.Data.Viewer.Zones[0].HttpRequests1DGroups) == 0 {
 		return 0, fmt.Errorf("cdn: fail to get cloudflare usage: %v", resp.Errors)
 	}

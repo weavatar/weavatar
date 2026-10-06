@@ -1,0 +1,186 @@
+name: Deploy Backend
+run-name: Deploy the API to ${{ inputs.environment }}
+
+# Builds bin/app and bin/cli, uploads them over SSH, runs the database migrations, swaps the
+# binaries, restarts the systemd unit and probes /healthz and /readyz. A failed restart or probe
+# rolls the binaries back (migrations are not reverted, so they must stay backward compatible).
+#
+# Environment "prod" (Settings -> Environments -> prod):
+#   vars    API_DIR       install directory, default /opt/ace/projects/weavatar
+#           API_PORT      port the app listens on locally, default 3000
+#           SERVICE_NAME  systemd unit name, default weavatar
+#   secrets DEPLOY_HOST          SSH host
+#           DEPLOY_USER          SSH user: root, or a user that can write API_DIR and run
+#                                sudo -u www, sudo chown, systemctl and journalctl without a password
+#           DEPLOY_SSH_KEY       private key for DEPLOY_USER
+#           DEPLOY_KNOWN_HOSTS   output of `ssh-keyscan <host>`
+#
+# The server needs rsync, curl and sha256sum, a `www` user, $API_DIR/config/config.yml, a
+# $API_DIR/storage directory created and owned by www, and a systemd unit that runs
+# $API_DIR/app as www with WorkingDirectory=$API_DIR and
+# Environment=APP_CONFIG=$API_DIR/config/config.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deploy environment
+        required: true
+        type: choice
+        options:
+          - prod
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 30
+    env:
+      APP_VERSION: ${{ github.sha }}
+      API_DIR: ${{ vars.API_DIR || '/opt/ace/projects/weavatar' }}
+      API_PORT: ${{ vars.API_PORT || '3000' }}
+      SERVICE_NAME: ${{ vars.SERVICE_NAME || 'weavatar' }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - name: Check the environment configuration
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=()
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::missing environment configuration: ${missing[*]}"
+            exit 1
+          fi
+          [[ "$API_DIR" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "::error::API_DIR must be an absolute path"; exit 1; }
+          [[ "$API_PORT" =~ ^[0-9]+$ ]] || { echo "::error::API_PORT must be a number"; exit 1; }
+          [[ "$SERVICE_NAME" =~ ^[A-Za-z0-9@._-]+$ ]] || { echo "::error::SERVICE_NAME is not a valid unit name"; exit 1; }
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go and caches
+        uses: ./.github/actions/setup-go
+        with:
+          scope: build-amd64
+
+      - name: Build binaries
+        run: |
+          make build
+          {
+            echo "APP_SHA256=$(sha256sum bin/app | cut -d' ' -f1)"
+            echo "CLI_SHA256=$(sha256sum bin/cli | cut -d' ' -f1)"
+          } >> "$GITHUB_ENV"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          # Some runner images, such as self-hosted Gitea ones, ship without rsync or an SSH client.
+          if ! command -v rsync >/dev/null || ! command -v ssh >/dev/null; then
+            SUDO=""
+            if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
+            $SUDO apt-get update -qq
+            $SUDO apt-get install -y -qq --no-install-recommends rsync openssh-client
+          fi
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host deploy-target
+            HostName $DEPLOY_HOST
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ConnectTimeout 15
+            ServerAliveInterval 10
+          EOF
+
+      - name: Upload binaries and scripts
+        run: |
+          # Seed app.new/cli.new from the running binaries so rsync only sends the delta.
+          # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
+          ssh deploy-target "set -e
+            install -d '$API_DIR/config' '$API_DIR/scripts'
+            cd '$API_DIR'
+            if [ -f app ]; then cp -f app app.new; else : > app.new; fi
+            if [ -f cli ]; then cp -f cli cli.new; else : > cli.new; fi"
+          RSYNC=(rsync --partial --inplace --no-whole-file --ignore-times -z --timeout=60)
+          for attempt in 1 2 3; do
+            if "${RSYNC[@]}" bin/app "deploy-target:$API_DIR/app.new" &&
+               "${RSYNC[@]}" bin/cli "deploy-target:$API_DIR/cli.new" &&
+               rsync --timeout=30 config/config.example.yml "deploy-target:$API_DIR/config/config.example.yml" &&
+               rsync --timeout=30 deploy/scripts/*.sh "deploy-target:$API_DIR/scripts/"; then
+              exit 0
+            fi
+            [ "$attempt" -eq 3 ] && { echo "upload failed after 3 attempts" >&2; exit 1; }
+            sleep $((attempt * 3))
+          done
+
+      - name: Migrate, restart and probe
+        run: |
+          remote_env="$(printf 'APP_VERSION=%q API_DIR=%q API_PORT=%q SERVICE_NAME=%q APP_SHA256=%q CLI_SHA256=%q' \
+            "$APP_VERSION" "$API_DIR" "$API_PORT" "$SERVICE_NAME" "$APP_SHA256" "$CLI_SHA256")"
+          # shellcheck disable=SC2029 # variables are meant to expand locally before ssh
+          ssh deploy-target "$remote_env bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$API_DIR"
+          echo "$APP_SHA256  app.new" | sha256sum -c -
+          echo "$CLI_SHA256  cli.new" | sha256sum -c -
+          # www runs cli.new below, whatever the deploy user's umask
+          chmod 755 app.new cli.new scripts/probe.sh scripts/rollback.sh
+
+          export APP_CONFIG="$API_DIR/config/config.yml"
+          if [ ! -f "$APP_CONFIG" ]; then
+            echo "missing $APP_CONFIG; copy config/config.example.yml there and fill it in first" >&2
+            exit 1
+          fi
+          if [ ! -d storage ]; then
+            echo "missing $API_DIR/storage; create it owned by www first" >&2
+            exit 1
+          fi
+
+          # Run as www so the logs the CLI writes under storage/ stay owned by the service user.
+          migrate() { sudo -u www env APP_CONFIG="$APP_CONFIG" ./cli.new migrate "$@"; }
+          migrate status
+          migrate plan
+          migrate up
+
+          if [ -f app ]; then cp -f app app.prev; fi
+          if [ -f cli ]; then cp -f cli cli.prev; fi
+          if [ -f VERSION ]; then cp -f VERSION VERSION.prev; fi
+          mv -f app.new app
+          mv -f cli.new cli
+          printf '%s\n' "$APP_VERSION" > VERSION
+          # Hand over only what this deploy wrote; storage/ belongs to www from server setup.
+          owned=(app cli VERSION config/config.example.yml)
+          for f in app.prev cli.prev VERSION.prev; do
+            if [ -e "$f" ]; then owned+=("$f"); fi
+          done
+          sudo chown -h www:www "${owned[@]}"
+          sudo chown -R www:www scripts
+
+          if ! sudo systemctl restart "$SERVICE_NAME" || ! scripts/probe.sh "http://127.0.0.1:$API_PORT"; then
+            sudo systemctl status "$SERVICE_NAME" --no-pager || true
+            sudo journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
+            if scripts/rollback.sh "$API_DIR" "$SERVICE_NAME"; then
+              scripts/probe.sh "http://127.0.0.1:$API_PORT" 15 || echo "the rolled back binary is not healthy either" >&2
+            fi
+            exit 1
+          fi
+          REMOTE

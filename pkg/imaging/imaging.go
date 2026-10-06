@@ -1,4 +1,4 @@
-// Package imaging 提供纯 Go 的图片解码、缩放和编码
+// Package imaging decodes, resizes and encodes images in pure Go.
 package imaging
 
 import (
@@ -21,7 +21,7 @@ import (
 	"golang.org/x/image/tiff"
 )
 
-// MaxPixels 允许解码的最大像素数
+// MaxPixels caps decoded images to bound memory.
 const MaxPixels = 8192 * 8192
 
 var (
@@ -52,7 +52,7 @@ var codecs = map[string]codec{
 		decode: gif.Decode,
 		config: gif.DecodeConfig,
 		encode: func(w io.Writer, m image.Image) error {
-			// 标准库默认的 Plan9 调色板没有透明色，需要量化器生成带透明色的调色板
+			// the default Plan9 palette has no transparent entry, so quantize one in
 			return gif.Encode(w, m, &gif.Options{NumColors: 256, Quantizer: quantize.MedianCutQuantizer{AddTransparent: true}})
 		},
 	},
@@ -67,7 +67,7 @@ var codecs = map[string]codec{
 		decode: tiff.Decode,
 		config: tiff.DecodeConfig,
 		encode: func(w io.Writer, m image.Image) error {
-			// 默认不压缩，体积过大
+			// uncompressed by default, which is far too large
 			return tiff.Encode(w, m, &tiff.Options{Compression: tiff.Deflate})
 		},
 	},
@@ -101,7 +101,7 @@ var aliases = map[string]string{
 	"heif": "heic",
 }
 
-// Decode 解码图片，返回图片和格式名
+// Decode returns the image and its format name.
 func Decode(b []byte) (image.Image, string, error) {
 	format := detect(b)
 	c, ok := codecs[format]
@@ -125,7 +125,7 @@ func Decode(b []byte) (image.Image, string, error) {
 	return img, format, nil
 }
 
-// Encode 按格式编码图片，支持 jpeg(jpg)、png、gif、webp、tiff、avif、heic(heif)、jxl
+// Encode supports jpeg (jpg), png, gif, webp, tiff, avif, heic (heif) and jxl.
 func Encode(img image.Image, format string) ([]byte, error) {
 	if alias, ok := aliases[format]; ok {
 		format = alias
@@ -143,7 +143,7 @@ func Encode(img image.Image, format string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// detect 根据文件头识别图片格式
+// detect sniffs the format from magic bytes.
 func detect(b []byte) string {
 	switch {
 	case bytes.HasPrefix(b, []byte("\x89PNG\r\n\x1a\n")):
@@ -165,7 +165,7 @@ func detect(b []byte) string {
 	return ""
 }
 
-// detectISOBMFF 根据 ftyp box 中的 brand 区分 AVIF 和 HEIC
+// detectISOBMFF tells AVIF from HEIC by the brands in the ftyp box.
 func detectISOBMFF(b []byte) string {
 	size := int(binary.BigEndian.Uint32(b))
 	if size < 16 || size > len(b) {

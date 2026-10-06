@@ -1,112 +1,156 @@
 package cdn
 
 import (
-	"sync"
-
-	"github.com/dromara/carbon/v2"
-	"github.com/knadh/koanf/v2"
+	"context"
+	"errors"
+	"fmt"
+	"time"
 )
 
-var (
-	instance *Cdn
-	once     sync.Once
-)
+// Config enables Drivers in the listed order.
+type Config struct {
+	Drivers    []string         `koanf:"drivers"`
+	BaiShan    BaiShanConfig    `koanf:"baishan"`
+	Cloudflare CloudflareConfig `koanf:"cloudflare"`
+	CTYun      CTYunConfig      `koanf:"ctyun"`
+	HuaWei     HuaWeiConfig     `koanf:"huawei"`
+	EdgeOne    EdgeOneConfig    `koanf:"edgeone"`
+	StarShield StarShieldConfig `koanf:"starshield"`
+	UpYun      UpYunConfig      `koanf:"upyun"`
+	WafPro     WafProConfig     `koanf:"wafpro"`
+	WjDun      WjDunConfig      `koanf:"wjdun"`
+	YunDun     YunDunConfig     `koanf:"yundun"`
+}
+
+type BaiShanConfig struct {
+	Token string `koanf:"token"`
+}
+
+type CloudflareConfig struct {
+	APIKey   string `koanf:"api_key"`
+	APIEmail string `koanf:"api_email"`
+	ZoneID   string `koanf:"zone_id"`
+}
+
+type CTYunConfig struct {
+	AppID     string `koanf:"app_id"`
+	AppSecret string `koanf:"app_secret"`
+}
+
+type HuaWeiConfig struct {
+	AccessKey string `koanf:"access_key"`
+	SecretKey string `koanf:"secret_key"`
+}
+
+type EdgeOneConfig struct {
+	SecretID  string `koanf:"secret_id"`
+	SecretKey string `koanf:"secret_key"`
+}
+
+type StarShieldConfig struct {
+	AccessKey  string `koanf:"access_key"`
+	SecretKey  string `koanf:"secret_key"`
+	InstanceID string `koanf:"instance_id"`
+	ZoneID     string `koanf:"zone_id"`
+}
+
+type UpYunConfig struct {
+	Token string `koanf:"token"`
+}
+
+type WafProConfig struct {
+	APIKey    string `koanf:"api_key"`
+	APISecret string `koanf:"api_secret"`
+}
+
+type WjDunConfig struct {
+	APIKey    string `koanf:"api_key"`
+	APISecret string `koanf:"api_secret"`
+}
+
+type YunDunConfig struct {
+	Username string `koanf:"username"`
+	Password string `koanf:"password"`
+}
 
 type Cdn struct {
 	drivers []Driver
 }
 
-func NewCdn(conf *koanf.Koanf) *Cdn {
-	once.Do(func() {
-		names := conf.MustStrings("cdn.driver")
-		var drivers []Driver
-		for _, driver := range names {
-			switch driver {
-			case "baishan":
-				drivers = append(drivers, &BaiShan{
-					token: conf.MustString("cdn.baishan.token"),
-				})
-			case "cloudflare":
-				drivers = append(drivers, &CloudFlare{
-					apiKey:   conf.MustString("cdn.cloudflare.apiKey"),
-					apiEmail: conf.MustString("cdn.cloudflare.apiEmail"),
-					zoneID:   conf.MustString("cdn.cloudflare.zoneID"),
-				})
-			case "ctyun":
-				drivers = append(drivers, &CTYun{
-					appID:       conf.MustString("cdn.ctyun.appID"),
-					appSecret:   conf.MustString("cdn.ctyun.appSecret"),
-					apiEndpoint: "https://open.ctcdn.cn",
-				})
-			case "huawei":
-				drivers = append(drivers, &HuaWei{
-					accessKey: conf.MustString("cdn.huawei.accessKey"),
-					secretKey: conf.MustString("cdn.huawei.secretKey"),
-				})
-			case "edgeone":
-				drivers = append(drivers, &EdgeOne{
-					secretId:  conf.MustString("cdn.edgeone.secretId"),
-					secretKey: conf.MustString("cdn.edgeone.secretKey"),
-				})
-			case "starshield":
-				drivers = append(drivers, &StarShield{
-					accessKey:  conf.MustString("cdn.starshield.accessKey"),
-					secretKey:  conf.MustString("cdn.starshield.secretKey"),
-					instanceID: conf.MustString("cdn.starshield.instanceID"),
-					zoneID:     conf.MustString("cdn.starshield.zoneID"),
-				})
-			case "upyun":
-				drivers = append(drivers, &UpYun{
-					token: conf.MustString("cdn.upyun.token"),
-				})
-			case "wafpro":
-				drivers = append(drivers, &WafPro{
-					apiKey:    conf.MustString("cdn.wafpro.apiKey"),
-					apiSecret: conf.MustString("cdn.wafpro.apiSecret"),
-				})
-			case "wjdun":
-				drivers = append(drivers, &WjDun{
-					apiKey:    conf.MustString("cdn.wjdun.apiKey"),
-					apiSecret: conf.MustString("cdn.wjdun.apiSecret"),
-				})
-			case "yundun":
-				drivers = append(drivers, &YunDun{
-					username: conf.MustString("cdn.yundun.username"),
-					password: conf.MustString("cdn.yundun.password"),
-				})
+func New(config Config) (*Cdn, error) {
+	drivers := make([]Driver, 0, len(config.Drivers))
+	for _, name := range config.Drivers {
+		var driver Driver
+		switch name {
+		case "baishan":
+			driver = newBaiShan(config.BaiShan)
+		case "cloudflare":
+			driver = newCloudFlare(config.Cloudflare)
+		case "ctyun":
+			driver = newCTYun(config.CTYun)
+		case "huawei":
+			driver = &HuaWei{accessKey: config.HuaWei.AccessKey, secretKey: config.HuaWei.SecretKey}
+		case "edgeone":
+			driver = &EdgeOne{secretId: config.EdgeOne.SecretID, secretKey: config.EdgeOne.SecretKey}
+		case "starshield":
+			driver = &StarShield{
+				accessKey:  config.StarShield.AccessKey,
+				secretKey:  config.StarShield.SecretKey,
+				instanceID: config.StarShield.InstanceID,
+				zoneID:     config.StarShield.ZoneID,
 			}
+		case "upyun":
+			driver = newUpYun(config.UpYun)
+		case "wafpro":
+			driver = newWafPro("wafpro", "https://scdn.console.waf.pro", config.WafPro.APIKey, config.WafPro.APISecret)
+		case "wjdun":
+			driver = newWafPro("wjdun", "https://user.wjdun.cn", config.WjDun.APIKey, config.WjDun.APISecret)
+		case "yundun":
+			driver = newYunDun(config.YunDun)
+		default:
+			return nil, fmt.Errorf("cdn: unsupported driver %q", name)
 		}
+		drivers = append(drivers, driver)
+	}
 
-		instance = &Cdn{
-			drivers: drivers,
-		}
-	})
-
-	return instance
+	return &Cdn{drivers: drivers}, nil
 }
 
-func (c *Cdn) RefreshUrl(urls []string) error {
+// RefreshUrl keeps going past a failing driver and joins the errors.
+func (c *Cdn) RefreshUrl(ctx context.Context, urls []string) error {
+	var errs []error
 	for _, driver := range c.drivers {
-		if err := driver.RefreshUrl(urls); err != nil {
-			return err
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
+		if err := driver.RefreshUrl(ctx, urls); err != nil {
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
-func (c *Cdn) RefreshPath(paths []string) error {
+// RefreshPath keeps going past a failing driver and joins the errors.
+func (c *Cdn) RefreshPath(ctx context.Context, paths []string) error {
+	var errs []error
 	for _, driver := range c.drivers {
-		if err := driver.RefreshPath(paths); err != nil {
-			return err
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
+		if err := driver.RefreshPath(ctx, paths); err != nil {
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
-func (c *Cdn) GetUsage(domain string, start, end *carbon.Carbon) (uint, error) {
+// GetUsage sums every driver's count and fails if any driver does. Drivers
+// format dates in the location of start and end, so pass them in the zone the
+// day boundaries belong to.
+func (c *Cdn) GetUsage(ctx context.Context, domain string, start, end time.Time) (uint, error) {
 	var total uint
 	for _, driver := range c.drivers {
-		usage, err := driver.GetUsage(domain, start, end)
+		usage, err := driver.GetUsage(ctx, domain, start, end)
 		if err != nil {
 			return 0, err
 		}

@@ -21,7 +21,7 @@ import (
 	"github.com/weavatar/weavatar/pkg/mphf"
 )
 
-// Table 只读，可并发查询
+// Table is read-only and safe for concurrent lookups.
 type Table struct {
 	typ      string
 	keyBytes int
@@ -48,7 +48,7 @@ type Stats struct {
 	Partitions int
 	IdxSize    uint64
 	ValSize    uint64
-	BitsPerKey float64 // 仅 MPHF 部分
+	BitsPerKey float64 // MPHF only
 	MaxLevels  int
 }
 
@@ -147,7 +147,7 @@ func (t *Table) LookupDigest(d []byte) (uint32, bool) {
 		return 0, false
 	}
 
-	// MPHF 对表外的键也会给出槽位，必须回算摘要校验
+	// the MPHF also yields slots for keys outside the table, so recompute the digest to confirm
 	qq := t.values[p.slotOffset+slot]
 	var out [sha256.Size]byte
 	if !bytes.Equal(digestQq(t.typ, uint64(qq), &out), d) {
@@ -193,8 +193,8 @@ func FormatSize(n uint64) string {
 
 type VerifyOptions struct {
 	Workers  int
-	Coverage bool                             // 检查每个 QQ 号恰好出现一次，需要 n/8 字节内存
-	Logf     func(format string, args ...any) // 可为 nil
+	Coverage bool                             // check every QQ number appears exactly once; costs n/8 bytes
+	Logf     func(format string, args ...any) // may be nil
 }
 
 const (
@@ -285,7 +285,7 @@ func (t *Table) Verify(ctx context.Context, o VerifyOptions) error {
 		return err
 	}
 
-	// 槽位数等于键数、值都在范围内且不重复，即每个 QQ 号恰好出现一次
+	// as many slots as keys, all in range and distinct, means each QQ number appears exactly once
 	if f := failed.Load(); f > 0 {
 		return fmt.Errorf("%w: %d slots failed verification, first %d: %v", ErrCorrupt, f, len(msgs), msgs)
 	}
@@ -313,7 +313,7 @@ type Tables struct {
 	tables map[string]*Table
 }
 
-// Open 缺失的类型跳过
+// Open skips hash types whose files are missing.
 func Open(dir string) (*Tables, error) {
 	ts := &Tables{tables: make(map[string]*Table, len(Types))}
 	for _, typ := range Types {

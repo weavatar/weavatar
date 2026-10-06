@@ -1,0 +1,35 @@
+name: Mockery
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["web/**"]
+  pull_request:
+    paths-ignore: ["web/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mockery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go and caches
+        uses: ./.github/actions/setup-go
+        with:
+          scope: mockery
+
+      - name: Generate mocks
+        run: go tool mockery
+
+      - name: Verify mocks are up to date
+        run: |
+          git add -N .
+          git diff --exit-code

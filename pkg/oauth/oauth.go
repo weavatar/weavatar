@@ -1,6 +1,8 @@
 package oauth
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	"github.com/imroc/req/v3"
@@ -42,10 +44,9 @@ func NewOauth(clientID, clientSecret, baseURL string) *Oauth {
 	}
 }
 
-// GetToken 获取 AccessToken 和 RefreshToken 信息
-func (r *Oauth) GetToken(code, redirectUri string) (Token, error) {
+func (r *Oauth) GetToken(ctx context.Context, code, redirectUri string) (Token, error) {
 	var token Token
-	resp, err := r.client.R().SetQueryParams(map[string]string{
+	resp, err := r.client.R().SetContext(ctx).SetQueryParams(map[string]string{
 		"grant_type":    "authorization_code",
 		"client_id":     r.clientID,
 		"client_secret": r.clientSecret,
@@ -58,17 +59,17 @@ func (r *Oauth) GetToken(code, redirectUri string) (Token, error) {
 	if !resp.IsSuccessState() {
 		return token, fmt.Errorf("failed to get token: %s", resp.String())
 	}
+	// the body may carry a usable access token, so it stays out of the error
 	if token.AccessToken == "" || token.RefreshToken == "" {
-		return token, fmt.Errorf("failed to unmarshal token: %s", resp.String())
+		return token, errors.New("oauth: token response lacks access or refresh token")
 	}
 
 	return token, nil
 }
 
-// GetUserInfo 获取用户信息
-func (r *Oauth) GetUserInfo(accessToken string) (BasicInfo, error) {
+func (r *Oauth) GetUserInfo(ctx context.Context, accessToken string) (BasicInfo, error) {
 	var basicInfo BasicInfo
-	resp, err := r.client.R().SetQueryParams(map[string]string{
+	resp, err := r.client.R().SetContext(ctx).SetQueryParams(map[string]string{
 		"access_token": accessToken,
 	}).SetSuccessResult(&basicInfo).Get("/api/v1/oauth/user_info")
 	if err != nil {

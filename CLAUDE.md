@@ -6,51 +6,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WeAvatar 是一个头像服务（类似 Gravatar 的中国替代品），支持用户通过邮箱或手机号上传头像，同时提供 Gravatar/QQ 头像回退、程序化头像生成（identicon、monsterid、robohash、wavatar、retricon）、AI 内容审核和多云 CDN 缓存刷新。
 
-## 常用命令
+后端是基于 [fiber-skeleton](https://github.com/libtnb/fiber-skeleton) 的模块化单体，单 Go module `github.com/weavatar/weavatar`（Go 1.27），数据库为 PostgreSQL。
 
-### 构建
+## 结构
 
-```bash
-# HTTP 服务
-go build -o app ./cmd/app
+- `cmd/app`：HTTP 服务。`cmd/cli`：管理命令（`migrate`、`hash`）。`cmd/gen`：模块与迁移生成器。
+- `internal/app`：组合根。`wire.go` 汇总所有模块，生成 app 与 cli 的注入器；`arch_test.go` 是架构测试。
+- `internal/platform`：基础设施。`bootstrap` 是各 provider，`conf` 是配置，`server` 是 Fiber、中间件、健康检查与 OpenAPI。
+- `internal/shared`：模块共用的契约。`transport` 负责绑定、响应、端点声明、登录与限流；`apperr` 是带类型的错误；`registry` 是 Wire 多绑定集合；`job` 是定时任务；`appinfo` 是注入给模块的配置值；`rule` 是自定义校验规则。
+- `internal/migrations`：数据库迁移。`internal/mocks`：mockery 生成物。
+- `internal/<模块>`：业务模块，按 `biz/data/service` 分层，根上一个 `wire.go`。
+  - `avatar`：核心模块。负责头像解析（WeAvatar → Gravatar → QQ → 默认头像）、程序化生成、头像增删改查、AI 审核队列、CDN 刷新、缓存清理定时任务和 `hash` 命令。
+  - `user`：OAuth 登录、JWT 签发、用户资料。
+  - `verifycode`：短信与邮件验证码，含发送冷却与限流。
+  - `system`：CDN 用量统计、随机头像。
+- `pkg/`：与业务无关的库，包括图片处理、MPHF、QQ 哈希表、CDN、审核、短信、邮件、OAuth、极验、队列等。
+- `config/config.example.yml`：全部配置项。`config/config.yml` 不入库。
+- `docs/`：手写文档。`web/`：Vue 前端。
 
-# CLI 工具
-go build -o cli ./cmd/cli
-```
+## 命令
 
-### 开发（热重载）
+仓库根执行：
 
-```bash
-air  # 使用 .air.toml 配置，监听 :3000
-```
+| 命令 | 用途 |
+| --- | --- |
+| `make init` | 复制 `config/config.example.yml` 为 `config/config.yml` |
+| `make run` / `make dev` | 启动服务（默认 `:3000`）/ air 热重载。启动时先执行未应用的迁移 |
+| `make build` | 构建 `bin/app`、`bin/cli`（`CGO_ENABLED=0`，注入版本号） |
+| `make test` | `go test -race`，输出 `coverage.out` |
+| `make lint` | golangci-lint |
+| `make generate` | 重新生成 Wire 注入代码与 mockery mock。改了任何 `wire.go` 或 biz 接口后必跑 |
+| `make wire-check` | 检查 `wire_gen.go` 是否最新 |
+| `make gen name=article` | 生成 CRUD 模块骨架。之后把 `article.Module` 加进 `internal/app/wire.go` 的 `Include`，再 `make generate` |
+| `make gen-migration name=add_email_to_users_table` | 生成迁移文件 |
+| `make gen-check` | 验证生成器产物能编译，改了 `cmd/gen` 模板后必跑 |
 
-### 测试
+CLI：`go run ./cmd/cli migrate {up,plan,status,rollback --step N}`（不带子命令等同 `up`），以及 `hash {build,verify,lookup,stat}`。
 
-```bash
-go test -v -coverprofile="coverage.out" ./...
-```
+配置：
 
-### Lint
+- 配置值只从 YAML 文件读取，**不支持环境变量覆盖**。
+- 唯一的环境变量是 `APP_CONFIG`，用于指定配置文件路径（默认 `config/config.yml`），主要供测试使用。
+- 启动时解析为类型化的 `conf.Config` 并校验，例如 `app.key` 必须是 32 字节。
+- `app.debug: true` 会跳过极验校验，生产环境必须关闭。
+- 部署在 nginx 之后时，要把 `http.proxy_header` 设为 `X-Real-IP`，否则 `c.IP()` 是代理地址，所有经代理的请求共用一份限流额度。设置后该请求头来自任何连接都会被采用，所以服务只能经代理访问；值不是合法 IP 时回退到连接地址。
 
-```bash
-golangci-lint run --timeout=30m ./...
-govulncheck ./...
-```
+## 架构要点
 
-### 依赖注入代码生成
+- **分层**：biz 放模型、Repo 与端口接口、`XxxUsecase`，HTTP、CLI、定时任务共用同一个 usecase。data 放接口实现，包括 rio 仓库、文件存储、`pkg/` 客户端适配和对其他模块 usecase 的适配器。service 放 Fiber handler、`request.go`、`route.go`、CLI 命令与定时任务。
+- **装配**：每个模块的 `wire.go` 用 libtnb/wire `Provide` 构造器，把路由、命令、定时任务 `Contribute` 到 `registry` 集合，只 `Export` 被其他模块使用的 usecase。
+- **模块边界**：由 `internal/app/arch_test.go` 的 `TestModuleBoundaries` 强制。
+  - 业务模块只能 import `internal/shared/*` 和其他模块的 `biz` 包，不能 import `app`、`platform`、`migrations`。
+  - 模块内的 `biz` 不能 import 自己的 `data` 与 `service`。
+  - `shared` 只能 import `shared`。`platform` 只能 import `shared`、`platform/conf` 和自己的子包。`platform/conf` 不 import 任何 internal 包。
+  - `pkg/` 不受限制。
+- **跨模块调用**：在自己的 biz 里声明端口接口，在 data 里适配对方的 usecase。例如 avatar 的 `Users` 端口适配 user 模块的 `UserUsecase`。
+- **配置注入**：模块不能 import `platform/conf`。需要的配置值通过 `internal/shared/appinfo` 的命名类型注入，例如 `appinfo.Domain`、`appinfo.CodeExpire`。
+- **HTTP**：Fiber v3。路由表返回 `transport.Endpoints`，每个端点带 OpenAPI `Document`。需要登录的端点加 `Middlewares: {transport.MustLogin(jwt)}`，限流加 `transport.Throttle`。注意 `Throttle` 每次调用都是独立配额，几个端点要共享配额时得共用同一个 handler。handler 只做三件事：`transport.Bind`、调用 usecase、`transport.Success` 或 `transport.ErrorFrom`。
+- **请求生命周期**：Fiber 未开 `Immutable`，从 `fiber.Ctx` 取到的值（`c.Query`、`c.Params`、`c.Get`、`c.IP`、`c.Body` 以及 `transport.Bind` 的结果）都引用请求缓冲区，只在 handler 内有效；需要在响应返回后使用的值（cache 键值、队列闭包、goroutine）在逃逸点显式 `strings.Clone`。`c.Context()` 不得越过 handler，goroutine 与后台任务用自己的 ctx，由 `arch_test.go` 的 `TestRequestContextDoesNotEscape` 检查。`adaptor.ConvertRequest` 的结果只能在请求内同步使用。
+- **响应**：成功为 `{"msg":"success","data":...}`。失败为 `{"msg":"...","data":null}`，apperr 错误另带机器码 `code`（如 `avatar.not_square`）；框架级错误（404、405、413、panic）也走同一信封。登录态通过 `Authorization: Bearer <jwt>` 传递，未登录返回 401。前端按 HTTP 状态分流：422 弹 toast，401 清除登录态，其余弹对话框。
+- **错误**：客户端可见的错误由 biz 的错误构造器返回，例如 `ErrStateExpired()`，它基于 `apperr`，再由 `transport.ErrorFrom` 映射为状态码。未命中统一透传 `rio.ErrNotFound`，映射为 404。没有 kind 的错误返回通用 500，详情只进日志。
+- **持久化**：PostgreSQL + go-rio/rio。查询写成包级模板 `rio.From[T]().Where("...").Must()`，参数延迟绑定。迁移用 go-rio/migrate，一个文件一个迁移。
+- **校验**：libtnb/validator，标签用布尔 DSL，例如 `required && email && max:255`。`required` 开启了严格模式，会拒绝零值。自定义规则 `geetest`、`verify_code`、`cn_mobile`、`exists`、`not_exists` 在 `internal/shared/rule`。
+- **路由**：所有 API 在 `/api` 前缀下，覆盖 `avatar`、`avatars`、`user`、`verify_code`、`system`。核心端点是 `GET /api/avatar/:hash`。另有探针 `/healthz`、`/readyz`，`/` 与 `/api` 302 跳转到 `https://<http.domain>`；`http.docs` 开启时，`/openapi.json` 与 `/docs` 提供接口文档。
+- **其他技术栈**：配置 koanf，日志 log/slog + libtnb/logrotate，定时任务 libtnb/cron，生命周期 libtnb/graceful，错误 samber/oops，图片处理纯 Go、无 CGO。
 
-修改 `cmd/app/wire.go` 或 `cmd/cli/wire.go` 后需重新生成：
+## 编码约定
 
-```bash
-wire ./cmd/app
-wire ./cmd/cli
-```
+- 声明顺序为常量、变量、类型、构造器、公开函数、公开方法、私有方法、包级私有助手。简单助手内联。
+- 测试文件同样按这个顺序：类型和它的导出方法、测试函数，最后是私有方法与助手。
+- 错误 key 格式为 `<模块>.<原因>`（snake_case），用户可见文案用中文。
+- 空列表返回 `[]` 而不是 `null`，时间一律 UTC。pgx 按进程本地时区返回 timestamptz，所以 `cmd/app` 与 `cmd/cli` 的 main 开头设置了 `time.Local = time.UTC`，日志时间也是 UTC。
+- 代码和注释用英文，本文件与 `docs/` 用中文。
 
-### 配置
+## 注释
 
-首次运行需复制配置文件：`cp config/config.example.yml config/config.yml`
+注释尽可能少，一两句为限。只写代码说不出的东西，例如不显然的原因、外部约束和有意的取舍。不复述代码，不写分节横幅、注释掉的代码和修改记录，也不写编号、名字、日期或历史叙述。
 
-### QQ 哈希表
+## 测试纪律
+
+- 用 `testing` + `libtnb/assert`。`must` 失败即停，`check` 继续执行，参数顺序为 `(got, want)`。
+- 每条业务规则一条用例，覆盖正常路径与拒绝路径。不写压力或循环型测试，不用 `time.Sleep` 等待，不为可测性拆碎方法。
+- `service/request_test.go` 用 `v.Check[T]()` 保证校验标签能编译。validator 要带上 `rule.Options(...)` 与 `validator.WithStrictRequired()`，与生产一致。
+- service 层用 mockery mock 加 `app.Test` 测 handler。biz 层 mock 端口测 usecase。mock 的 func 字段留空时，意外调用会直接 panic。
+- 集成测试只覆盖必须碰数据库的行为。
+
+## QQ 哈希表
 
 QQ 头像回退依赖 `hash.dir`（默认 `storage/hash/`）下的 MPHF 映射表，文件缺失时仅关闭该回退。详见 `docs/qq-hash.md`。
 
@@ -59,60 +100,6 @@ QQ 头像回退依赖 `hash.dir`（默认 `storage/hash/`）下的 MPHF 映射�
 ./cli hash verify --full    # 全量校验
 ./cli hash lookup <hash>    # 调试查询
 ```
-
-## 架构
-
-项目采用分层架构，通过 Google Wire 进行编译期依赖注入。
-
-### 分层结构
-
-```
-route (路由注册) → service (业务逻辑) → biz (实体/接口定义) ← data (数据访问/仓库实现)
-```
-
-- **`cmd/app`** — HTTP 服务入口，Wire 注入配置
-- **`cmd/cli`** — CLI 工具入口（`hash build/verify/lookup/stat`，构建与校验 QQ 哈希映射表，不依赖数据库）
-- **`internal/bootstrap`** — 基础设施初始化（配置、数据库、HTTP 服务器、缓存、队列、定时任务、加密、校验器），统一通过 `ProviderSet` 暴露给 Wire
-- **`internal/biz`** — 实体定义和 Repo 接口（`UserRepo`、`AvatarRepo`），不含具体实现
-- **`internal/service`** — 业务逻辑层（`AvatarService`、`UserService`、`VerifyCodeService`、`SystemService`、`CliService`）
-- **`internal/data`** — Repo 接口的 GORM 实现，包含头像图片生成逻辑
-- **`internal/route`** — Fiber 路由注册（`http.go` 注册 HTTP 路由，`cli.go` 注册 CLI 命令）
-- **`internal/http`** — 中间件（认证、限流）、请求 DTO、自定义校验规则
-- **`internal/migration`** — 数据库迁移（gormigrate）
-- **`internal/cronjob`** — 定时任务（如每小时更新过期头像）
-- **`internal/queuejob`** — 异步队列任务（如头像审核）
-
-### 外部集成包（`pkg/`）
-
-- **`pkg/avatars`** — Gravatar 和 QQ 头像获取
-- **`pkg/imaging`** — 纯 Go 图片解码、缩放、编码（jpeg/png/gif/webp/tiff/avif/heic/jxl）
-- **`pkg/mphf`** — BBHash 风格最小完美哈希函数（构建、序列化、mmap 零拷贝加载）
-- **`pkg/qqhash`** — QQ 邮箱哈希 → QQ 号映射表（MPHF + uint32 值数组，键为完整摘要不截断）
-- **`pkg/cdn`** — 多 CDN 缓存刷新（11+ 驱动：Cloudflare、华为云、又拍云、EdgeOne 等）
-- **`pkg/audit`** — 内容审核（阿里云、腾讯 COS）
-- **`pkg/sms`** — 短信发送（阿里云、腾讯云）
-- **`pkg/mail`** — 邮件发送
-- **`pkg/oauth`** — OAuth 认证
-- **`pkg/queue`** — 内存任务队列
-- **`pkg/geetest`** — 极验验证码
-
-### 关键技术栈
-
-- **HTTP**: Fiber v3
-- **ORM**: GORM + MySQL
-- **图片处理**: 纯 Go，无 CGO
-- **配置**: koanf (YAML)
-- **DI**: Google Wire
-- **日志**: log/slog
-
-### API 路由结构
-
-所有 API 在 `/api` 前缀下，主要端点：
-- `GET /api/avatar/:hash` — 获取头像（核心端点）
-- `/api/avatars` — 头像 CRUD（需登录）
-- `/api/user` — 用户认证与管理
-- `/api/verify_code` — 短信/邮件验证码
-- `/api/system/count` — 系统统计
 
 ## 前端（`web/`）
 

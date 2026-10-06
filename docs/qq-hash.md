@@ -17,7 +17,7 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 - 查询流程：hex 解码 → 分区 → MPHF 求槽位 → 读值数组得到 QQ 号 → **重新计算 `{qq}@qq.com` 的摘要与请求比对**。
   MPHF 对表外的键也会给出槽位，这一步校验保证不会误命中。
 - 文件通过 mmap 加载：idx 常驻页缓存（`MADV_WILLNEED`），val 按需读取（`MADV_RANDOM`），
-  多进程（`http.prefork`）共享同一份页缓存，内存不进 Go 堆。
+  多个进程（如平滑升级期间的新旧进程）共享同一份页缓存，内存不进 Go 堆。
 - 文件缺失时应用只记录警告，QQ 头像回退失效，不影响其它功能。
 
 ## 构建
@@ -50,7 +50,7 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 
 ## 部署
 
-- `hash.dir` 建议挂载独立的 volume，`.dockerignore` 已排除 `storage/hash`，产物不会被打进镜像。
+- `hash.dir` 建议放在独立的磁盘或目录上。部署只上传 `app` 与 `cli` 二进制，哈希表需要单独放到服务器上。
 - 页缓存越大命中越快：idx 全部常驻需要约 4 GB，val 全部常驻再加约 34 GB；
   内存不足时每次查询最多一次 SSD 随机读。
 - QQ 号范围扩大时需要全量重建，MPHF 不支持增量。
@@ -59,4 +59,5 @@ QQ 头像回退需要把请求中的邮箱哈希反查成 QQ 号。QQ 号的取�
 
 - `pkg/mphf`：通用 BBHash 风格 MPHF，构建、序列化、零拷贝加载、查询。
 - `pkg/qqhash`：文件格式、构建流水线、mmap 表与查询、校验。
-- `internal/bootstrap/qqhash.go`：启动时加载，`internal/data/avatar.go` 的 `GetQqByHash` 使用。
+- `internal/platform/bootstrap/qqhash.go`：启动时加载。
+- `internal/avatar`：解析头像时通过 `biz.QQHashes` 端口查询，`cli hash` 命令也由这个模块提供。

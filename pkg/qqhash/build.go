@@ -25,22 +25,22 @@ import (
 const (
 	DefaultStart    = MinQq
 	DefaultEnd      = MaxQq
-	DefaultPartBits = 8 // 256 个分区对应哈希的前两位十六进制
+	DefaultPartBits = 8 // 256 partitions, keyed by the first two hex digits
 
 	enumerateChunk   = 1 << 20
-	bucketBuffer     = 32 << 10 // 每个 worker 对每个桶的写缓冲
+	bucketBuffer     = 32 << 10 // write buffer per worker per bucket
 	progressInterval = 10 * time.Second
 )
 
 type BuildOptions struct {
 	Dir      string
-	Types    []string                         // 默认全部
-	Start    uint64                           // 含，默认 10000
-	End      uint64                           // 含，默认 uint32 上限
-	PartBits uint32                           // 默认 8
-	Gamma    float64                          // 默认 2.0
-	Workers  int                              // 默认 CPU 数
-	Logf     func(format string, args ...any) // 可为 nil
+	Types    []string                         // default all
+	Start    uint64                           // inclusive, default 10000
+	End      uint64                           // inclusive, default max uint32
+	PartBits uint32                           // default 8
+	Gamma    float64                          // default 2.0
+	Workers  int                              // default CPU count
+	Logf     func(format string, args ...any) // may be nil
 }
 
 func (o BuildOptions) normalize() (BuildOptions, error) {
@@ -104,7 +104,8 @@ func Build(ctx context.Context, o BuildOptions) error {
 	defer func() {
 		_ = os.RemoveAll(tmp)
 	}()
-	// 堆几乎全是无指针的大块缓冲，GC 标记极便宜，调低阈值能用几次额外 GC 换掉三成峰值内存
+	// the heap is almost all pointer-free buffers, so marking is cheap; a low
+	// GC target trades a few extra cycles for about 30% less peak memory
 	defer debug.SetGCPercent(debug.SetGCPercent(20))
 
 	o.Logf("QQ 号范围 %d ~ %d（%d 个），哈希类型 %v，分区 %d，并行 %d", o.Start, o.End, o.End-o.Start+1, o.Types, 1<<o.PartBits, o.Workers)
@@ -465,7 +466,7 @@ func grow[T any](s []T, n int) []T {
 	return slices.Grow(s[:0], n)[:n]
 }
 
-// 文件大小必须正好等于 len(buf)
+// readFull fails unless the file is exactly len(buf) bytes.
 func readFull(path string, buf []byte) error {
 	f, err := os.Open(path)
 	if err != nil {
@@ -486,7 +487,7 @@ func readFull(path string, buf []byte) error {
 	return err
 }
 
-// 让构建可复现
+// buildSeed derives the seed from the inputs so builds are reproducible.
 func buildSeed(typ string, start, end uint64) uint64 {
 	var out [sha256.Size]byte
 	d := digestOf(TypeSHA256, fmt.Appendf(nil, "%s:%d:%d", typ, start, end), &out)

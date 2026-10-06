@@ -1,5 +1,7 @@
 package audit
 
+import "context"
+
 type Driver interface {
-	Check(url string) (bool, string, error)
+	Check(ctx context.Context, url string) (bool, string, error)
 }

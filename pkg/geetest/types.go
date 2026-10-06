@@ -8,11 +8,11 @@ type Ticket struct {
 }
 
 type Response struct {
-	// 失败时返回
+	// set when the request fails
 	Status string `json:"status"`
 	Code   string `json:"code"`
 	Msg    string `json:"msg"`
-	// 成功时返回
+	// set when the request succeeds
 	Result      string         `json:"result"`
 	Reason      string         `json:"reason"`
 	CaptchaArgs map[string]any `json:"captcha_args"`

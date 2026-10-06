@@ -1,8 +1,9 @@
 package audit
 
 import (
+	"context"
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // COS request signing mandates HMAC-SHA1
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
@@ -17,6 +18,7 @@ type COS struct {
 	secretId  string
 	secretKey string
 	bucket    string
+	client    *req.Client
 }
 
 func NewCOS(secretId, secretKey, bucket string) *COS {
@@ -24,18 +26,17 @@ func NewCOS(secretId, secretKey, bucket string) *COS {
 		secretId:  secretId,
 		secretKey: secretKey,
 		bucket:    bucket,
+		client:    req.C().SetTimeout(10 * time.Second),
 	}
 }
 
-// Check 检查图片是否违规 true: 违规 false: 未违规
-func (c *COS) Check(url string) (bool, string, error) {
+func (c *COS) Check(ctx context.Context, url string) (bool, string, error) {
 	authorization, err := c.getAuthorization("GET", "/", 0)
 	if err != nil {
 		return false, "", err
 	}
 
-	client := req.C()
-	resp, err := client.R().SetQueryParams(map[string]string{
+	resp, err := c.client.R().SetContext(ctx).SetQueryParams(map[string]string{
 		"ci-process": "sensitive-content-recognition",
 		"detect-url": url,
 	}).SetHeader("Authorization", authorization).Get("https://" + c.bucket + "/")
@@ -58,7 +59,7 @@ func (c *COS) Check(url string) (bool, string, error) {
 	var response checkResponse
 	err = xml.Unmarshal(resp.Bytes(), &response)
 	if err != nil {
-		return false, "", fmt.Errorf("cos audit response unmarshal failed: %s", err)
+		return false, "", fmt.Errorf("cos audit response unmarshal failed: %w", err)
 	}
 
 	if response.Result == 1 {
@@ -82,7 +83,7 @@ func (c *COS) getAuthorization(method, path string, expires time.Duration) (stri
 	}
 
 	httpString := strings.ToLower(method) + "\n" + pathUnescaped + "\n\n\n"
-	hasher := sha1.New()
+	hasher := sha1.New() //nolint:gosec // COS request signing mandates SHA1
 	hasher.Write([]byte(httpString))
 	sha1edHttpString := hex.EncodeToString(hasher.Sum(nil))
 	stringToSign := "sha1\n" + signTime + "\n" + sha1edHttpString + "\n"

@@ -1,12 +1,12 @@
-// Package mphf 实现 BBHash 风格的最小完美哈希函数
+// Package mphf implements a BBHash-style minimal perfect hash function.
 //
-// 序列化布局（小端 uint64 字）：
+// Serialized layout, as little-endian uint64 words:
 //
-//	[0]        键数量 n
-//	[1]        种子
-//	[2]        层数 L
-//	[3, 3+2L)  每层 { 块数, 该层之前已放置的键数 }
-//	[3+2L, …)  每层的块数据，每块 8 个字：首字是块前累计 rank，其余 7 个字是位向量
+//	[0]        key count n
+//	[1]        seed
+//	[2]        level count L
+//	[3, 3+2L)  per level { block count, keys placed by earlier levels }
+//	[3+2L, …)  per-level blocks of 8 words: the rank before the block, then a 7-word bit vector
 package mphf
 
 import (
@@ -42,13 +42,13 @@ var (
 )
 
 type Options struct {
-	Gamma     float64 // 每键位数，默认 2.0，越大查询越快、体积越大
-	MaxLevels int     // 默认 32，超过后换种子重试
+	Gamma     float64 // bits per key, default 2.0; larger is faster to query but bigger
+	MaxLevels int     // default 32; exceeding it retries with another seed
 	Seed      uint64
 }
 
 type MPHF struct {
-	words    []uint64 // levels 的切片都指向这里
+	words    []uint64 // backs every levels[i].data
 	keyCount uint64
 	seed     uint64
 	levels   []level
@@ -61,7 +61,7 @@ type level struct {
 	seed       uint64
 }
 
-// Build 同时返回每个键的槽位，与 keys 同序
+// Build also returns the slot of every key, in key order.
 func Build(keys []byte, keySize int, opts Options) (*MPHF, []uint32, error) {
 	if keySize <= 0 || len(keys)%keySize != 0 {
 		return nil, nil, fmt.Errorf("mphf: invalid key size %d for %d bytes", keySize, len(keys))
@@ -90,7 +90,7 @@ func Build(keys []byte, keySize int, opts Options) (*MPHF, []uint32, error) {
 		if len(leftover) == 0 {
 			return assemble(uint64(n), seed, levels), slots, nil
 		}
-		// 相同的键永远分不开，先排除再换种子重试
+		// no seed can separate equal keys, so rule them out before retrying
 		if hasDuplicate(keys, keySize, leftover) {
 			return nil, nil, ErrDuplicateKey
 		}
@@ -121,7 +121,7 @@ func buildLevels(keys []byte, keySize int, slots []uint32, gamma float64, maxLev
 		nbits := blocks * blockBits
 		lseed := levelSeed(seed, lvl)
 
-		// seen：被命中的位；coll：被命中两次以上的位
+		// seen marks bits hit at least once, coll bits hit more than once
 		flat := blocks * (blockWords - 1)
 		seen := make([]uint64, flat)
 		coll := make([]uint64, flat)
@@ -135,7 +135,7 @@ func buildLevels(keys []byte, keySize int, slots []uint32, gamma float64, maxLev
 			}
 		}
 
-		// 只命中一次的位即本层放置的键，按块交错写入并累计 rank
+		// bits hit exactly once place their keys on this level
 		data := make([]uint64, blocks*blockWords)
 		var placed uint64
 		for b := range blocks {
@@ -147,7 +147,8 @@ func buildLevels(keys []byte, keySize int, slots []uint32, gamma float64, maxLev
 			}
 		}
 
-		// 撞车的键进入下一层，原地复用 cur；其余键的槽位就此确定，省掉构建后再逐键 Find
+		// colliding keys move to the next level in place; recording the slots of
+		// the rest now saves a Find per key after the build
 		next := cur[:0]
 		for _, idx := range cur {
 			pos := position(hash64(keyAt(keys, keySize, idx), lseed), nbits)
@@ -209,7 +210,8 @@ func assemble(n, seed uint64, built []builtLevel) *MPHF {
 	return m
 }
 
-// Load 返回值引用 data，data 需保持有效且不可修改；不对齐时会拷贝
+// Load aliases data, which must stay valid and unmodified; unaligned data is
+// copied instead.
 func Load(data []byte) (*MPHF, error) {
 	if len(data) < headerWords*8 || len(data)%8 != 0 {
 		return nil, ErrCorrupt
@@ -245,7 +247,8 @@ func Load(data []byte) (*MPHF, error) {
 	return m, nil
 }
 
-// Find key 不在原始键集合中时结果不可信，调用方需自行校验
+// Find returns an arbitrary slot for a key outside the built set; callers
+// must verify the hit themselves.
 func (m *MPHF) Find(key []byte) (uint64, bool) {
 	for i := range m.levels {
 		l := &m.levels[i]
@@ -280,7 +283,7 @@ func (m *MPHF) BitsPerKey() float64 {
 	return float64(m.Size()*8) / float64(m.keyCount)
 }
 
-// Bytes 与内部存储共享内存，不得修改
+// Bytes shares memory with m and must not be modified.
 func (m *MPHF) Bytes() []byte {
 	if nativeLittleEndian {
 		return unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(m.words))), len(m.words)*8)
@@ -301,13 +304,14 @@ func levelSeed(seed uint64, lvl int) uint64 {
 	return mix64(seed ^ (uint64(lvl)+1)*golden)
 }
 
-// 乘法取高位代替取模
+// position maps h onto [0, n) by a high multiply instead of a modulo.
 func position(h, n uint64) uint64 {
 	hi, _ := bits.Mul64(h, n)
 	return hi
 }
 
-// key 应当已经均匀分布（如摘要），逐字与种子混合即可
+// hash64 assumes keys are already uniform, such as digests, so mixing each
+// word with the seed suffices.
 func hash64(key []byte, seed uint64) uint64 {
 	h := seed ^ uint64(len(key))*golden
 	for len(key) >= 8 {
@@ -322,7 +326,7 @@ func hash64(key []byte, seed uint64) uint64 {
 	return h
 }
 
-// MurmurHash3 的 64 位终结函数
+// mix64 is the MurmurHash3 64-bit finalizer.
 func mix64(x uint64) uint64 {
 	x ^= x >> 33
 	x *= 0xff51afd7ed558ccd
@@ -348,7 +352,7 @@ func asWords(b []byte) []uint64 {
 	return w
 }
 
-// pos 之前的置位数
+// rank counts the set bits before pos.
 func rank(data []uint64, pos uint64) uint64 {
 	blk := pos / blockBits
 	off := pos - blk*blockBits

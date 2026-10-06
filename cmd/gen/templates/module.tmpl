@@ -1,0 +1,21 @@
+//go:build wireinject
+
+// Package {{.Snake}} is the {{.Snake}} module's assembly.
+package {{.Snake}}
+
+import (
+	"github.com/libtnb/wire"
+
+	"{{.Module}}/internal/{{.Snake}}/biz"
+	"{{.Module}}/internal/{{.Snake}}/data"
+	"{{.Module}}/internal/{{.Snake}}/service"
+	"{{.Module}}/internal/shared/registry"
+)
+
+var Module = wire.New().
+	Provide(data.New{{.Pascal}}Repo).
+	Provide(biz.New{{.Pascal}}Usecase).
+	Provide(service.New{{.Pascal}}Service).
+	Multibind[registry.Routes]().
+	Contribute[registry.Routes](service.{{.Pascal}}Routes).
+	Export[registry.Routes]()

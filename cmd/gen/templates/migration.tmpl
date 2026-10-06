@@ -1,0 +1,20 @@
+package migrations
+
+import "github.com/go-rio/migrate"
+
+func init() {
+	collection.Add("{{.Name}}", func(s *migrate.Schema) {
+{{- if .Create}}
+		s.Create("{{.Table}}", func(t *migrate.Table) {
+			t.ID()
+			t.String("name")
+			t.Timestamps()
+			t.SoftDeletes()
+		})
+{{- else}}
+		s.Table("{{.Table}}", func(t *migrate.Table) {
+			// declare the change, e.g. t.String("email").Nullable()
+		})
+{{- end}}
+	})
+}

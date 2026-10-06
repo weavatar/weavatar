@@ -1,0 +1,21 @@
+// Package appinfo carries configuration values to business modules, which
+// cannot import platform/conf. Each value has its own named type because wire
+// keys bindings by exact type.
+package appinfo
+
+import "time"
+
+// Domain is the public host (http.domain), without scheme, e.g. "weavatar.com".
+type Domain string
+
+// HashDir is the QQ hash table directory (hash.dir).
+type HashDir string
+
+// CodeExpire is how long a verification code stays valid (code.expire).
+type CodeExpire time.Duration
+
+// OAuthClient identifies this application to the OAuth server.
+type OAuthClient struct {
+	BaseURL  string
+	ClientID string
+}
