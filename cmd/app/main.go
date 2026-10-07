@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	_ "time/tzdata"
 
+	"github.com/libtnb/graceful"
 	"github.com/weavatar/weavatar/internal/app"
 )
 
@@ -28,7 +28,11 @@ func main() {
 	}
 }
 
-func run() (err error) {
+// run fails only when the service itself failed. Trouble while stopping is
+// reported but exits zero: after an upgrade handoff this process's exit
+// status becomes the unit's result, and a failure there makes systemd restart
+// the service on the next reload.
+func run() error {
 	fmt.Println("[APP] version", version)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -38,11 +42,15 @@ func run() (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if cleanup != nil {
-			err = errors.Join(err, cleanup())
-		}
-	}()
+	err = application.Run(ctx)
+	if cleanupErr := cleanup(); cleanupErr != nil {
+		fmt.Fprintln(os.Stderr, "Warning:", cleanupErr)
+	}
+	// a bare assertion on purpose: a drain failure joined onto a real cause stays a failure
+	if drain, ok := err.(*graceful.DrainError); ok { //nolint:errorlint
+		fmt.Fprintln(os.Stderr, "Warning:", drain)
+		return nil
+	}
 
-	return application.Run(ctx)
+	return err
 }
