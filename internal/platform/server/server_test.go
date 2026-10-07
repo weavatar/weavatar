@@ -125,6 +125,15 @@ func TestDocsServeOpenAPI(t *testing.T) {
 	must.Equal(t, resp.status, fiber.StatusOK)
 }
 
+func TestMonitorServesTheLivePage(t *testing.T) {
+	app, err := NewRouter(testConfig(), validator.MustNew(), "v1.2.3", nil)
+	must.NoError(t, err)
+
+	resp := send(t, app, httptest.NewRequest(http.MethodGet, "/api/monitor", nil))
+	must.Equal(t, resp.status, fiber.StatusOK)
+	must.Contains(t, resp.body, "WeAvatar Monitor")
+}
+
 func TestFrameworkErrorsAnswerInEnvelope(t *testing.T) {
 	routes := registry.Routes{{
 		{Method: fiber.MethodGet, Path: "/panic", Handler: func(fiber.Ctx) error {

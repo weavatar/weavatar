@@ -35,7 +35,7 @@ WeAvatar 后端：类似 Gravatar 的头像服务，用户通过邮箱或手机�
 
 ## 架构要点
 
-- **HTTP**：Fiber v3，接口前缀 `/api`。各模块 `service/route.go` 返回 `transport.Endpoints`，中间件放 `Middlewares`（登录用 `transport.MustLogin(jwt)`，限流用 `transport.Throttle`），`Document` 用 `transport.Describe[Req, transport.Envelope[Resp]]`，没有请求参数时 `Req` 写 `openapi.NoBody`；不写 `Document` 的端点（如 `GET /api/avatar/:hash`）不进文档。核心端点是 `GET /api/avatar/:hash`，直接返回图片。另有探针 `/healthz`、`/readyz`，`/` 与 `/api` 302 跳转到 `https://<http.domain>`；`http.docs` 打开时提供 `/openapi.json` 与 `/docs`。
+- **HTTP**：Fiber v3，接口前缀 `/api`。各模块 `service/route.go` 返回 `transport.Endpoints`，中间件放 `Middlewares`（登录用 `transport.MustLogin(jwt)`，限流用 `transport.Throttle`），`Document` 用 `transport.Describe[Req, transport.Envelope[Resp]]`，没有请求参数时 `Req` 写 `openapi.NoBody`；不写 `Document` 的端点（如 `GET /api/avatar/:hash`）不进文档。核心端点是 `GET /api/avatar/:hash`，直接返回图片。另有探针 `/healthz`、`/readyz`，实时监控页 `/api/monitor`（Fiber contrib monitor，无鉴权），`/` 与 `/api` 302 跳转到 `https://<http.domain>`；`http.docs` 打开时提供 `/openapi.json` 与 `/docs`。
 - **限流与客户端 IP**：`transport.Throttle` 按 `c.IP()` 计数，每次调用一份独立额度，多个端点共用就复用同一个实例（如短信与邮件验证码共用 5/min）。部署在 nginx 后必须把 `http.proxy_header` 设为 `X-Real-IP`，否则全站共用一份额度；设置后任何来源的该头都会被采用（不是合法 IP 时退回连接地址），所以服务只能经 nginx 访问。
 - **时间**：一律 UTC。`cmd/app` 与 `cmd/cli` 启动时设 `time.Local = time.UTC`，驱动读回的 timestamptz 与日志都按 UTC 呈现。
 - **接口契约**：前端（`web/`）依赖现有的路径与响应形状，改动前先确认兼容；前端路由 `/oauth/callback` 被后端拼进 OAuth 回调地址，登录与注销确认共用它。

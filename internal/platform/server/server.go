@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gofiber/contrib/monitor"
 	"github.com/gofiber/fiber/v3"
 	"github.com/libtnb/validator"
 	"github.com/libtnb/validator/contrib/openapi"
@@ -46,6 +47,12 @@ func NewRouter(
 	}
 
 	HTTP(routes, r)
+
+	// the live metrics page; Chart.js comes from a mirror reachable from China
+	r.Get("/api/monitor", monitor.New(monitor.Config{
+		Title:      config.App.Name + " Monitor",
+		ChartJSURL: "https://fastly.jsdelivr.net/npm/chart.js@2.9/dist/Chart.bundle.min.js",
+	}))
 
 	if config.HTTP.Docs {
 		spec, err := SpecJSON(config.App.Name, version, validate, routes)
