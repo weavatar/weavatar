@@ -50,7 +50,7 @@ func NewRouter(
 
 	// the live metrics page; Chart.js comes from a mirror reachable from China
 	r.Get("/api/monitor", monitor.New(monitor.Config{
-		Title:      config.App.Name + " Monitor",
+		Title:      "WeAvatar Monitor",
 		ChartJSURL: "https://fastly.jsdelivr.net/npm/chart.js@2.9/dist/Chart.bundle.min.js",
 	}))
 
