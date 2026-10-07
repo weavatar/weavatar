@@ -31,7 +31,7 @@ require (
 	github.com/jdcloud-api/jdcloud-sdk-go v1.67.0
 	github.com/knadh/koanf/parsers/yaml v1.1.1
 	github.com/knadh/koanf/providers/file v1.2.1
-	github.com/knadh/koanf/v2 v2.3.7
+	github.com/knadh/koanf/v2 v2.3.8
 	github.com/libtnb/assert v0.4.2
 	github.com/libtnb/cache v1.3.0
 	github.com/libtnb/cron v0.6.0
