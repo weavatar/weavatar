@@ -26,16 +26,7 @@ declare module 'alova' {
   }
 }
 
-/** 422 弹 toast，401 只清除登录态，其余弹对话框 */
-const alertError = (err: ApiError) => {
-  if (err.status === 422) window.$message?.error(err.message)
-  else if (err.status !== 401)
-    window.$dialog?.error({
-      title: err.status ? '错误' : '请求失败',
-      content: err.message,
-      maskClosable: false
-    })
-}
+const alertError = (err: ApiError) => window.$message?.error(err.message)
 
 const service = createAlova({
   baseURL: import.meta.env.VITE_API_URL,
