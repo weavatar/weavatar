@@ -103,9 +103,12 @@ jobs:
           # files are renamed into place together at the end, so index.html never points at
           # assets that have not arrived
           for attempt in 1 2 3; do
-            if rsync -az --delete-delay --delay-updates --timeout=60 web/dist/ "deploy-target:$WEB_ROOT/"; then
+            # the CDN may keep serving an older index.html for a while, so hashed assets are only
+            # added here and pruned below once they are a month old
+            if rsync -az --timeout=60 web/dist/assets/ "deploy-target:$WEB_ROOT/assets/" &&
+               rsync -az --delete-delay --delay-updates --exclude=assets/ --timeout=60 web/dist/ "deploy-target:$WEB_ROOT/"; then
               # shellcheck disable=SC2029
-              ssh deploy-target "sudo chown -R www:www '$WEB_ROOT'"
+              ssh deploy-target "sudo chown -R www:www '$WEB_ROOT' && sudo find '$WEB_ROOT/assets' -type f -mtime +30 -delete"
               exit 0
             fi
             [ "$attempt" -eq 3 ] && { echo "upload failed after 3 attempts" >&2; exit 1; }
