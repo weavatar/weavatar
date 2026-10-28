@@ -31,7 +31,7 @@
     "@iconify-json/lucide": "^1.2.139",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^30.0.0",
-    "@types/node": "^24.12.2",
+    "@types/node": "^26.0.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.7.0",
