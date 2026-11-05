@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/etag"
-	"github.com/gofiber/fiber/v3/middleware/recover"
+	fiberrecover "github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 
 	"github.com/weavatar/weavatar/internal/platform/conf"
@@ -15,7 +15,7 @@ import (
 // Cross-Origin-Resource-Policy: same-origin would block cross-site embedding.
 func globalMiddlewares(config *conf.Config) []fiber.Handler {
 	handlers := []fiber.Handler{
-		recover.New(recover.Config{
+		fiberrecover.New(fiberrecover.Config{
 			EnableStackTrace: true,
 		}),
 	}

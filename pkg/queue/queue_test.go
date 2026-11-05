@@ -129,8 +129,8 @@ func TestStopWaitsForRunningJobAndDropsPending(t *testing.T) {
 	go func() { stopped <- q.Stop(context.Background()) }()
 
 	select {
-	case <-stopped:
-		t.Fatal("Stop returned before running job finished")
+	case err := <-stopped:
+		t.Fatalf("Stop returned before running job finished: %v", err)
 	case <-time.After(50 * time.Millisecond):
 	}
 
