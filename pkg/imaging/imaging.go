@@ -76,9 +76,7 @@ var codecs = map[string]codec{
 			return avif.Decode(r, avif.Options{FrameSizeLimit: MaxPixels})
 		},
 		config: avif.DecodeConfig,
-		encode: func(w io.Writer, m image.Image) error {
-			return avif.Encode(w, m, avif.EncodeOptions{Speed: avif.DefaultSpeed})
-		},
+		encode: func(w io.Writer, m image.Image) error { return avif.Encode(w, m) },
 	},
 	"heic": {
 		decode: func(r io.Reader) (image.Image, error) {

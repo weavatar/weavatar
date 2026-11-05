@@ -12,8 +12,8 @@ require (
 	github.com/devhaozi/huaweicloud-sdk-go-v3 v0.0.0-20241018211007-bbebb6de5db7
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/forPelevin/gomoji v1.4.1
-	github.com/gen2brain/gav1d v0.2.5
-	github.com/gen2brain/h265 v0.2.3
+	github.com/gen2brain/gav1d v0.2.6
+	github.com/gen2brain/h265 v0.2.4
 	github.com/gen2brain/jpegn v0.6.1
 	github.com/gen2brain/jxl v0.2.0
 	github.com/gen2brain/pngn v0.1.3
