@@ -18,7 +18,7 @@
     "@fontsource-variable/manrope": "^5.3.0",
     "@vueuse/core": "^15.0.0",
     "alova": "^3.5.1",
-    "cropperjs": "^2.1.1",
+    "cropperjs": "^2.3.1",
     "highlight.js": "^11.11.1",
     "pinia": "^4.0.0",
     "pinia-plugin-persistedstate": "^4.7.1",

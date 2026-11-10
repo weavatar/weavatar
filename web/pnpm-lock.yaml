@@ -176,7 +176,7 @@ importers:
         specifier: ^3.5.1
         version: 3.5.5
       cropperjs:
-        specifier: ^2.1.1
+        specifier: ^2.3.1
         version: 2.3.1
       highlight.js:
         specifier: ^11.11.1

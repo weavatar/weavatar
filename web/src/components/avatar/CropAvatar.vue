@@ -28,7 +28,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 import { NModal } from 'naive-ui'
-import Cropper from 'cropperjs'
+import Cropper, { type CropperSelection } from 'cropperjs'
+
+type Box = { x: number; y: number; width: number; height: number }
 
 const emit = defineEmits<{ cropAvatar: [blob: Blob] }>()
 
@@ -37,9 +39,6 @@ const loading = ref(false)
 const containerRef = ref<HTMLElement>()
 const imgSrc = ref('')
 let cropper: Cropper | null = null
-
-// 图片在 canvas 中的实际区域，选区不能超出它
-let imgBounds = { x: 0, y: 0, w: 0, h: 0 }
 
 const destroyCropper = () => {
   if (cropper) {
@@ -84,63 +83,40 @@ const initCropper = () => {
   })
 
   const localCropper = cropper
-
   const cropperImage = localCropper.getCropperImage()
-  if (cropperImage) {
-    cropperImage.$ready().then(() => {
-      if (!localCropper || localCropper !== cropper) return
-
-      const canvasEl = localCropper.getCropperCanvas()
-      if (!canvasEl) return
-
-      const imgRect = cropperImage.getBoundingClientRect()
-      const canvasRect = canvasEl.getBoundingClientRect()
-
-      const imgX = imgRect.left - canvasRect.left
-      const imgY = imgRect.top - canvasRect.top
-      const imgW = imgRect.width
-      const imgH = imgRect.height
-
-      imgBounds = { x: imgX, y: imgY, w: imgW, h: imgH }
-
-      // 初始选区取图片短边的正方形并居中
-      const size = Math.min(imgW, imgH)
-      const sel = localCropper.getCropperSelection()
-      if (sel) {
-        sel.x = imgX + (imgW - size) / 2
-        sel.y = imgY + (imgH - size) / 2
-        sel.width = size
-        sel.height = size
-        sel.$render()
-      }
-    })
-  }
-
   const selection = localCropper.getCropperSelection()
-  if (selection) {
-    selection.addEventListener('change', (event: Event) => {
-      const e = event as CustomEvent
-      const { x, y, width, height } = e.detail
-      const { x: bx, y: by, w: bw, h: bh } = imgBounds
+  if (!cropperImage || !selection) return
 
-      if (bw === 0 || bh === 0) return
-
-      const maxSize = Math.min(bw, bh)
-      const clampedW = Math.min(width, maxSize)
-      const clampedH = Math.min(height, maxSize)
-      const clampedX = Math.max(bx, Math.min(x, bx + bw - clampedW))
-      const clampedY = Math.max(by, Math.min(y, by + bh - clampedH))
-
-      if (x !== clampedX || y !== clampedY || width !== clampedW || height !== clampedH) {
-        e.preventDefault()
-        selection.x = clampedX
-        selection.y = clampedY
-        selection.width = clampedW
-        selection.height = clampedH
-        selection.$render()
-      }
+  // 图片载入并居中后，初始选区取图片短边的正方形并居中
+  cropperImage.$ready().then(() => {
+    if (localCropper !== cropper) return
+    const bounds = visibleBounds(localCropper)
+    if (!bounds) return
+    const size = Math.min(bounds.width, bounds.height)
+    applySelection(selection, {
+      x: bounds.x + (bounds.width - size) / 2,
+      y: bounds.y + (bounds.height - size) / 2,
+      width: size,
+      height: size
     })
-  }
+  })
+
+  // 选区只能在图片可见范围内移动和缩放
+  selection.addEventListener('change', (event) => {
+    const e = event as CustomEvent<Box>
+    const fitted = fit(e.detail, visibleBounds(localCropper))
+    if (fitted && !same(fitted, e.detail)) {
+      e.preventDefault()
+      applySelection(selection, fitted)
+    }
+  })
+
+  // 滚轮缩放或拖动图片后把选区压回图片内，否则输出会带透明区域
+  cropperImage.addEventListener('change', (event) => {
+    const e = event as CustomEvent<Box>
+    const fitted = fit(selection, visibleBounds(localCropper, e.detail))
+    if (fitted && !same(fitted, selection)) applySelection(selection, fitted)
+  })
 }
 
 const handleConfirm = async () => {
@@ -184,6 +160,54 @@ onBeforeUnmount(() => {
 })
 
 defineExpose({ setShow, setImage })
+
+// 图片与画布的重叠区域（画布坐标系），不传 image 时取图片当前位置
+const visibleBounds = (c: Cropper, image?: Box): Box | null => {
+  const canvasEl = c.getCropperCanvas()
+  const imageEl = c.getCropperImage()
+  if (!canvasEl || !imageEl) return null
+  const canvasRect = canvasEl.getBoundingClientRect()
+  if (!image) {
+    const rect = imageEl.getBoundingClientRect()
+    image = {
+      x: rect.left - canvasRect.left,
+      y: rect.top - canvasRect.top,
+      width: rect.width,
+      height: rect.height
+    }
+  }
+  const x = Math.max(0, image.x)
+  const y = Math.max(0, image.y)
+  return {
+    x,
+    y,
+    width: Math.min(canvasRect.width, image.x + image.width) - x,
+    height: Math.min(canvasRect.height, image.y + image.height) - y
+  }
+}
+
+// 把正方形选区压进图片区域，图片比选区小时选区缩成图片短边
+const fit = (box: Box, bounds: Box | null): Box | null => {
+  if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null
+  const size = Math.min(box.width, box.height, bounds.width, bounds.height)
+  return {
+    x: Math.max(bounds.x, Math.min(box.x, bounds.x + bounds.width - size)),
+    y: Math.max(bounds.y, Math.min(box.y, bounds.y + bounds.height - size)),
+    width: size,
+    height: size
+  }
+}
+
+const same = (a: Box, b: Box) =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+
+const applySelection = (selection: CropperSelection, box: Box) => {
+  selection.x = box.x
+  selection.y = box.y
+  selection.width = box.width
+  selection.height = box.height
+  selection.$render()
+}
 </script>
 
 <style scoped>
