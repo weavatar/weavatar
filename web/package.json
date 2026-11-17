@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.139",
-    "@tsconfig/node24": "^24.0.4",
+    "@tsconfig/node26": "^26.0.0",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.5",
